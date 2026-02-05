@@ -152,4 +152,24 @@ export class Landscape extends CityEntity {
             default: return '#888';
         }
     }
+
+    draw(ctx: CanvasRenderingContext2D, offsetX: number): void {
+        super.draw(ctx, offsetX);
+
+        // Fix Floating Artifacts:
+        // When we lift layers (yOffset), the bottom of the shape might be exposed if the hill is small.
+        // We need to extend the "ground" downwards indefinitely.
+
+        // Calculate screen coordinates of the base
+        const screenX = this.x - offsetX;
+
+        // CityEntity draws the cached image such that 'this.y' is the baseline.
+        // We want to fill from this.y downwards.
+        // Since we are in a potentially scaled/translated context for the layer, 
+        // we just draw at (x, y) with a large height.
+
+        ctx.fillStyle = this.getColor();
+        // Expand slightly X to match overlap logic
+        ctx.fillRect(screenX - 1, this.y, this.width + 2, 2000);
+    }
 }

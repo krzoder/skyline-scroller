@@ -4,12 +4,14 @@ export class Layer {
     public objects: Renderable[] = [];
     public speedModifier: number;
     public zIndex: number;
-    public yOffset: number; // For hillside effect
+    public yOffset: number;
+    public scale: number;
 
-    constructor(speedModifier: number, zIndex: number, yOffset: number = 0) {
+    constructor(speedModifier: number, zIndex: number, yOffset: number = 0, scale: number = 1.0) {
         this.speedModifier = speedModifier;
         this.zIndex = zIndex;
         this.yOffset = yOffset;
+        this.scale = scale;
     }
 
     public add(obj: Renderable) {
@@ -51,13 +53,18 @@ export class Layer {
         ctx.save();
         ctx.translate(0, -this.yOffset);
 
+        // Apply Scaling
+        if (this.scale !== 1.0) {
+            ctx.scale(this.scale, this.scale);
+        }
+
         this.objects.forEach(obj => {
             // Check visibility
             // Object is visible if (obj.x - layerViewX) < screenWidth AND (obj.x + width - layerViewX) > 0
 
             const screenX = obj.x - layerViewX;
 
-            if (screenX < screenWidth && screenX + obj.width > 0) {
+            if (screenX * this.scale < screenWidth && (screenX + obj.width) * this.scale > 0) {
                 obj.draw(ctx, layerViewX);
             }
         });
@@ -65,3 +72,4 @@ export class Layer {
         ctx.restore();
     }
 }
+

@@ -152,7 +152,7 @@ export class CityGenerator {
             layer.add(obj);
         }
 
-        this.lastX[layerIndex] += chunkWidth;
+        this.lastX[layerIndex] += chunkWidth - 1; // Overlap by 1px to prevent hairline seams
     }
 
     private pickTreeType(biome: BiomeType): TreeType {

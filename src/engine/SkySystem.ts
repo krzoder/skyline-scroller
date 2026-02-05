@@ -5,19 +5,25 @@ export class SkySystem {
     private speed: number = 0.1; // 5x Slower
     private canvas: HTMLCanvasElement;
 
-    // Gradient Keyframes - Rapid Transition around 6 and 18
+    // Gradient Keyframes - Refined Day/Night Cycle
     private keyframes = [
-        { t: 0, top: "#020024", bot: "#090979" },    // Deep Night
-        { t: 5.0, top: "#020024", bot: "#090979" },  // Night until last moment
-        { t: 5.5, top: "#40405c", bot: "#603040" },  // Dawn Rapid
-        { t: 6.0, top: "#87ceeb", bot: "#ff7f50" },  // Sunrise Peak (Flip)
-        { t: 6.5, top: "#4facfe", bot: "#00f2fe" },  // Full Day Quickly
-        { t: 12, top: "#1a73e8", bot: "#4facfe" },   // Noon
-        { t: 17.5, top: "#4facfe", bot: "#00f2fe" }, // Day until last moment
-        { t: 18.0, top: "#fd746c", bot: "#ff9966" }, // Sunset Peak (Flip)
-        { t: 18.5, top: "#40405c", bot: "#603040" }, // Dusk Rapid
-        { t: 19.0, top: "#020024", bot: "#090979" }, // Night Rapid
-        { t: 24, top: "#020024", bot: "#090979" }    // Wrap
+        { t: 0, top: "#020024", bot: "#090979", overlay: "rgb(15, 15, 40)" },       // Deep Night (Dark Blue Multiplier)
+        { t: 2.5, top: "#000000", bot: "#020210", overlay: "rgb(20, 20, 35)" },     // Darkest Night Start (Deep but Visible)
+        { t: 4.0, top: "#000000", bot: "#020210", overlay: "rgb(20, 20, 35)" },     // Darkest Night End
+        { t: 5.0, top: "#1a1a3a", bot: "#2a2a5a", overlay: "rgb(40, 40, 80)" },     // Bluey Gloom
+        { t: 5.5, top: "#40405c", bot: "#603040", overlay: "rgb(100, 80, 100)" },   // Pre-Sunrise
+        { t: 6.0, top: "#70a1ff", bot: "#ff9f43", overlay: "rgb(200, 180, 170)" },  // Sunrise Peak (Softer Pastel Orange)
+        { t: 6.3, top: "#60a3bc", bot: "#82ccdd", overlay: "rgb(220, 220, 230)" },  // Early Morning (Bridge: Blue-Cyan)
+        { t: 6.5, top: "#4facfe", bot: "#00f2fe", overlay: "rgb(255, 255, 255)" },  // Full Day (No Filter)
+        { t: 12, top: "#1a73e8", bot: "#4facfe", overlay: "rgb(255, 255, 255)" },   // Noon
+        { t: 16.5, top: "#4facfe", bot: "#00f2fe", overlay: "rgb(255, 240, 220)" }, // Day Fade
+        { t: 17.35, top: "#4a69bd", bot: "#ec8e14", overlay: "rgb(200, 150, 100)" }, // Dusky Orange (Deep Blue top, rich orange bot - boosted)
+        { t: 17.8, top: "#1e3799", bot: "#6a0572", overlay: "rgb(100, 50, 100)" },  // Velvet Phase (Dark Blue top, Deep Velvet Purple bot)
+        { t: 18.2, top: "#0c2461", bot: "#3c1053", overlay: "rgb(60, 30, 80)" },    // Deep Velvet/Night Bridge
+        { t: 18.5, top: "#2c3e50", bot: "#4ca1af", overlay: "rgb(40, 60, 100)" },   // Bright Night
+        { t: 20.5, top: "#0f2027", bot: "#203a43", overlay: "rgb(20, 30, 60)" },    // Fade
+        { t: 22.0, top: "#020024", bot: "#090979", overlay: "rgb(15, 15, 40)" },    // Deep Night
+        { t: 24, top: "#020024", bot: "#090979", overlay: "rgb(15, 15, 40)" }       // Wrap
     ];
 
     private clouds: {
@@ -36,15 +42,17 @@ export class SkySystem {
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
         this.rng = new Random(Date.now());
-        this.time = this.rng.nextRange(6, 18);
+        this.time = this.rng.nextRange(0, 24);
         this.initClouds();
     }
 
     private initClouds() {
         this.clouds = [];
         const count = 20;
+        // Approximation for init (assume standard width or wait for first update? Use 1920 as base)
+        const approxWidth = 1920;
         for (let i = 0; i < count; i++) {
-            this.createCloud(true, i * (this.canvas.width / count));
+            this.createCloud(true, i * (approxWidth / count));
         }
     }
 
@@ -140,13 +148,15 @@ export class SkySystem {
             // Cloud max right edge is center + maxX * scale.
             // We want (x + maxX*scale) < 0.
             // So x < -(maxX * scale).
-            x = randomX ? this.rng.nextRange(0, this.canvas.width) : -(maxX * scale) - 50;
+            // So x < -(maxX * scale).
+            // Note: max width check is done in properties
+            x = randomX ? this.rng.nextRange(0, 2000) : -(maxX * scale) - 50;
         }
 
         this.clouds.push({ x, y, speed, type, scale, opacity, parts, bounds });
     }
 
-    public update(dt: number) {
+    public update(dt: number, logicalW: number) {
         this.time += this.speed * dt;
         if (this.time >= 24) this.time = 0;
 
@@ -163,25 +173,30 @@ export class SkySystem {
 
             const cloudMinPixel = c.x + (c.bounds.minX * c.scale);
 
-            if (cloudMinPixel > this.canvas.width) {
+            if (cloudMinPixel > logicalW) {
                 this.clouds.splice(i, 1);
                 this.createCloud(false);
             }
         }
     }
 
-    public draw(ctx: CanvasRenderingContext2D) {
+    public getAmbientColor(): string {
+        const { overlay } = this.getSkyColors(this.time);
+        return overlay;
+    }
+
+    public draw(ctx: CanvasRenderingContext2D, w: number, h: number) {
         // 1. Interpolate Sky Color
         const { top, bot } = this.getSkyColors(this.time);
 
-        const grad = ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
         grad.addColorStop(0, top);
         grad.addColorStop(1, bot);
         ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        ctx.fillRect(0, 0, w, h);
 
         // 2. Celestial Body
-        this.drawCelestialBody(ctx);
+        this.drawCelestialBody(ctx, w);
 
         // Draw Clouds
         this.clouds.forEach(c => {
@@ -229,22 +244,32 @@ export class SkySystem {
         const progress = (t - f1.t) / (f2.t - f1.t);
         return {
             top: this.lerpColor(f1.top, f2.top, progress),
-            bot: this.lerpColor(f1.bot, f2.bot, progress)
+            bot: this.lerpColor(f1.bot, f2.bot, progress),
+            overlay: this.lerpColor(f1.overlay, f2.overlay, progress)
         };
     }
 
     private lerpColor(c1: string, c2: string, t: number): string {
         const parse = (c: string) => {
-            const hex = c.replace('#', '');
-            return [
-                parseInt(hex.substr(0, 2), 16),
-                parseInt(hex.substr(2, 2), 16),
-                parseInt(hex.substr(4, 2), 16)
-            ];
+            if (c.startsWith('#')) {
+                const hex = c.replace('#', '');
+                return [
+                    parseInt(hex.substr(0, 2), 16),
+                    parseInt(hex.substr(2, 2), 16),
+                    parseInt(hex.substr(4, 2), 16)
+                ];
+            } else {
+                const match = c.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                if (match) {
+                    return [parseInt(match[1]), parseInt(match[2]), parseInt(match[3])];
+                }
+                return [0, 0, 0];
+            }
         };
         const [r1, g1, b1] = parse(c1);
         const [r2, g2, b2] = parse(c2);
 
+        // Round to integers for Canvas/CSS compatibility and to avoid sub-pixel multiply issues
         const r = Math.round(r1 + (r2 - r1) * t);
         const g = Math.round(g1 + (g2 - g1) * t);
         const b = Math.round(b1 + (b2 - b1) * t);
@@ -252,21 +277,21 @@ export class SkySystem {
         return `rgb(${r}, ${g}, ${b})`;
     }
 
-    private drawCelestialBody(ctx: CanvasRenderingContext2D) {
+    private drawCelestialBody(ctx: CanvasRenderingContext2D, w: number) {
         // Pad logic: 0..24 maps to -150 to W+150 (Reduced buffer)
         const pad = 150;
-        const totalW = this.canvas.width + (pad * 2);
+        const totalW = w + (pad * 2);
         const x = -pad + (this.time / 24) * totalW;
 
         // Height Logic (Higher arc)
         const cy = 125 + Math.sin((this.time - 6) * Math.PI / 12) * -75;
 
         // ANIMATION
-        // User: "Flip speed 3x FASTER".
-        // Was 0.2. Now 0.06.
-        const flipWin = 0.06;
+        // User Update: Stretch periods, make it smooth definitive but not rapid.
+        // Increasing window to 0.15 (slower/smoother flip)
+        const flipWin = 0.15;
         // Ray Window: Fade happens before flip.
-        const rayWin = 1.0;
+        const rayWin = 0.5; // Reduced from 1.0 to match rapid sky change
 
         let scaleX = 1;
         let drawSun = (this.time > 6 && this.time < 18);

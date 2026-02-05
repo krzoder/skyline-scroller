@@ -39,6 +39,8 @@ body, html {
   left: 10px;
   z-index: 10;
   pointer-events: none; /* Let clicks pass through to canvas if needed */
+  transform: scale(1.6);
+  transform-origin: top left;
 }
 
 #seed-display {
