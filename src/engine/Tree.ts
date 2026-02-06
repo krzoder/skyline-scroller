@@ -5,6 +5,7 @@ export type TreeType = 'sequoia' | 'pine' | 'oak' | 'bush' | 'hedge' | 'cactus';
 export class Tree extends CityEntity {
     type: TreeType;
     hasFlower: boolean = false;
+    flowerPos: 'left' | 'right' | 'top' = 'top';
 
     constructor(x: number, type: TreeType) {
         // 1. Determine dimensions first
@@ -36,8 +37,12 @@ export class Tree extends CityEntity {
         super(x, w, h);
         this.type = type;
 
-        if (this.type === 'cactus' && Math.random() < 0.05) {
+        if (this.type === 'cactus' && Math.random() < 0.15) { // Increased chance slightly for visibility
             this.hasFlower = true;
+            const r = Math.random();
+            if (r < 0.33) this.flowerPos = 'left';
+            else if (r < 0.66) this.flowerPos = 'right';
+            else this.flowerPos = 'top';
         }
 
         this.initCache(padding);
@@ -155,20 +160,35 @@ export class Tree extends CityEntity {
         ctx.fillRect(this.width * 0.75, this.height * 0.35, this.width * 0.1, this.height * 0.25);
 
         // Flower
+        // Flower
         if (this.hasFlower) {
-            ctx.fillStyle = '#E91E63'; // Pink flower
-            const flowerX = this.width * 0.5;
-            const flowerY = this.height * 0.2;
-            const flowerSize = 6;
+            let fx = this.width * 0.5;
+            let fy = this.height * 0.2;
 
+            if (this.flowerPos === 'left') {
+                fx = this.width * 0.1 + (this.width * 0.12 * 0.5); // Center of left arm
+                fy = this.height * 0.25; // Top of left arm
+            } else if (this.flowerPos === 'right') {
+                fx = this.width * 0.75 + (this.width * 0.1 * 0.5); // Center of right arm top
+                fy = this.height * 0.35; // Top of right arm
+            }
+
+            // Draw Flower (Dumb but cute)
+            const size = 5;
+            ctx.fillStyle = '#E91E63'; // Pink
+
+            // Petals
             ctx.beginPath();
-            ctx.arc(flowerX, flowerY, flowerSize, 0, Math.PI * 2);
+            ctx.arc(fx - size, fy, size, 0, Math.PI * 2);
+            ctx.arc(fx + size, fy, size, 0, Math.PI * 2);
+            ctx.arc(fx, fy - size, size, 0, Math.PI * 2);
+            ctx.arc(fx, fy + size, size, 0, Math.PI * 2);
             ctx.fill();
 
-            // Inner pot
-            ctx.fillStyle = '#FFEB3B'; // Yellow center
+            // Center
+            ctx.fillStyle = '#FFEB3B';
             ctx.beginPath();
-            ctx.arc(flowerX, flowerY, flowerSize * 0.4, 0, Math.PI * 2);
+            ctx.arc(fx, fy, size * 0.8, 0, Math.PI * 2);
             ctx.fill();
         }
     }

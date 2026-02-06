@@ -23,6 +23,7 @@ export class Game {
     private volume: number = 1.0;
     private isMuted: boolean = false;
     private isPreview: boolean = false;
+    public timeFormat: 'score' | '24h' | '12h' = '24h';
 
     constructor(canvas: HTMLCanvasElement, isPreview: boolean = false) {
         this.canvas = canvas;
@@ -160,7 +161,22 @@ export class Game {
                 uiSeedVal.innerText = this.seed;
             }
             if (uiTimeVal) {
-                uiTimeVal.innerText = Math.floor(this.cameraX).toString();
+                if (this.timeFormat === 'score') {
+                    uiTimeVal.innerText = Math.floor(this.cameraX).toString();
+                } else if (this.sky) {
+                    const t = this.sky.getTime();
+                    const h = Math.floor(t);
+                    const m = Math.floor((t - h) * 60);
+                    const mStr = m.toString().padStart(2, '0');
+
+                    if (this.timeFormat === '12h') {
+                        const ampm = h >= 12 ? 'PM' : 'AM';
+                        const h12 = h % 12 || 12;
+                        uiTimeVal.innerText = `${h12}:${mStr} ${ampm}`;
+                    } else {
+                        uiTimeVal.innerText = `${h.toString().padStart(2, '0')}:${mStr}`;
+                    }
+                }
             }
         }
     }

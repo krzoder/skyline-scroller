@@ -156,6 +156,10 @@ export class SkySystem {
         this.clouds.push({ x, y, speed, type, scale, opacity, parts, bounds });
     }
 
+    public getTime(): number {
+        return this.time;
+    }
+
     public update(dt: number, logicalW: number) {
         this.time += this.speed * dt;
         if (this.time >= 24) this.time = 0;

@@ -105,6 +105,38 @@ html {
   width: 250px;
 }
 
+#advanced-window {
+  position: fixed;
+  /* Force fixed to ignore parent container */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 500px;
+  max-width: 90vw;
+  max-height: 90vh;
+  z-index: 300;
+  /* Higher than settings */
+}
+
+#settings-window,
+#advanced-window {
+  /* Shared Base Styles */
+  background: rgba(20, 20, 20, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  display: none;
+  flex-direction: column;
+  color: white;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+#settings-window.visible,
+#advanced-window.visible {
+  display: flex;
+}
+
 #custom-gen-window {
   top: 55%;
   /* Slightly down */

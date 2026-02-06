@@ -1,4 +1,9 @@
 import './style.css'
+
+window.addEventListener('error', (event) => {
+  alert(`Runtime Error: ${event.message} at ${event.filename}:${event.lineno}`);
+});
+
 import { Game } from './engine/Game'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
@@ -71,12 +76,29 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
              </svg>
           </button>
         </div>
+        
         <!-- Speed Slider -->
         <div style="margin-top: 10px;">
           <label style="font-size: 12px; display:block; margin-bottom: 5px; color:#aaa;">Simulation Speed</label>
           <!-- Logarithmic scale: -1 to 1. 0 is 1x. -->
           <input type="range" id="speed-slider" min="-1" max="1" step="0.01" value="0">
         </div>
+      </div>
+
+      <!-- Advanced Options Window -->
+      <div id="advanced-window" class="ui-window">
+        <h3>Advanced Options</h3>
+        
+        <div class="setting-group" style="margin-top:20px;">
+          <label>Time Format</label>
+          <select id="adv-time-format" style="width:100%; padding: 8px; margin-top:5px; background:#333; color:white; border:1px solid #555; border-radius:4px;">
+            <option value="24h" selected>24h Clock (13:37)</option>
+            <option value="12h">12h Clock (1:37 PM)</option>
+            <option value="score">Ingame Time (Score)</option>
+          </select>
+        </div>
+
+        <button id="btn-adv-close" class="control-btn" style="margin-top:auto; background:#444;">Close</button>
       </div>
       <button id="btn-settings" class="control-btn" title="Settings">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -156,11 +178,15 @@ const uiTimeVal = document.getElementById('ui-time-val');
 function copyToClipboard(element: HTMLElement | null, textFn: () => string) {
   if (!element) return;
   element.addEventListener('click', () => {
-    navigator.clipboard.writeText(textFn()).then(() => {
-      const originalColor = element.style.color;
+    const text = textFn();
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      // Use class-based feedback or forcing style and clearing it
+      // To avoid race conditions, we just force green then clear inline style
       element.style.color = "#4CAF50"; // Green
       setTimeout(() => {
-        element.style.color = originalColor || "inherit";
+        // Revert to CSS default by clearing inline style
+        element.style.color = "";
       }, 500);
     });
   });
@@ -203,9 +229,31 @@ const volumeSlider = document.getElementById('volume-slider') as HTMLInputElemen
 
 const btnSettings = document.getElementById('btn-settings')!;
 const settingsWindow = document.getElementById('settings-window')!;
+const btnAdvanced = document.getElementById('btn-advanced')!;
+const advancedWindow = document.getElementById('advanced-window')!;
+const btnAdvClose = document.getElementById('btn-adv-close')!;
+const advTimeFormat = document.getElementById('adv-time-format') as HTMLSelectElement;
+
+// Advanced Options Logic
+btnAdvanced.addEventListener('click', () => {
+  // Close settings, open Advanced
+  settingsWindow.classList.remove('visible');
+  const isVis = advancedWindow.classList.contains('visible');
+  if (isVis) advancedWindow.classList.remove('visible');
+  else advancedWindow.classList.add('visible');
+});
+
+btnAdvClose.addEventListener('click', () => {
+  advancedWindow.classList.remove('visible');
+});
+
+advTimeFormat.addEventListener('change', () => {
+  const val = advTimeFormat.value as 'score' | '24h' | '12h';
+  game.timeFormat = val;
+});
 const btnFullscreen = document.getElementById('btn-fullscreen')!;
 const btnCustomGen = document.getElementById('btn-custom-gen')!;
-const btnAdvanced = document.getElementById('btn-advanced')!;
+// btnAdvanced already declared above
 const speedSlider = document.getElementById('speed-slider') as HTMLInputElement;
 
 const customGenWindow = document.getElementById('custom-gen-window')!;
@@ -229,10 +277,8 @@ const toggleWindow = (el: HTMLElement) => {
   return !isVisible;
 };
 
-// 1. Settings Window
-btnAdvanced.addEventListener('click', () => {
-  alert("Advanced settings coming soon!");
-});
+// 1. Settings Window (Logic moved to Advanced/Settings block above)
+// Removed old alert listener
 
 btnSettings.addEventListener('click', (e) => {
   e.stopPropagation();
@@ -305,9 +351,8 @@ btnGenReset.addEventListener('click', (e) => {
     if (previewGame) previewGame.setSeed(randomSeed);
 
     // Reset Logic - Maybe reset other params too in future
-
     cancelResetConfirm();
-    customGenWindow.classList.remove('visible');
+    // customGenWindow.classList.remove('visible'); // Updated: Don't close on reset
   } else {
     // First click
     isResetConfirming = true;
@@ -434,40 +479,59 @@ const seedInputEl = document.getElementById('seed-input');
 const customSeedInputEl = document.getElementById('custom-seed-input');
 
 window.addEventListener('keydown', (e) => {
-  // Avoid triggering when typing
-  if (document.activeElement === terminalInput && e.key !== 'Escape') return;
-  if (document.activeElement === seedInputEl) return;
-  if (document.activeElement === customSeedInputEl) return;
-
-  if (e.key === 'Escape') {
-    // Priority Stack: CustomGen -> Terminal -> Settings -> Fullscreen
-    if (customGenWindow.classList.contains('visible')) {
-      cancelResetConfirm();
-      customGenWindow.classList.remove('visible');
-      return;
-    }
-    if (terminalBar.style.display === 'flex') {
-      toggleTerminal();
-      return;
-    }
-    if (settingsWindow.classList.contains('visible')) {
-      settingsWindow.classList.remove('visible');
-      return;
-    }
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    }
+  // Ignore if typing in an input (unless Esc)
+  if (document.activeElement?.tagName === 'INPUT') {
+    if (e.key === 'Escape') (document.activeElement as HTMLElement).blur();
     return;
   }
 
-  if (e.key === 'f') toggleFullscreen();
-  if (e.key === 'g') { cancelResetConfirm(); openCustomGen(); }
-  if (e.key === 's') { cancelResetConfirm(); toggleWindow(settingsWindow); }
-  if (e.key === 'm') btnSound.click();
-  if (e.key === 't') { e.preventDefault(); toggleTerminal(); }
-  if (e.key === 'r') {
+  if (e.key === 'f') {
+    toggleFullscreen();
+  } else if (e.key === 'g') {
+    // Toggle Gen Window
+    if (customGenWindow.classList.contains('visible')) {
+      cancelResetConfirm();
+      customGenWindow.classList.remove('visible');
+    } else {
+      openCustomGen();
+    }
+  } else if (e.key === 'r') {
     const newSeed = Math.floor(Math.random() * 100000).toString();
     game.setSeed(newSeed);
+  } else if (e.key === 's') {
+    toggleWindow(settingsWindow);
+  } else if (e.key === 'a') {
+    // Toggle Advanced
+    if (advancedWindow.classList.contains('visible')) {
+      advancedWindow.classList.remove('visible');
+    } else {
+      settingsWindow.classList.remove('visible'); // Close settings
+      advancedWindow.classList.add('visible');
+    }
+  } else if (e.key === 'm') {
+    btnSound.click();
+  } else if (e.key === 't') {
+    e.preventDefault();
+    toggleTerminal();
+  } else if (e.key === 'Escape') {
+    // Priority Close
+    if (document.fullscreenElement) {
+      // Let default Esc handle fullscreen exit
+    }
+
+    // Close Windows in order of priority
+    if (customGenWindow.classList.contains('visible')) {
+      cancelResetConfirm();
+      customGenWindow.classList.remove('visible');
+    } else if (advancedWindow.classList.contains('visible')) {
+      advancedWindow.classList.remove('visible');
+    } else if (settingsWindow.classList.contains('visible')) {
+      settingsWindow.classList.remove('visible');
+    } else if (document.pointerLockElement) {
+      document.exitPointerLock();
+    } else if (terminalBar.style.display === 'flex') {
+      toggleTerminal();
+    }
   }
 });
 
