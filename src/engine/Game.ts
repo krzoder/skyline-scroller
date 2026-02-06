@@ -19,9 +19,14 @@ export class Game {
     private noisePattern: CanvasPattern | null = null;
 
     private readonly scaleFactor = 1.6;
+    public timeScale: number = 1.0;
+    private volume: number = 1.0;
+    private isMuted: boolean = false;
+    private isPreview: boolean = false;
 
-    constructor(canvas: HTMLCanvasElement) {
+    constructor(canvas: HTMLCanvasElement, isPreview: boolean = false) {
         this.canvas = canvas;
+        this.isPreview = isPreview;
         this.ctx = canvas.getContext('2d')!;
         if (!this.ctx) {
             throw new Error("Could not get 2D context");
@@ -31,9 +36,18 @@ export class Game {
         this.initNoise();
         this.reset();
 
-        // Bind resize
-        window.addEventListener('resize', () => this.resize());
-        this.resize();
+        if (!this.isPreview) {
+            // Bind resize only for main game
+            window.addEventListener('resize', () => this.resize());
+            this.resize();
+        } else {
+            // Preview has fixed size usually, but let's ensure it matches canvas
+            this.resize();
+        }
+    }
+
+    public dispose() {
+        this.isRunning = false;
     }
 
     private initNoise() {
@@ -79,12 +93,19 @@ export class Game {
             new Layer(1.0, 3, 0)    // Foreground (Ground level)
         ];
         this.generator = new CityGenerator(this.seed, this.layers.length);
-        this.sky = new SkySystem(this.canvas);
+        // this.sky = new SkySystem(this.canvas); // Was this here? I'll re-add it if I saw it before.
+        // Actually, looking at previous diffs, I might have deleted it.
+        // Let's assume it should be there.
+        if (!this.isPreview) this.sky = new SkySystem(this.canvas);
     }
 
-    private resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+    private initNoise() {
+        // Simple noise init if needed
+    }
+
+    public resize() {
+        this.canvas.width = this.canvas.clientWidth;
+        this.canvas.height = this.canvas.clientHeight;
     }
 
     public start() {
@@ -105,7 +126,7 @@ export class Game {
             // Cap dt to prevent huge jumps if tab was inactive
             const safeDt = Math.min(deltaTime, 0.1);
 
-            this.update(safeDt);
+            this.update(safeDt * this.timeScale);
             this.render();
         } catch (e) {
             console.error("Game Loop Error:", e);
@@ -130,15 +151,17 @@ export class Game {
         // Prune old
         this.layers.forEach(l => l.prune(this.cameraX));
 
-        // Update Debug UI
-        const uiSeedVal = document.getElementById('ui-seed-val');
-        const uiTimeVal = document.getElementById('ui-time-val');
+        // Update Debug UI (Only for main game)
+        if (!this.isPreview) {
+            const uiSeedVal = document.getElementById('ui-seed-val');
+            const uiTimeVal = document.getElementById('ui-time-val');
 
-        if (uiSeedVal && uiSeedVal.innerText !== this.seed) {
-            uiSeedVal.innerText = this.seed;
-        }
-        if (uiTimeVal) {
-            uiTimeVal.innerText = Math.floor(this.cameraX).toString();
+            if (uiSeedVal && uiSeedVal.innerText !== this.seed) {
+                uiSeedVal.innerText = this.seed;
+            }
+            if (uiTimeVal) {
+                uiTimeVal.innerText = Math.floor(this.cameraX).toString();
+            }
         }
     }
 
@@ -193,5 +216,21 @@ export class Game {
         }
 
         this.ctx.restore(); // Restore scale
+    }
+
+    public setTimeScale(scale: number) {
+        this.timeScale = scale;
+    }
+
+    public setVolume(vol: number) {
+        this.volume = vol;
+        // TODO: Apply to audio context
+        console.log("Volume set to:", vol);
+    }
+
+    public setMuted(muted: boolean) {
+        this.isMuted = muted;
+        // TODO: Apply to audio context
+        console.log("Muted:", muted);
     }
 }

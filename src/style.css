@@ -2,7 +2,7 @@
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  
+
   color-scheme: dark;
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424;
@@ -13,7 +13,8 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-body, html {
+body,
+html {
   margin: 0;
   padding: 0;
   width: 100%;
@@ -38,7 +39,8 @@ body, html {
   top: 10px;
   left: 10px;
   z-index: 10;
-  pointer-events: none; /* Let clicks pass through to canvas if needed */
+  pointer-events: none;
+  /* Let clicks pass through to canvas if needed */
   transform: scale(1.6);
   transform-origin: top left;
 }
@@ -48,4 +50,233 @@ body, html {
   padding: 5px 10px;
   border-radius: 4px;
   font-family: monospace;
+}
+
+/* --- Bottom Right Controls --- */
+#bottom-right-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+.control-btn {
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 40px;
+  height: 40px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  transition: background 0.2s;
+}
+
+.control-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* --- Windows --- */
+.ui-window {
+  position: absolute;
+  background: rgba(20, 20, 20, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px;
+  display: none;
+  /* Hidden by default */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+}
+
+.ui-window.visible {
+  display: block;
+}
+
+#settings-window {
+  bottom: 70px;
+  /* Above buttons */
+  right: 0;
+  width: 250px;
+}
+
+#custom-gen-window {
+  top: 55%;
+  /* Slightly down */
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80vw;
+  height: 80vh;
+  z-index: 200;
+  display: none;
+  flex-direction: column;
+}
+
+#custom-gen-window.visible {
+  display: flex;
+}
+
+#custom-gen-content {
+  display: flex;
+  flex: 1;
+  gap: 20px;
+  overflow: hidden;
+  margin: 10px 0;
+  align-items: flex-start;
+  /* Align items to the top */
+}
+
+#gen-controls {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding-right: 10px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  justify-content: center;
+  /* Center content */
+  align-items: stretch;
+  /* Stretch buttons to width */
+}
+
+#gen-preview-container {
+  flex: 2;
+  background: #000;
+  border: 1px solid #333;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  /* Force 16:9 */
+  /* Remove flex centering on container so canvas fills it properly? */
+  display: block;
+}
+
+#gen-preview-canvas {
+  width: 100%;
+  height: 100%;
+  /* Allow height to adjust */
+  max-height: 100%;
+  display: block;
+  object-fit: cover;
+  /* or contain */
+}
+
+/* --- Terminal --- */
+#terminal-bar {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 180px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid #336;
+  color: #0f0;
+  font-family: monospace;
+  display: none;
+  align-items: center;
+  padding: 0 10px;
+  z-index: 150;
+}
+
+#terminal-input {
+  background: transparent;
+  border: none;
+  color: inherit;
+  width: 100%;
+  font-family: inherit;
+  font-size: 16px;
+  outline: none;
+  box-shadow: none;
+}
+
+/* --- Sound Hover Slider --- */
+#volume-popup {
+  position: absolute;
+  bottom: 100%;
+  /* Position directly above container */
+  left: 50%;
+  transform: translateX(-50%);
+  background: transparent;
+  /* Transparent wrapper */
+  padding: 15px 10px;
+  /* Invisible bridge to button */
+  padding-bottom: 25px;
+  display: none;
+  z-index: 200;
+  pointer-events: auto;
+}
+
+/* Visual Background Box (stops before bridge) */
+#volume-popup::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 25px;
+  /* Leave padding-bottom transparent */
+  background: rgba(0, 0, 0, 0.9);
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  z-index: -1;
+}
+
+#volume-slider {
+  writing-mode: bt-lr;
+  -webkit-appearance: slider-vertical;
+  appearance: slider-vertical;
+  width: 8px;
+  height: 120px;
+  cursor: pointer;
+  position: relative;
+  z-index: 10;
+}
+
+/* --- Gesture Speed Slider --- */
+#gesture-slider-container {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 10px;
+  border-radius: 8px;
+  display: none;
+  z-index: 500;
+  color: white;
+  font-size: 14px;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Utilities */
+.row {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.btn-small {
+  flex: 1;
+  padding: 8px 5px;
+  /* Slight padding adjust */
+  background: #333;
+  border: 1px solid #555;
+  color: white;
+  cursor: pointer;
+  /* Centering */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-small:hover {
+  background: #444;
+}
+
+input[type=range] {
+  width: 100%;
 }
