@@ -5,6 +5,7 @@ import { Tree, type TreeType } from '../engine/Tree';
 import { BiomeSystem, type BiomeType } from './BiomeSystem';
 import { Ground, type GroundType } from '../engine/Ground';
 import { Landscape } from '../engine/Landscape';
+import { DEFAULT_TREE_CONFIG, type TreeConfig } from './TreeConfig';
 
 interface CityDNA {
     density: number;    // 0.1 (sparse) to 1.0 (packed)
@@ -17,11 +18,19 @@ export class CityGenerator {
     private lastX: number[];
     private biomeSystem: BiomeSystem;
     private dna: CityDNA;
+    public config: TreeConfig; // Instance config
 
-    constructor(seed: number | string, layerCount: number) {
+    constructor(seed: number | string, layerCount: number, config?: TreeConfig) {
         this.rng = new Random(seed);
         this.lastX = new Array(layerCount).fill(0);
         this.biomeSystem = new BiomeSystem(seed);
+
+        // Load config (passed or default)
+        if (config) {
+            this.config = JSON.parse(JSON.stringify(config));
+        } else {
+            this.config = JSON.parse(JSON.stringify(DEFAULT_TREE_CONFIG));
+        }
 
         // Generate DNA
         this.dna = {
@@ -120,10 +129,20 @@ export class CityGenerator {
             obj = new Building(x, featureWidth, h, mat, roof, color.base, color.roof);
 
         } else if (feature === 'tree') {
-            // Pick tree type based on Biome
+            // Pick tree type based on Biome and Config
             const treeType = this.pickTreeType(biome);
-            obj = new Tree(x, treeType);
-            featureWidth = obj.width + this.rng.nextInt(10, 30); // Breathing room
+            if (treeType) {
+                const config = this.config[treeType];
+                const height = this.rng.nextInt(config.minHeight, config.maxHeight);
+                const flowerChance = config.flowerChance;
+
+                obj = new Tree(x, treeType, height, flowerChance);
+                featureWidth = obj.width + this.rng.nextInt(10, 30); // Breathing room
+            } else {
+                // No valid tree for this biome? Treat as empty
+                obj = null;
+                featureWidth = this.rng.nextInt(20, 100);
+            }
         } else {
             // Empty / Gap
             featureWidth = this.rng.nextInt(20, 100);
@@ -143,34 +162,27 @@ export class CityGenerator {
 
         // Add Feature (if any)
         if (obj) {
-            // Center object on chunk? or Left align?
-            // Let's left align at x + small offset?
-            // Ground is at x. Object at x.
-            // If obj is tree, it has specific width.
-            // If obj is building, it has specific width.
-            // We set chunkWidth = featureWidth.
             layer.add(obj);
         }
 
-        this.lastX[layerIndex] += chunkWidth - 1; // Overlap by 1px to prevent hairline seams
+        this.lastX[layerIndex] += chunkWidth - 1; // Overlap by 1px
     }
 
-    private pickTreeType(biome: BiomeType): TreeType {
-        // Logic mapping biome to tree
-        if (biome === 'forest') {
-            const r = this.rng.nextFloat();
-            if (r < 0.3) return 'pine';
-            if (r < 0.6) return 'oak';
-            if (r < 0.8) return 'sequoia'; // Add sequoias to forest
-            return 'bush';
+    private pickTreeType(biome: BiomeType): TreeType | null {
+        // Filter enabled trees for this biome
+        const availableTypes: TreeType[] = [];
+
+        for (const type of Object.keys(this.config) as TreeType[]) {
+            const config = this.config[type];
+            if (config.enabled && config.biomes.includes(biome)) {
+                availableTypes.push(type);
+            }
         }
-        if (biome === 'desert') return 'cactus';
-        if (biome === 'tundra') return 'pine';
-        if (biome === 'plains') {
-            const r = this.rng.nextFloat();
-            return r > 0.5 ? 'oak' : 'hedge';
-        }
-        return 'sequoia'; // default
+
+        if (availableTypes.length === 0) return null;
+
+        // Weighting? For now uniform random from available
+        return availableTypes[this.rng.nextInt(0, availableTypes.length)];
     }
 
     private pickMaterial(biome: BiomeType): BuildingMaterial {

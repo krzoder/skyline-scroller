@@ -1,5 +1,7 @@
 import { Layer } from './Layer';
 import { CityGenerator } from '../procgen/CityGenerator';
+import type { TreeConfig } from '../procgen/TreeConfig';
+import { DEFAULT_TREE_CONFIG } from '../procgen/TreeConfig';
 
 import { SkySystem } from './SkySystem';
 
@@ -13,9 +15,11 @@ export class Game {
     private cameraSpeed: number = 100; // Pixels per second
 
     private layers: Layer[] = [];
-    private generator: CityGenerator | null = null;
+    public generator: CityGenerator | null = null;
     private sky: SkySystem | null = null;
     private seed: string = "default";
+    public treeConfig: TreeConfig; // Custom config
+
     private noisePattern: CanvasPattern | null = null;
 
     private readonly scaleFactor = 1.6;
@@ -33,7 +37,11 @@ export class Game {
             throw new Error("Could not get 2D context");
         }
 
+        // Init config
+        this.treeConfig = JSON.parse(JSON.stringify(DEFAULT_TREE_CONFIG));
+
         // Initialize Logic
+
         this.initNoise();
         this.reset();
 
@@ -80,6 +88,18 @@ export class Game {
         this.reset();
     }
 
+    public getSeed(): string {
+        return this.seed;
+    }
+
+    public getCameraX(): number {
+        return this.cameraX;
+    }
+
+    public setCameraX(x: number) {
+        this.cameraX = x;
+    }
+
     private reset() {
         this.cameraX = 0;
         // Layer Params: speedModifier, zIndex, yOffset
@@ -93,16 +113,22 @@ export class Game {
             new Layer(0.6, 2, 50),  // Mid-Fore
             new Layer(1.0, 3, 0)    // Foreground (Ground level)
         ];
-        this.generator = new CityGenerator(this.seed, this.layers.length);
+        // Pass current config to generator
+        this.generator = new CityGenerator(this.seed, this.layers.length, this.treeConfig);
         // this.sky = new SkySystem(this.canvas); // Was this here? I'll re-add it if I saw it before.
         // Actually, looking at previous diffs, I might have deleted it.
         // Let's assume it should be there.
         if (!this.isPreview) this.sky = new SkySystem(this.canvas);
     }
 
-    private initNoise() {
-        // Simple noise init if needed
-    }
+    // The original initNoise method was duplicated in the instruction,
+    // but it seems the intent was to add properties and modify the constructor/reset.
+    // The actual initNoise method should remain as it was, or be removed if it's truly a duplicate.
+    // Based on the context, the first initNoise is the correct one.
+    // The second one in the original document was a placeholder comment.
+    // private initNoise() {
+    //     // Simple noise init if needed
+    // }
 
     public resize() {
         this.canvas.width = this.canvas.clientWidth;

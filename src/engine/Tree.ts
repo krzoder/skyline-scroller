@@ -7,42 +7,34 @@ export class Tree extends CityEntity {
     hasFlower: boolean = false;
     flowerPos: 'left' | 'right' | 'top' = 'top';
 
-    constructor(x: number, type: TreeType) {
+    constructor(x: number, type: TreeType, height: number, flowerChance: number = 0) {
         // 1. Determine dimensions first
         let w = 0;
-        let h = 0;
+        let h = height; // Use passed height
         let padding = 0; // Default padding
 
         if (type === 'sequoia') {
             w = 70;
-            h = 240 + Math.random() * 100;
         } else if (type === 'pine') {
             w = 60;
-            h = 140 + Math.random() * 60;
         } else if (type === 'oak') {
             w = 90;
-            h = 110 + Math.random() * 40;
             padding = 30; // Extra space for foliage
         } else if (type === 'bush') {
             w = 40;
-            h = 30 + Math.random() * 20;
         } else if (type === 'cactus') {
             w = 40;
-            h = 60 + Math.random() * 40;
         } else { // hedge
             w = 60;
-            h = 40;
         }
 
         super(x, w, h);
         this.type = type;
 
-        if (this.type === 'cactus' && Math.random() < 0.15) { // Increased chance slightly for visibility
+        if (this.type === 'cactus' && Math.random() < flowerChance) {
             this.hasFlower = true;
-            const r = Math.random();
-            if (r < 0.33) this.flowerPos = 'left';
-            else if (r < 0.66) this.flowerPos = 'right';
-            else this.flowerPos = 'top';
+            // Only left or right
+            this.flowerPos = Math.random() < 0.5 ? 'left' : 'right';
         }
 
         this.initCache(padding);
@@ -160,7 +152,6 @@ export class Tree extends CityEntity {
         ctx.fillRect(this.width * 0.75, this.height * 0.35, this.width * 0.1, this.height * 0.25);
 
         // Flower
-        // Flower
         if (this.hasFlower) {
             let fx = this.width * 0.5;
             let fy = this.height * 0.2;
@@ -173,22 +164,12 @@ export class Tree extends CityEntity {
                 fy = this.height * 0.35; // Top of right arm
             }
 
-            // Draw Flower (Dumb but cute)
-            const size = 5;
+            // Draw Flower: Simple Pink Dot
+            const radius = 4;
+
             ctx.fillStyle = '#E91E63'; // Pink
-
-            // Petals
             ctx.beginPath();
-            ctx.arc(fx - size, fy, size, 0, Math.PI * 2);
-            ctx.arc(fx + size, fy, size, 0, Math.PI * 2);
-            ctx.arc(fx, fy - size, size, 0, Math.PI * 2);
-            ctx.arc(fx, fy + size, size, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Center
-            ctx.fillStyle = '#FFEB3B';
-            ctx.beginPath();
-            ctx.arc(fx, fy, size * 0.8, 0, Math.PI * 2);
+            ctx.arc(fx, fy, radius, 0, Math.PI * 2);
             ctx.fill();
         }
     }

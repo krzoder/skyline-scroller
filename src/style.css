@@ -1,314 +1,489 @@
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
 
-  color-scheme: dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+    color-scheme: light dark;
+    color: rgba(255, 255, 255, 0.87);
+    background-color: #242424;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
+
+#tree-settings-dropdown-container {
+    width: 100%;
+}
+
+.tree-setting-wrapper {
+    transition: background 0.2s;
+}
+
+.tree-setting-wrapper:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+
 
 body,
 html {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
 }
 
 #app {
-  width: 100%;
-  height: 100%;
-  position: relative;
+    width: 100%;
+    height: 100%;
+    position: relative;
 }
 
 #game-canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
+    display: block;
+    width: 100%;
+    height: 100%;
 }
 
 #ui-layer {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 10;
-  pointer-events: none;
-  /* Let clicks pass through to canvas if needed */
-  transform: scale(1.6);
-  transform-origin: top left;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+    pointer-events: none;
+    /* Let clicks pass through to canvas if needed */
+    transform: scale(1.6);
+    transform-origin: top left;
 }
 
 #seed-display {
-  background: rgba(0, 0, 0, 0.5);
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-family: monospace;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-family: monospace;
 }
 
 /* --- Bottom Right Controls --- */
 #bottom-right-controls {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  display: flex;
-  gap: 10px;
-  z-index: 100;
-  pointer-events: auto;
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 100;
+    pointer-events: auto;
 }
 
 .control-btn {
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  width: 40px;
-  height: 40px;
-  border-radius: 5px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  transition: background 0.2s;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: 40px;
+    height: 40px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: background 0.2s;
 }
 
 .control-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 /* --- Windows --- */
 .ui-window {
-  position: absolute;
-  background: rgba(20, 20, 20, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 10px;
-  display: none;
-  /* Hidden by default */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+    position: absolute;
+    background: rgba(20, 20, 20, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px;
+    display: none;
+    /* Hidden by default */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
 }
 
 .ui-window.visible {
-  display: block;
+    display: block;
 }
 
 #settings-window {
-  bottom: 70px;
-  /* Above buttons */
-  right: 0;
-  width: 250px;
+    bottom: 70px;
+    /* Above buttons */
+    right: 0;
+    width: 250px;
 }
 
 #advanced-window {
-  position: fixed;
-  /* Force fixed to ignore parent container */
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 600px;
-  height: 500px;
-  max-width: 90vw;
-  max-height: 90vh;
-  z-index: 300;
-  /* Higher than settings */
+    position: fixed;
+    /* Force fixed to ignore parent container */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 500px;
+    max-width: 90vw;
+    max-height: 90vh;
+    z-index: 300;
+    /* Higher than settings */
 }
 
 #settings-window,
 #advanced-window {
-  /* Shared Base Styles */
-  background: rgba(20, 20, 20, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 20px;
-  display: none;
-  flex-direction: column;
-  color: white;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    /* Shared Base Styles */
+    background: rgba(20, 20, 20, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    display: none;
+    flex-direction: column;
+    color: white;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 #settings-window.visible,
 #advanced-window.visible {
-  display: flex;
+    display: flex;
 }
 
 #custom-gen-window {
-  top: 55%;
-  /* Slightly down */
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80vw;
-  height: 80vh;
-  z-index: 200;
-  display: none;
-  flex-direction: column;
+    top: 55%;
+    /* Slightly down */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80vw;
+    height: 80vh;
+    z-index: 200;
+    display: none;
+    flex-direction: column;
 }
 
 #custom-gen-window.visible {
-  display: flex;
+    display: flex;
 }
 
 #custom-gen-content {
-  display: flex;
-  flex: 1;
-  gap: 20px;
-  overflow: hidden;
-  margin: 10px 0;
-  align-items: flex-start;
-  /* Align items to the top */
+    display: flex;
+    flex: 1;
+    gap: 20px;
+    overflow: hidden;
+    margin: 10px 0;
+    align-items: flex-start;
+    /* Align items to the top */
 }
 
 #gen-controls {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  padding-right: 10px;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  justify-content: center;
-  /* Center content */
-  align-items: stretch;
-  /* Stretch buttons to width */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding-right: 10px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    justify-content: center;
+    /* Center content */
+    align-items: stretch;
+    /* Stretch buttons to width */
 }
 
 #gen-preview-container {
-  flex: 2;
-  background: #000;
-  border: 1px solid #333;
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16/9;
-  /* Force 16:9 */
-  /* Remove flex centering on container so canvas fills it properly? */
-  display: block;
+    flex: 2;
+    background: #000;
+    border: 1px solid #333;
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    /* Force 16:9 */
+    /* Remove flex centering on container so canvas fills it properly? */
+    display: block;
 }
 
 #gen-preview-canvas {
-  width: 100%;
-  height: 100%;
-  /* Allow height to adjust */
-  max-height: 100%;
-  display: block;
-  object-fit: cover;
-  /* or contain */
+    width: 100%;
+    height: 100%;
+    /* Allow height to adjust */
+    max-height: 100%;
+    display: block;
+    object-fit: cover;
+    /* or contain */
 }
 
 /* --- Terminal --- */
 #terminal-bar {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  right: 180px;
-  height: 40px;
-  background: rgba(0, 0, 0, 0.85);
-  border: 1px solid #336;
-  color: #0f0;
-  font-family: monospace;
-  display: none;
-  align-items: center;
-  padding: 0 10px;
-  z-index: 150;
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 180px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.85);
+    border: 1px solid #336;
+    color: #0f0;
+    font-family: monospace;
+    display: none;
+    align-items: center;
+    padding: 0 10px;
+    z-index: 150;
 }
 
 #terminal-input {
-  background: transparent;
-  border: none;
-  color: inherit;
-  width: 100%;
-  font-family: inherit;
-  font-size: 16px;
-  outline: none;
-  box-shadow: none;
+    background: transparent;
+    border: none;
+    color: inherit;
+    width: 100%;
+    font-family: inherit;
+    font-size: 16px;
+    outline: none;
+    box-shadow: none;
 }
 
 /* --- Sound Hover Slider --- */
 #volume-popup {
-  position: absolute;
-  bottom: 100%;
-  /* Position directly above container */
-  left: 50%;
-  transform: translateX(-50%);
-  background: transparent;
-  /* Transparent wrapper */
-  padding: 15px 10px;
-  /* Invisible bridge to button */
-  padding-bottom: 25px;
-  display: none;
-  z-index: 200;
-  pointer-events: auto;
+    position: absolute;
+    bottom: 100%;
+    /* Position directly above container */
+    left: 50%;
+    transform: translateX(-50%);
+    background: transparent;
+    /* Transparent wrapper */
+    padding: 15px 10px;
+    /* Invisible bridge to button */
+    padding-bottom: 25px;
+    display: none;
+    z-index: 200;
+    pointer-events: auto;
 }
 
 /* Visual Background Box (stops before bridge) */
 #volume-popup::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 25px;
-  /* Leave padding-bottom transparent */
-  background: rgba(0, 0, 0, 0.9);
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-  z-index: -1;
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 25px;
+    /* Leave padding-bottom transparent */
+    background: rgba(0, 0, 0, 0.9);
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    z-index: -1;
 }
 
 #volume-slider {
-  writing-mode: bt-lr;
-  -webkit-appearance: slider-vertical;
-  appearance: slider-vertical;
-  width: 8px;
-  height: 120px;
-  cursor: pointer;
-  position: relative;
-  z-index: 10;
+    writing-mode: bt-lr;
+    -webkit-appearance: slider-vertical;
+    appearance: slider-vertical;
+    width: 8px;
+    height: 120px;
+    cursor: pointer;
+    position: relative;
+    z-index: 10;
 }
 
 /* --- Gesture Speed Slider --- */
 #gesture-slider-container {
-  position: absolute;
-  pointer-events: none;
-  background: rgba(0, 0, 0, 0.8);
-  padding: 10px;
-  border-radius: 8px;
-  display: none;
-  z-index: 500;
-  color: white;
-  font-size: 14px;
-  white-space: nowrap;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    position: absolute;
+    pointer-events: none;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 10px;
+    border-radius: 8px;
+    display: none;
+    z-index: 500;
+    color: white;
+    font-size: 14px;
+    white-space: nowrap;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
 }
 
 /* Utilities */
 .row {
-  display: flex;
-  gap: 5px;
-  margin-bottom: 10px;
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
 }
 
 .btn-small {
-  flex: 1;
-  padding: 8px 5px;
-  /* Slight padding adjust */
-  background: #333;
-  border: 1px solid #555;
-  color: white;
-  cursor: pointer;
-  /* Centering */
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    flex: 1;
+    padding: 8px 5px;
+    /* Slight padding adjust */
+    background: #333;
+    border: 1px solid #555;
+    color: white;
+    cursor: pointer;
+    /* Centering */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-small:hover {
-  background: #444;
+    background: #444;
+}
+
+/* Cleanup Number Inputs */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
 }
 
 input[type=range] {
-  width: 100%;
+    width: 100%;
+}
+
+.btn-selected {
+    background: #2E7D32 !important;
+    /* Green */
+    border-color: #4CAF50 !important;
+    color: white;
+}
+
+/* Smart Reset Button */
+.btn-smart-reset {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+    transition: background 0.2s;
+    padding: 0;
+}
+
+/* Default State (Yellow-Orange, X) */
+.btn-smart-reset.default {
+    background: #FBC02D;
+    /* Yellow-Orange */
+    color: #333;
+}
+
+/* Modified State (Red, X) */
+.btn-smart-reset.modified {
+    background: #d32f2f;
+    /* Red */
+    color: white;
+    cursor: pointer;
+}
+
+.btn-smart-reset svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    stroke-width: 3;
+}
+
+/* Visual Volume Bar (Right Edge) */
+#volume-visual-container {
+    position: fixed;
+    right: 30px;
+    /* Increased from 15px */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    /* Increased from 6px */
+    height: 72vh;
+    /* Reduced by 10% (was 80vh) */
+    /* Takes up 40% of screen height */
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 3px;
+    overflow: hidden;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0;
+    /* Hidden by default */
+    transition: opacity 0.5s ease;
+}
+
+#volume-visual-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 50%;
+    /* Dynamic */
+    background: white;
+    border-radius: 3px;
+    transition: height 0.1s linear;
+}
+
+#volume-visual-container.visible {
+    opacity: 1;
+}
+
+/* --- Dual Slider --- */
+.dual-slider-container {
+    position: relative;
+    height: 30px;
+    /* Taller touch target area */
+    display: flex;
+    align-items: center;
+    flex: 1;
+    margin: 0 5px;
+}
+
+.dual-slider-track-bg {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: #444;
+    border-radius: 2px;
+    z-index: 1;
+}
+
+.dual-slider-track-fill {
+    position: absolute;
+    height: 4px;
+    background: #2E7D32;
+    z-index: 2;
+    border-radius: 2px;
+}
+
+.dual-slider-input {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    pointer-events: none;
+    /* Allow clicks to pass through empty space */
+    -webkit-appearance: none;
+    background: none;
+    z-index: 3;
+    /* Thumbs above tracks */
+}
+
+.dual-slider-input::-webkit-slider-thumb {
+    pointer-events: auto;
+    /* Capture clicks on thumb */
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border: 2px solid #333;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: -6px;
+    /* Center vertically if needed, or flex aligns it? input is height 100% */
+}
+
+/* Firefox support */
+.dual-slider-input::-moz-range-thumb {
+    pointer-events: auto;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border: 2px solid #333;
+    border-radius: 50%;
+    cursor: pointer;
 }
