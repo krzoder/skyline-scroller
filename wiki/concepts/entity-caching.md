@@ -65,6 +65,39 @@ The current design accepts memory waste in exchange for not having to define wha
 - The cached pixels are exactly what `drawToCache(ctx)` painted; per-frame draw cannot add detail.
 - `Ground` never caches; `Building` and all `CityEntity` subclasses always cache.
 
+## The cache lifecycle (per entity)
+
+```
+construct entity
+  ├─ compute shape parameters (position, size, biome-derived colours)
+  ├─ allocate cacheCanvas via document.createElement('canvas')
+  ├─ size cacheCanvas to bounding box + padding
+  ├─ get 2D context on cacheCanvas
+  ├─ ctx.translate(padding, padding)              // no save/restore (#90)
+  ├─ drawToCache(ctx)                              // expensive procedural draw
+  └─ retain cacheCanvas as field
+
+each frame:
+  ├─ Layer.draw computes screenX = obj.x - layerViewX
+  ├─ if on-screen: ctx.drawImage(cacheCanvas, screenX, y)
+  └─ done (no per-entity update needed)
+
+eventually:
+  ├─ Layer.prune drops obj from objects[]
+  ├─ obj.cacheCanvas becomes unreachable
+  └─ GC reclaims pixel memory
+```
+
+## Trade-off summary
+
+| Property | Current design | Alternative |
+|---|---|---|
+| Per-entity memory | One canvas (e.g. 80×100 px × 4 bytes = ~30 KB) | Shared atlas would amortise |
+| Per-frame cost | 1 `drawImage` | Same with atlas; less with sprite batching |
+| Reproducibility | Macro yes, micro no (`Math.random` in bake) | Could be fully reproducible with a forked RNG ([[decisions/DEC-01-unified-rng]]) |
+| Mutability | Frozen at construction | Could re-bake on demand but no use case |
+| GC pressure | Linear with pruned entities | Atlas would have constant memory |
+
 ## See also
 
 - [[concepts/single-canvas]] — why ambient lighting must be a global multiply pass (D5)
@@ -73,3 +106,4 @@ The current design accepts memory waste in exchange for not having to define wha
 - [[entities/CityEntity]] — the base class
 - [[entities/Building]] — the parallel cache implementation
 - [[entities/Landscape]] — the hybrid cache + per-frame draw
+- [[concepts/dualisms]] #46, #47, #90 — computed/cached, inline/cached, save/restore broken pair

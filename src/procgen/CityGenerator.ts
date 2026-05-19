@@ -1,3 +1,4 @@
+import { deepClone } from '../utils/deepClone';
 import { Building, type BuildingMaterial, type RoofType } from '../engine/Building';
 import { Layer } from '../engine/Layer';
 import { Random } from '../utils/Random';
@@ -27,9 +28,9 @@ export class CityGenerator {
 
         // Load config (passed or default)
         if (config) {
-            this.config = JSON.parse(JSON.stringify(config));
+            this.config = deepClone(config);
         } else {
-            this.config = JSON.parse(JSON.stringify(DEFAULT_TREE_CONFIG));
+            this.config = deepClone(DEFAULT_TREE_CONFIG);
         }
 
         // Generate DNA

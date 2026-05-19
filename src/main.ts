@@ -1,3 +1,4 @@
+import { deepClone } from './utils/deepClone';
 import './style.css'
 
 window.addEventListener('error', (event) => {
@@ -701,7 +702,7 @@ btnGenApply.addEventListener('click', () => {
 
     // 1. Save Config
     if (previewGame && previewGame.generator) {
-        game.treeConfig = JSON.parse(JSON.stringify(previewGame.generator.config));
+        game.treeConfig = deepClone(previewGame.generator.config);
     }
 
     // 2. Set seed & Reset Game (which uses new treeConfig)
@@ -744,7 +745,7 @@ const iconIntervals: number[] = [];
 const refreshPreview = () => {
     if (previewGame && previewGame.generator) {
         // SYNC: Ensure the Game's config matches the Generator's current (modified) config
-        previewGame.treeConfig = JSON.parse(JSON.stringify(previewGame.generator.config));
+        previewGame.treeConfig = deepClone(previewGame.generator.config);
 
         // Read Seed from Input
         const inp = document.getElementById('custom-seed-input') as HTMLInputElement;
@@ -948,7 +949,7 @@ const renderTreeSettings = () => {
         btnResetAll.onclick = (e) => {
             e.stopPropagation();
             if (previewGame && previewGame.generator) {
-                previewGame.generator.config = JSON.parse(JSON.stringify(DEFAULT_TREE_CONFIG));
+                previewGame.generator.config = deepClone(DEFAULT_TREE_CONFIG);
                 refreshPreview();
                 renderTreeSettings();
             }
@@ -1090,7 +1091,7 @@ const renderTreeSettings = () => {
             resetBtn.onclick = () => {
                 if (isTreeModified(type)) {
                     if (previewGame && previewGame.generator) {
-                        previewGame.generator.config[type] = JSON.parse(JSON.stringify(DEFAULT_TREE_CONFIG[type]));
+                        previewGame.generator.config[type] = deepClone(DEFAULT_TREE_CONFIG[type]);
                         refreshPreview();
                         renderTreeSettings();
                     }
@@ -1341,9 +1342,9 @@ btnGenReset.addEventListener('click', (e) => {
             previewGame.setSeed(randomSeed);
             // Reset Tree Config to Defaults
             if (previewGame.generator) {
-                const def = JSON.parse(JSON.stringify(DEFAULT_TREE_CONFIG));
+                const def = deepClone(DEFAULT_TREE_CONFIG);
                 previewGame.generator.config = def;
-                previewGame.treeConfig = JSON.parse(JSON.stringify(def)); // Sync Game config too!
+                previewGame.treeConfig = deepClone(def); // Sync Game config too!
             }
         }
 
@@ -1372,7 +1373,7 @@ btnGenApply.addEventListener('click', () => {
 
     // 1. Save Config
     if (previewGame && previewGame.generator) {
-        game.treeConfig = JSON.parse(JSON.stringify(previewGame.generator.config));
+        game.treeConfig = deepClone(previewGame.generator.config);
     }
 
     // 2. Set seed & Reset Game (which uses new treeConfig)
@@ -1549,8 +1550,8 @@ const syncUIFromTerminal = () => {
 
     // 4. Force synchronization of generator configuration
     if (typeof previewGame !== 'undefined' && previewGame && previewGame.generator) {
-        previewGame.generator.config = JSON.parse(JSON.stringify(game.treeConfig));
-        previewGame.treeConfig = JSON.parse(JSON.stringify(game.treeConfig));
+        previewGame.generator.config = deepClone(game.treeConfig);
+        previewGame.treeConfig = deepClone(game.treeConfig);
     }
 
     // 5. Fire standard sub-component layout redraws

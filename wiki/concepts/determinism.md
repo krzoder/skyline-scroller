@@ -26,10 +26,11 @@ The contract is **enforced** by the `tests/Random.test.ts` suite: same seed → 
 
 ## Why it matters
 
-- **Shareable worlds.** A seed slug is the entire description of a city. Users can swap a string and "see that one cool skyline" again.
-- **Reproducible bugs.** Visual glitches in procgen can be re-investigated by re-running the same seed.
-- **Cheap state.** One `u32` per generator instance; no save format, no replay buffer.
-- **The customisation loop closes.** [[concepts/customisation-flow]] depends on this: every user action either changes a parameter and reseeds, or is view-only. Without determinism, the "Apply" button has no fixed point.
+- **Shareable worlds.** A seed slug is the entire description of a city. Users can swap a string and "see that one cool skyline" again. The whole `seed`-command UX in [[entities/Terminal]] depends on this.
+- **Reproducible bugs.** Visual glitches in procgen can be re-investigated by re-running the same seed. Without this, every bug report would be "saw a weird building, can't reproduce".
+- **Cheap state.** One `u32` per generator instance; no save format, no replay buffer. The PRNG is the entire world description.
+- **The customisation loop closes.** [[concepts/customisation-flow]] depends on this: every user action either changes a parameter and reseeds, or is view-only. Without determinism, the "Apply" button has no fixed point — clicking it would produce different results each time even with no input change.
+- **`btn-gen-apply` exploits "same seed → full reset".** Passing the *same* seed to `setSeed` still triggers a full `reset()`, so applying tweaked `treeConfig` works by reseeding with the unchanged seed. The deterministic-by-seed property makes this exploit safe.
 
 ## Counter-examples
 
@@ -48,7 +49,8 @@ Additional asymmetries:
 
 - **Sibling-RNG correlation**: `CityGenerator` and `BiomeSystem` both call `new Random(seed)` with the *same* seed string. Two independent instances seeded identically produce **identical sequences**, so a `biomeRng.nextFloat()` and a `cityRng.nextFloat()` at the same logical tick draw the same value. This is unintentional decorrelation loss. Fix in [[decisions/DEC-01-unified-rng]].
 - **`cyrb128` returns 32 bits, not 128.** The mix function is real, but the final return XORs the four words. Collision surface is `2^32` not `2^128`. Harmless for procgen, dangerous if anyone trusts the name.
-- **`new Random(0)` ≠ `new Random("")`.** Numeric path masks; string path hashes. Empty string runs the post-loop mix on un-touched SHA-IV constants.
+- **`new Random(0)` ≠ `new Random("")`.** Numeric path masks; string path hashes. Empty string runs the post-loop mix on un-touched SHA-IV constants and returns a non-zero state.
+- **No `pick` / `weighted` / `bool` helpers.** The `Random` class is a minimal Mulberry32 wrapper — call sites reinvent these idioms inline (e.g. `arr[this.rng.nextInt(0, arr.length)]` appears repeatedly). Each reinvention is a chance to leak `Math.random()` instead.
 
 ## Invariants
 

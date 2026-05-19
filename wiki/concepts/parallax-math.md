@@ -67,10 +67,39 @@ Notes:
 - Every active `Renderable` belongs to exactly one `Layer` (no cross-layer aliasing — see "Each layer has its own world" above).
 - Each layer's prune horizon (`layerViewX - 2000`) is in *that layer's* space, not world space.
 
+## The `layerViewX` equation
+
+The single source of truth for "where is this layer's camera":
+
+```ts
+const layerViewX = cameraX * this.speedModifier;
+const screenX    = obj.x - layerViewX;
+```
+
+Concretely, at `cameraX = 5000` px (the camera has scrolled 5000 px right):
+
+| Layer | `speedModifier` | `layerViewX` | An object at `obj.x = 5200` renders at `screenX = …` |
+|---|---|---|---|
+| 0 (background) | 0.2 | 1000 | 4200 (far off-screen right — not yet visible) |
+| 1 | 0.4 | 2000 | 3200 |
+| 2 | 0.6 | 3000 | 2200 |
+| 3 (foreground) | 1.0 | 5000 | 200 (just to the right of camera origin) |
+
+This is what "the same `obj.x` in different layers is not the same place" means concretely. The background's `obj.x = 5200` is 4200 px to the right of the screen origin (because the background has barely scrolled). The foreground's `obj.x = 5200` is 200 px right (because the foreground scrolls at full speed). Both are correct — each layer's `obj.x` lives in that layer's world coordinates.
+
+## Why four layers, not more
+
+Four is hand-tuned. There is no procedural reason for the count — `Game.reset()` literally constructs four `Layer` instances. The trade:
+
+- **More layers** → smoother depth illusion, but more entities to draw per frame ([[concepts/chunking]] active-set grows with layer count) and more `lastX[]` bookkeeping.
+- **Fewer layers** → cheaper, but the parallax stair-step becomes visible. Three layers shows a "card-stack" effect; two looks like a sticker on a background.
+
+Four is the sweet spot for this codebase's chunk density and viewport size. Changing it would require re-tuning `yOffset` and `scale` for the new count.
+
 ## See also
 
 - [[concepts/chunking]] — why per-layer `lastX` is sensible
 - [[concepts/single-canvas]] — why render order is the only depth
 - [[entities/Layer]] — the implementation
 - [[entities/Game]] — the four-layer config
-- [[concepts/dualisms]] #23, #24, #27 — fg/bg, near/far, world/screen
+- [[concepts/dualisms]] #23, #24, #27, #106, #107 — fg/bg, near/far, world/screen, yOffset asymmetry, scale asymmetry

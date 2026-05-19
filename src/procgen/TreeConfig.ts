@@ -1,3 +1,4 @@
+import { deepClone } from '../utils/deepClone';
 import type { TreeType } from '../engine/Tree';
 import type { BiomeType } from './BiomeSystem';
 
@@ -57,12 +58,12 @@ export const DEFAULT_TREE_CONFIG: TreeConfig = {
 };
 
 // Start with a copy of defaults
-export let currentTreeConfig: TreeConfig = JSON.parse(JSON.stringify(DEFAULT_TREE_CONFIG));
+export let currentTreeConfig: TreeConfig = deepClone(DEFAULT_TREE_CONFIG);
 
 export const resetTreeConfigToDefault = (type?: TreeType) => {
     if (type) {
-        currentTreeConfig[type] = JSON.parse(JSON.stringify(DEFAULT_TREE_CONFIG[type]));
+        currentTreeConfig[type] = deepClone(DEFAULT_TREE_CONFIG[type]);
     } else {
-        currentTreeConfig = JSON.parse(JSON.stringify(DEFAULT_TREE_CONFIG));
+        currentTreeConfig = deepClone(DEFAULT_TREE_CONFIG);
     }
 };

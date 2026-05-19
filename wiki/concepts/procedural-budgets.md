@@ -65,6 +65,25 @@ Note the skew: `density` is biased toward dense (range midpoint 0.65, not 0.5). 
 - Cloud pool always ~20 (despawn + respawn is 1-for-1, see [[concepts/control-flow]] §SM3).
 - Generation horizon ≥ prune horizon (otherwise entities would be pruned before being seen).
 
+## Why bounds, not raw knobs
+
+A weaker design would expose `density`, `greenery`, `buildingHeight` to the user directly with no bounds. The current design picks each from a bounded range *seeded by the seed*. Three knock-on effects:
+
+1. **The user never sees an unviable city.** Every seed produces something inside the aesthetic window. There is no "I tried 500 seeds and they all look the same" complaint — but also no "I rolled a degenerate seed".
+2. **The procgen surface is small.** With DNA inside `CityGenerator`, the only user-facing knob in the customisation window is `treeConfig` (per-species enable/height). The wider knobs are intentionally hidden — see [[concepts/customisation-flow]].
+3. **Performance is provably bounded.** Because chunk widths have a hard minimum, the active-set size has a hard maximum. No tuning knob can blow up the engine.
+
+## Sky and procgen budgets are separate
+
+[[entities/SkySystem]] runs on a totally separate budget envelope:
+
+- Cloud pool fixed at 20.
+- Sky keyframes fixed at 17.
+- Cloud wind speed comes from a hard-coded range.
+- `time` advances at `0.1 * dt` game-hours per real second — no procgen knob.
+
+A desert at midnight has the same sky as a tundra at midnight. The biome system does not modulate the sky. This is a deliberate decoupling — see [[concepts/dualisms]] #93–97 for the sky-internal dualisms.
+
 ## See also
 
 - [[concepts/chunking]] — consumes these budgets to size each chunk

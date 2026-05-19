@@ -1,3 +1,4 @@
+import { deepClone } from '../utils/deepClone';
 import { Layer } from './Layer';
 import { CityGenerator } from '../procgen/CityGenerator';
 import type { TreeConfig } from '../procgen/TreeConfig';
@@ -38,7 +39,7 @@ export class Game {
         }
 
         // Init config
-        this.treeConfig = JSON.parse(JSON.stringify(DEFAULT_TREE_CONFIG));
+        this.treeConfig = deepClone(DEFAULT_TREE_CONFIG);
 
         // Initialize Logic
 
