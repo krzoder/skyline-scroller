@@ -307,7 +307,9 @@ html {
     /* Invisible bridge to button */
     padding-bottom: 25px;
     display: none;
-    z-index: 200;
+    /* Was 200 — collided with #custom-gen-window. Bumped to 250 so the
+       volume popup floats above the gen window when both are open. */
+    z-index: 250;
     pointer-events: auto;
 }
 
@@ -326,15 +328,29 @@ html {
     z-index: -1;
 }
 
+/* Vertical volume slider — modern browsers honour writing-mode: vertical-lr.
+   `bt-lr` is invalid (Webkit-only legacy) and `-webkit-appearance: slider-vertical`
+   was removed in Chromium 122+. We use a rotated container as a fallback for
+   browsers that don't support the modern writing-mode form. */
 #volume-slider {
-    writing-mode: bt-lr;
-    -webkit-appearance: slider-vertical;
-    appearance: slider-vertical;
+    writing-mode: vertical-lr;
+    direction: rtl; /* Make the high end be at the top, the low end at the bottom */
     width: 8px;
     height: 120px;
     cursor: pointer;
     position: relative;
     z-index: 10;
+}
+
+@supports not (writing-mode: vertical-lr) {
+    #volume-slider {
+        writing-mode: horizontal-tb;
+        transform: rotate(-90deg);
+        transform-origin: center center;
+        width: 120px;
+        height: 8px;
+        margin: 56px -56px;
+    }
 }
 
 /* --- Gesture Speed Slider --- */

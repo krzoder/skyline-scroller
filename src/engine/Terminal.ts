@@ -446,19 +446,33 @@ export class Terminal {
         this.registerCommand({
             name: 'biome',
             aliases: [],
-            description: 'Forces the current generation biome.',
-            usage: 'biome <forest|desert|tundra|plains|city>',
+            description: 'Shows or forces the current generation biome.',
+            usage: 'biome [forest|desert|tundra|plains|city]',
             execute: (args, ctx) => {
-                if (args.length > 0) {
-                    ctx.output(`Too many arguments. Usage: biome`, true);
+                if (args.length === 0) {
+                    ctx.output(`Current biome: ${ctx.game.generator?.getCurrentBiome() || 'unknown'}`);
                     return;
                 }
-                ctx.output(`Current biome: ${ctx.game.generator?.getCurrentBiome() || 'unknown'}`);
+                if (args.length > 1) {
+                    ctx.output(`Too many arguments. Usage: biome [forest|desert|tundra|plains|city]`, true);
+                    return;
+                }
+                const valid: BiomeType[] = ['forest', 'desert', 'tundra', 'plains', 'city'];
+                const target = args[0].toLowerCase();
+                if (!valid.includes(target as BiomeType)) {
+                    ctx.output(`Unknown biome '${target}'. Valid: ${valid.join(', ')}`, true);
+                    return;
+                }
+                if (!ctx.game.generator) {
+                    ctx.output(`Generator not initialised`, true);
+                    return;
+                }
+                ctx.game.generator.forceBiome(target as BiomeType);
+                ctx.output(`Biome forced to: ${target}`);
             },
             autocomplete: (args) => args.length === 0 ? [
-                { value: 'auto', description: 'Determined dynamically by the seed' },
-                { value: 'forest', description: 'Dense tree, grass and nature' },
-                { value: 'desert', description: 'Cactuses, dry sand, and heat' },
+                { value: 'forest', description: 'Dense trees, grass and nature' },
+                { value: 'desert', description: 'Cacti, dry sand, and heat' },
                 { value: 'tundra', description: 'Snow, dead pine trees, and cold' },
                 { value: 'plains', description: 'Flat, sparse bushes, easy terrain' },
                 { value: 'city', description: 'Buildings block trees out entirely' }

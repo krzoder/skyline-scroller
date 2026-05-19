@@ -352,7 +352,6 @@ const updateTimeFormatUI = () => {
 
 updateTimeFormatUI();
 
-
 btnAdvanced.addEventListener('click', () => {
     settingsWindow.classList.remove('visible');
     const isVis = advancedWindow.classList.contains('visible');
@@ -574,7 +573,6 @@ const setGlobalVolume = (val: number, fromMuteToggle = false) => {
     }
 };
 
-
 advancedWindow.addEventListener('click', (e) => {
     if (e.target !== btnAdvReset) cancelAdvResetConfirm();
 });
@@ -763,7 +761,6 @@ if (customBiomeSelect) {
     customBiomeSelect.addEventListener('change', () => refreshPreview());
 }
 
-
 if (btnGenRefresh) {
     btnGenRefresh.onclick = () => refreshPreview();
 }
@@ -791,7 +788,6 @@ if (genSpeedSlider) {
         }
     };
 }
-
 
 // Target height: roughly 80-90px so the tree fills the 100x100 icon box.
 const getTreeIconScale = (type: TreeType) => {
@@ -1227,7 +1223,6 @@ const renderTreeSettings = () => {
     updateGlobalResetButton();
 };
 
-
 let isResetConfirming = false;
 
 const cancelResetConfirm = () => {
@@ -1323,7 +1318,6 @@ speedSlider.addEventListener('dblclick', () => {
     speedSlider.value = "0";
     updateSpeed(1.0);
 });
-
 
 btnSound.addEventListener('click', () => {
     setGlobalVolume(0, true);
