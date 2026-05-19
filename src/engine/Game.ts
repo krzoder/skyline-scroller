@@ -25,6 +25,8 @@ export class Game {
     private noisePattern: CanvasPattern | null = null;
     private rootRng: Random | null = null;
     private prevCameraX: number = 0;
+    private rafId: number | null = null;
+    private resizeHandler: (() => void) | null = null;
 
     private readonly scaleFactor = 1.6;
     public timeScale: number = 1.0;
@@ -49,17 +51,23 @@ export class Game {
         this.reset();
 
         if (!this.isPreview) {
-            // Bind resize only for main game
-            window.addEventListener('resize', () => this.resize());
-            this.resize();
-        } else {
-            // Preview has fixed size usually, but let's ensure it matches canvas
-            this.resize();
+            this.resizeHandler = () => this.resize();
+            window.addEventListener('resize', this.resizeHandler);
         }
+        this.resize();
     }
 
     public dispose() {
+        if (!this.isRunning && this.rafId === null && this.resizeHandler === null) return; // idempotent
         this.isRunning = false;
+        if (this.rafId !== null) {
+            cancelAnimationFrame(this.rafId);
+            this.rafId = null;
+        }
+        if (this.resizeHandler !== null) {
+            window.removeEventListener('resize', this.resizeHandler);
+            this.resizeHandler = null;
+        }
     }
 
     private initNoise(rng: Random) {
@@ -139,8 +147,7 @@ export class Game {
         if (this.isRunning) return;
         this.isRunning = true;
         this.lastTime = performance.now();
-        console.log("Game started at", this.lastTime);
-        requestAnimationFrame((t) => this.loop(t));
+        this.rafId = requestAnimationFrame((t) => this.loop(t));
     }
 
     private loop(time: number) {
@@ -158,9 +165,11 @@ export class Game {
         } catch (e) {
             console.error("Game Loop Error:", e);
             this.isRunning = false;
+            this.rafId = null;
+            return;
         }
 
-        requestAnimationFrame((t) => this.loop(t));
+        this.rafId = requestAnimationFrame((t) => this.loop(t));
     }
 
     private update(dt: number) {

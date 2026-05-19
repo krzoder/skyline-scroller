@@ -689,6 +689,12 @@ btnGenClose.addEventListener('click', () => {
     customGenWindow.classList.remove('visible');
     // Clear intervals when closing to save perf
     iconIntervals.forEach(i => clearInterval(i));
+    // Tear down preview game so its rAF loop and resize handler don't leak.
+    if (previewGame) {
+        previewGame.dispose();
+        previewGame = null;
+    }
+    cancelResetConfirm();
 });
 
 // ... (HTML injection code skipped) ...
@@ -1367,23 +1373,7 @@ customGenWindow.addEventListener('click', (e) => {
 });
 
 // Apply Logic
-btnGenApply.addEventListener('click', () => {
-    cancelResetConfirm();
-    const seed = (document.getElementById('custom-seed-input') as HTMLInputElement).value;
-
-    // 1. Save Config
-    if (previewGame && previewGame.generator) {
-        game.treeConfig = deepClone(previewGame.generator.config);
-    }
-
-    // 2. Set seed & Reset Game (which uses new treeConfig)
-    if (seed) game.setSeed(seed);
-    else game.setSeed(game.getSeed()); // Just reload if no new seed, to apply config
-});
-btnGenClose.addEventListener('click', () => {
-    cancelResetConfirm();
-    customGenWindow.classList.remove('visible');
-});
+// (Duplicate btnGenApply + btnGenClose handlers removed 2026-05-20 per DEC-04 §D12.)
 
 // Seed input Enter support
 const customSeedInput = document.getElementById('custom-seed-input') as HTMLInputElement;
