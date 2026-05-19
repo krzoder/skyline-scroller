@@ -1008,7 +1008,6 @@ const renderTreeSettings = () => {
                 </div>
             `;
 
-            // Icon Animation Logic (Start once)
             const ctx = (wrapper.querySelector(`#icon-${type}`) as HTMLCanvasElement).getContext('2d');
             if (ctx) {
                 const drawIcon = () => {
@@ -1019,12 +1018,10 @@ const renderTreeSettings = () => {
 
                     const scale = getTreeIconScale(type);
 
-                    // Create temp tree to get dims
                     const t = new Tree(0, type, h, flowerChance);
 
-                    // Center in 100x100
-                    // Tree draws from (0,0) down to (width, height) at (x,y)
-                    // We want the VISUAL center of the tree to be at 50,50
+                    // Tree draws from (0,0) down to (width, height) — translate
+                    // so the visual centre of the tree lands at (50,50).
                     const scaledW = t.width * scale;
                     const scaledH = t.height * scale;
 
@@ -1035,7 +1032,6 @@ const renderTreeSettings = () => {
                     ctx.translate(tx, ty);
                     ctx.scale(scale, scale);
 
-                    // Force X to 0 so it draws at origin of context
                     t.x = 0;
                     t.draw(ctx, 0);
                     ctx.restore();
@@ -1045,7 +1041,6 @@ const renderTreeSettings = () => {
                 iconIntervals.push(interval);
             }
 
-            // Bind Reset
             const resetBtn = wrapper.querySelector(`#reset-${type}`) as HTMLButtonElement;
             resetBtn.onclick = () => {
                 if (isTreeModified(type)) {
@@ -1058,9 +1053,6 @@ const renderTreeSettings = () => {
             };
         }
 
-        // 4. Update Values
-
-        // Checkbox
         const cb = wrapper!.querySelector(`#cb-${type}`) as HTMLInputElement;
         if (cb.checked !== item.enabled) cb.checked = item.enabled;
         cb.onchange = (e) => {
@@ -1071,7 +1063,6 @@ const renderTreeSettings = () => {
 
         updateTreeResetButton(type);
 
-        // Biomes
         const biomesContainer = wrapper!.querySelector(`#biomes-${type}`) as HTMLElement;
         const allBiomes: BiomeType[] = ['forest', 'desert', 'tundra', 'plains', 'city'];
         if (biomesContainer.children.length === 0) {
@@ -1090,8 +1081,8 @@ const renderTreeSettings = () => {
                     if (idx === -1) fresh.biomes.push(biome);
                     else fresh.biomes.splice(idx, 1);
                     updateTreeResetButton(type);
-                    refreshPreview(); // Instant Refresh
-                    renderTreeSettings(); // To update color
+                    refreshPreview();
+                    renderTreeSettings();
                 };
                 biomesContainer.appendChild(bBtn);
             });
@@ -1110,14 +1101,14 @@ const renderTreeSettings = () => {
             }
         });
 
-        // Dual Slider Logic
         const minInp = wrapper!.querySelector(`#h-min-${type}`) as HTMLInputElement;
         const maxInp = wrapper!.querySelector(`#h-max-${type}`) as HTMLInputElement;
         const sliderMinEl = wrapper!.querySelector(`#slider-min-${type}`) as HTMLInputElement;
         const sliderMaxEl = wrapper!.querySelector(`#slider-max-${type}`) as HTMLInputElement;
         const track = wrapper!.querySelector(`#track-${type}`) as HTMLElement;
 
-        // Determine Dynamic Range based on Defaults
+        // Slider range is 80%-120% of the default so the slider stays useful
+        // even after the user types extreme values into the number input.
         const def = DEFAULT_TREE_CONFIG[type];
         const rangeMin = Math.floor(def.minHeight * 0.8);
         const rangeMax = Math.ceil(def.maxHeight * 1.2);
@@ -1128,21 +1119,19 @@ const renderTreeSettings = () => {
         sliderMaxEl.min = rangeMin.toString();
         sliderMaxEl.max = rangeMax.toString();
 
-        // Visual Update Helper
         const updateVisuals = () => {
             const fresh = getFreshItem();
             const v1 = fresh.minHeight;
             const v2 = fresh.maxHeight;
 
-            // Inputs show actual values
             if (document.activeElement !== minInp) minInp.value = v1.toString();
             if (document.activeElement !== maxInp) maxInp.value = v2.toString();
 
-            // Sliders show clamped values (visual only)
+            // Sliders visualise the clamped value even if the number input holds something extreme.
             if (document.activeElement !== sliderMinEl) sliderMinEl.value = Math.max(rangeMin, Math.min(rangeMax, v1)).toString();
             if (document.activeElement !== sliderMaxEl) sliderMaxEl.value = Math.max(rangeMin, Math.min(rangeMax, v2)).toString();
 
-            // Track visuals (accounting for 16px thumb width)
+            // Track fill: 16px thumb width compensation so the green bar lines up with the dots.
             const p1Val = Math.max(0, Math.min(100, ((v1 - rangeMin) / rangeSpan) * 100));
             const p2Val = Math.max(0, Math.min(100, ((v2 - rangeMin) / rangeSpan) * 100));
 
@@ -1152,12 +1141,11 @@ const renderTreeSettings = () => {
 
         updateVisuals();
 
-        // Events
-        // Events - Decoupled to fix overwrite issues
+        // Min/max handlers are split so that each handler clamps against the
+        // other half's *config* value (not the other slider's clamped value).
         const updateFromMinSlider = () => {
             let v1 = parseInt(sliderMinEl.value);
             const fresh = getFreshItem();
-            // Clamp against current MAX (config, not slider)
             if (v1 > fresh.maxHeight) v1 = fresh.maxHeight;
 
             fresh.minHeight = v1;
@@ -1171,7 +1159,6 @@ const renderTreeSettings = () => {
         const updateFromMaxSlider = () => {
             let v2 = parseInt(sliderMaxEl.value);
             const fresh = getFreshItem();
-            // Clamp against current MIN
             if (v2 < fresh.minHeight) v2 = fresh.minHeight;
 
             fresh.maxHeight = v2;
@@ -1188,7 +1175,7 @@ const renderTreeSettings = () => {
         minInp.onchange = (e) => {
             let val = parseInt((e.target as HTMLInputElement).value);
             const fresh = getFreshItem();
-            // Allow any value, just ensure logical consistency (min <= max)
+            // Number input accepts any value; enforce min <= max only.
             if (val > fresh.maxHeight) val = fresh.maxHeight;
             fresh.minHeight = val;
 
@@ -1210,7 +1197,6 @@ const renderTreeSettings = () => {
             updateVisuals();
         };
 
-        // Flower Chance
         const extraContainer = wrapper!.querySelector(`#extra-${type}`) as HTMLElement;
         if (type === 'cactus') {
             if (!extraContainer.innerHTML) {
@@ -1225,7 +1211,6 @@ const renderTreeSettings = () => {
             const fInp = extraContainer.querySelector(`#flower-${type}`) as HTMLInputElement;
             const fVal = extraContainer.querySelector(`#flower-val-${type}`) as HTMLElement;
 
-            // Sync UI
             const currentPct = (item.flowerChance * 100).toFixed(1);
             if (document.activeElement !== fInp) fInp.value = currentPct;
             fVal.innerText = currentPct + "%";
@@ -1245,20 +1230,12 @@ const renderTreeSettings = () => {
         }
     });
 
-    // Initial Global Reset Button Update
     updateGlobalResetButton();
 };
 
-// Hook into OpenCustomGen
-// We'll modify openCustomGen logic below or inject it.
-// Actually, I can just modify the existing `openCustomGen` function if I have access to the file content.
-// OR I call `renderTreeSettings()` after opening.
 
-
-// Reset Confirmation Logic
 let isResetConfirming = false;
 
-// Clear Confirm state on interaction with other elements
 const cancelResetConfirm = () => {
     if (isResetConfirming) {
         isResetConfirming = false;
@@ -1268,47 +1245,38 @@ const cancelResetConfirm = () => {
 };
 
 btnGenReset.addEventListener('click', (e) => {
-    e.stopPropagation(); // Prevent clearing itself
+    e.stopPropagation();
     if (isResetConfirming) {
-        // Confirmed
         const randomSeed = Math.floor(Math.random() * 100000).toString();
 
-        // Update Input
         const customSeedInput = document.getElementById('custom-seed-input') as HTMLInputElement;
         if (customSeedInput) customSeedInput.value = randomSeed;
 
         if (previewGame) {
             previewGame.setSeed(randomSeed);
-            // Reset Tree Config to Defaults
             if (previewGame.generator) {
                 const def = deepClone(DEFAULT_TREE_CONFIG);
                 previewGame.generator.config = def;
-                previewGame.treeConfig = deepClone(def); // Sync Game config too!
+                // Sync the Game-level config so the preview matches.
+                previewGame.treeConfig = deepClone(def);
             }
         }
 
-        // Re-render UI to show defaults
         renderTreeSettings();
-
-        // Reset Logic - Maybe reset other params too in future
         cancelResetConfirm();
     } else {
-        // First click
         isResetConfirming = true;
         btnGenReset.innerText = "Confirm Reset?";
-        btnGenReset.style.background = "#8b0000"; // Darker Red
+        btnGenReset.style.background = "#8b0000";
     }
 });
 
-// Cancel reset confirm if clicking apply or close or ANY control in window
+// Any click inside the window that's NOT the reset button cancels the
+// two-click confirm flow.
 customGenWindow.addEventListener('click', (e) => {
     if (e.target !== btnGenReset) cancelResetConfirm();
 });
 
-// Apply Logic
-// (Duplicate btnGenApply + btnGenClose handlers removed 2026-05-20 per DEC-04 §D12.)
-
-// Seed input Enter support
 const customSeedInput = document.getElementById('custom-seed-input') as HTMLInputElement;
 customSeedInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
@@ -1316,44 +1284,31 @@ customSeedInput.addEventListener('keydown', (e) => {
     }
 });
 
-/* btnGenPreview removed */
-
-// 1c. Speed Slider (Logarithmic)
-// Input: -1 to 1. Output: 0.1 to 10. Center: 0 -> 1.
-const getSpeedFromSlider = (val: number) => {
-    // 10^val maps [-1, 1] -> [0.1, 10]
-    return Math.pow(10, val);
-};
-const getSliderFromSpeed = (val: number) => {
-    return Math.log10(val);
-};
+// Logarithmic speed slider: input [-1, 1] -> output [0.1x, 10x], 0 -> 1x.
+const getSpeedFromSlider = (val: number) => Math.pow(10, val);
+const getSliderFromSpeed = (val: number) => Math.log10(val);
 
 const updateSpeed = (speed: number) => {
-    // Clamp standard slider interactions
     speed = Math.max(0.1, Math.min(10, speed));
 
-    // Update Slider UI
     const sliderVal = getSliderFromSpeed(speed);
     if (document.activeElement !== speedSlider) {
         speedSlider.value = sliderVal.toString();
     }
 
-    // Update Game
     (game as any).setTimeScale?.(speed);
 
-    // Sync Advanced Speed UI, forcing a recenter if updated globally via terminal or normal slider
     if (typeof updateAdvSpeedUI === 'function') updateAdvSpeedUI(true);
 };
 
-// Bind for upstream usage in Advanced Window
 globalSpeedUpdateCallback = (spd: number) => {
-    // We only visually update the slider if it's within standard range 0.1 - 10 to prevent math errors
+    // The base slider only covers 0.1..10. If the advanced speed is outside
+    // that range, snap the base slider to 0 to signal "manual override".
     if (spd >= 0.1 && spd <= 10) {
         if (document.activeElement !== speedSlider) {
             speedSlider.value = getSliderFromSpeed(spd).toString();
         }
     } else {
-        // If outside normal bounds, we snap the regular slider to 0 to indicate manual override
         if (document.activeElement !== speedSlider) {
             speedSlider.value = "0";
         }
@@ -1362,7 +1317,7 @@ globalSpeedUpdateCallback = (spd: number) => {
 
 speedSlider.addEventListener('input', (e) => {
     const val = parseFloat((e.target as HTMLInputElement).value);
-    // Snap to center
+    // Snap to centre so 1.0x is easy to hit.
     if (Math.abs(val) < 0.05) {
         speedSlider.value = "0";
         updateSpeed(1.0);
@@ -1376,13 +1331,10 @@ speedSlider.addEventListener('dblclick', () => {
 });
 
 
-// 2. Sound
-
 btnSound.addEventListener('click', () => {
     setGlobalVolume(0, true);
 });
 
-// Sound Hover Logic (Wrapper)
 soundContainer.addEventListener('mouseenter', () => {
     volumePopup.style.display = 'block';
 });
@@ -1394,7 +1346,6 @@ volumeSlider.addEventListener('input', (e) => {
     setGlobalVolume(parseFloat((e.target as HTMLInputElement).value), false);
 });
 
-// 3. Terminal
 import { Terminal, type AutocompleteSuggestion } from './engine/Terminal';
 
 const terminalOutputContainer = document.getElementById('terminal-output-container')!;
@@ -1454,34 +1405,31 @@ const updateTerminalHints = () => {
 
 terminalInput.addEventListener('input', updateTerminalHints);
 
+// Called by the Terminal after a command runs so the UI reflects any
+// game-state changes that bypassed the normal UI handlers.
 const syncUIFromTerminal = () => {
-    // 1. Force Slider Bindings to adapt to global float speed changes silently:
     if (globalSpeedUpdateCallback) globalSpeedUpdateCallback(game.timeScale);
     updateAdvSpeedUI();
 
-    // 2. Extract Native Volume State, converting floats to generic integer arrays:
     const gVol = Math.round(game.getVolume() * 100);
     if (currentVolume !== gVol) {
         setGlobalVolume(gVol, false);
     }
 
-    // 3. Extract Mute Boolean Flags directly into volume UI array overrides:
     const gMuted = game.getMuted();
     if (isMuted !== gMuted) {
         setGlobalVolume(0, true);
     }
 
-    // 4. Force synchronization of generator configuration
-    if (typeof previewGame !== 'undefined' && previewGame && previewGame.generator) {
+    if (previewGame && previewGame.generator) {
         previewGame.generator.config = deepClone(game.treeConfig);
         previewGame.treeConfig = deepClone(game.treeConfig);
     }
 
-    // 5. Fire standard sub-component layout redraws
     updateTimeFormatUI();
     if (customGenWindow.classList.contains('visible')) {
         renderTreeSettings();
-        if (typeof refreshPreview === 'function') refreshPreview();
+        refreshPreview();
     }
 };
 
@@ -1497,7 +1445,6 @@ const terminal = new Terminal(
         line.style.color = isErr ? '#ff5555' : '#00ff00';
         line.innerText = msg;
 
-        // Click to copy functionality
         line.addEventListener('click', () => {
             const copyText = msg.startsWith('> ') ? msg.substring(2) : msg;
             navigator.clipboard.writeText(copyText).then(() => {
@@ -1505,9 +1452,7 @@ const terminal = new Terminal(
                 setTimeout(() => {
                     line.classList.remove('terminal-copied');
                 }, 300);
-            }).catch(() => {
-                // Fallback if clipboard API fails
-            });
+            }).catch(() => {});
         });
 
         terminalOutputContainer.appendChild(line);

@@ -32,7 +32,7 @@ export class SkySystem {
         type: 'cumulus' | 'cirrus' | 'stratus',
         scale: number,
         opacity: number,
-        // Bounds for precise culling
+        // Local bounds (pre-scale) for precise off-screen culling.
         bounds: { minX: number, maxX: number },
         parts: { x: number, y: number, r: number, opacity?: number, w?: number, h?: number }[]
     }[] = [];
@@ -48,7 +48,7 @@ export class SkySystem {
     private initClouds() {
         this.clouds = [];
         const count = 20;
-        // Approximation for init (assume standard width or wait for first update? Use 1920 as base)
+        // Canvas width is unknown until first update; 1920 is a reasonable seed.
         const approxWidth = 1920;
         for (let i = 0; i < count; i++) {
             this.createCloud(true, i * (approxWidth / count));
@@ -76,7 +76,6 @@ export class SkySystem {
             opacity = 0.6;
         }
 
-        // Generate parts
         const parts = [];
         let minX = 0;
         let maxX = 0;
@@ -89,7 +88,6 @@ export class SkySystem {
                 const pr = this.rng.nextRange(20, 45);
                 parts.push({ x: px, y: py, r: pr });
 
-                // Track bounds (circle extents)
                 minX = Math.min(minX, px - pr);
                 maxX = Math.max(maxX, px + pr);
             }
@@ -106,8 +104,7 @@ export class SkySystem {
                     h: this.rng.nextRange(3, 8),
                     opacity: this.rng.nextRange(0.2, 0.5)
                 });
-                // Ellipse bounds approx
-                minX = Math.min(minX, px - w); // w is radiusY? No, ctx.ellipse radiusX.
+                minX = Math.min(minX, px - w);
                 maxX = Math.max(maxX, px + w);
             }
         } else { // Stratus
@@ -123,32 +120,18 @@ export class SkySystem {
                     h: this.rng.nextRange(15, 40),
                     opacity: this.rng.nextRange(0.2, 0.5)
                 });
-                // Rect bounds
-                minX = Math.min(minX, px); // Rect draws from x? No, usually centered or corner. 
-                // Context code: ctx.rect(p.x, p.y, p.w, p.h)
-                // But in draw we do translate(cx, cy). So p.x is offset.
-                // If rect is x,y,w,h relative to center:
                 minX = Math.min(minX, px);
                 maxX = Math.max(maxX, px + w);
             }
         }
 
-        // Apply scale to bounds for global check
-        // We do precise check in update, so we store local bounds.
         const bounds = { minX, maxX };
 
-        // Initial Position
         let x;
         if (overrideX !== undefined) {
             x = overrideX + this.rng.nextRange(-100, 100);
         } else {
-            // "From zero" logic:
-            // Spawn just off-screen left.
-            // Cloud max right edge is center + maxX * scale.
-            // We want (x + maxX*scale) < 0.
-            // So x < -(maxX * scale).
-            // So x < -(maxX * scale).
-            // Note: max width check is done in properties
+            // Spawn just off-screen left: rightmost pixel (x + maxX*scale) should be < 0.
             x = randomX ? this.rng.nextRange(0, 2000) : -(maxX * scale) - 50;
         }
 
@@ -163,17 +146,12 @@ export class SkySystem {
         this.time += this.speed * dt;
         if (this.time >= 24) this.time = 0;
 
-        // Move clouds
         for (let i = this.clouds.length - 1; i >= 0; i--) {
             const c = this.clouds[i];
             c.x += c.speed * dt;
 
-            // Dynamic Despawn Logic
-            // Despawn when LEFTMOST pixel is off screen RIGHT?
-            // "if it still has pixels on screen, it can't disappear"
-            // So: minX pixel > canvas.width
-            // Pixel pos = c.x + (c.bounds.minX * c.scale).
-
+            // Despawn only once even the leftmost pixel has cleared the right edge,
+            // so the cloud never visibly pops out.
             const cloudMinPixel = c.x + (c.bounds.minX * c.scale);
 
             if (cloudMinPixel > logicalW) {
@@ -189,7 +167,6 @@ export class SkySystem {
     }
 
     public draw(ctx: CanvasRenderingContext2D, w: number, h: number) {
-        // 1. Interpolate Sky Color
         const { top, bot } = this.getSkyColors(this.time);
 
         const grad = ctx.createLinearGradient(0, 0, 0, h);
@@ -198,10 +175,8 @@ export class SkySystem {
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
 
-        // 2. Celestial Body
         this.drawCelestialBody(ctx, w);
 
-        // Draw Clouds
         this.clouds.forEach(c => {
             ctx.save();
             ctx.translate(c.x, c.y);
@@ -281,20 +256,15 @@ export class SkySystem {
     }
 
     private drawCelestialBody(ctx: CanvasRenderingContext2D, w: number) {
-        // Pad logic: 0..24 maps to -150 to W+150 (Reduced buffer)
+        // 0..24 maps horizontally to [-pad, w+pad] so the body enters/exits off-screen.
         const pad = 150;
         const totalW = w + (pad * 2);
         const x = -pad + (this.time / 24) * totalW;
 
-        // Height Logic (Higher arc)
         const cy = 125 + Math.sin((this.time - 6) * Math.PI / 12) * -75;
 
-        // ANIMATION
-        // User Update: Stretch periods, make it smooth definitive but not rapid.
-        // Increasing window to 0.15 (slower/smoother flip)
         const flipWin = 0.15;
-        // Ray Window: Fade happens before flip.
-        const rayWin = 0.5; // Reduced from 1.0 to match rapid sky change
+        const rayWin = 0.5;
 
         let scaleX = 1;
         let drawSun = (this.time > 6 && this.time < 18);
@@ -302,51 +272,41 @@ export class SkySystem {
         let currentCore = drawSun ? 40 : 30;
         let currentBloom = drawSun ? 1 : 0;
 
-        // SUNSET (18:00) Logic
         if (this.time > 12 && this.time < 24) {
-            // Sunset / Dusk Side
-            // 1. Ray Fade Phase (Before Flip)
-            // Range: [18 - rayWin, 18 - flipWin].
+            // Sunset / dusk side around 18:00.
             const t = this.time;
             const flipStart = 18 - flipWin;
             const rayStart = 18 - rayWin;
 
             if (t >= rayStart && t < flipStart) {
-                // Fading Rays (Bloom 1 -> 0)
-                // Shrinking Core (40 -> 30)
-                const p = (t - rayStart) / (flipStart - rayStart); // 0..1
+                const p = (t - rayStart) / (flipStart - rayStart);
                 currentBloom = 1 - p;
                 currentCore = 40 - (10 * p);
             } else if (t >= flipStart && t < 18 + flipWin) {
-                // Flip Phase
                 currentBloom = 0;
                 currentCore = 30;
 
-                // Calc Angle
-                const p = (t - flipStart) / (flipWin * 2); // 0..1
+                const p = (t - flipStart) / (flipWin * 2);
                 const angle = p * Math.PI;
                 scaleX = Math.cos(angle);
 
                 if (p >= 0.5) drawSun = false;
                 else drawSun = true;
             } else if (t >= 18 + flipWin) {
-                // Full Night
                 drawSun = false;
                 currentBloom = 0;
                 currentCore = 30;
             }
         } else {
-            // Sunrise Side (06:00)
+            // Sunrise side around 06:00.
             const t = this.time;
             const flipStart = 6 - flipWin;
             const flipEnd = 6 + flipWin;
             const rayEnd = 6 + rayWin;
 
             if (t < flipStart) {
-                // Full Night
                 drawSun = false;
             } else if (t >= flipStart && t < flipEnd) {
-                // Flip Phase
                 currentBloom = 0;
                 currentCore = 30;
                 const p = (t - flipStart) / (flipWin * 2);
@@ -356,13 +316,11 @@ export class SkySystem {
                 if (p < 0.5) drawSun = false;
                 else drawSun = true;
             } else if (t >= flipEnd && t < rayEnd) {
-                // Growing Phase
                 drawSun = true;
-                const p = (t - flipEnd) / (rayEnd - flipEnd); // 0..1
+                const p = (t - flipEnd) / (rayEnd - flipEnd);
                 currentBloom = p;
                 currentCore = 30 + (10 * p);
             } else {
-                // Full Day
                 drawSun = true;
                 currentBloom = 1;
                 currentCore = 40;
@@ -374,20 +332,17 @@ export class SkySystem {
         ctx.scale(Math.abs(scaleX), 1);
 
         if (drawSun) {
-            // Draw Sun
             if (currentBloom > 0.01) {
                 ctx.fillStyle = `rgba(255, 255, 255, ${0.1 * currentBloom})`;
                 ctx.beginPath();
                 ctx.arc(0, 0, 100, 0, Math.PI * 2);
                 ctx.fill();
             }
-            // Core
             ctx.fillStyle = "#FFD700";
             ctx.beginPath();
             ctx.arc(0, 0, currentCore, 0, Math.PI * 2);
             ctx.fill();
         } else {
-            // Draw Moon
             ctx.fillStyle = "#FEFCD7";
             ctx.beginPath();
             ctx.arc(0, 0, 30, 0, Math.PI * 2);

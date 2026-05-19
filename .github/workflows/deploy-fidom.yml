@@ -1,0 +1,54 @@
+name: Deploy fidom.link
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-fidom
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11   # v4.1.1
+      - uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b   # v4.0.3
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+        env:
+          PUBLIC_BASE_PATH: /
+
+      - name: Configure SSH
+        uses: webfactory/ssh-agent@dc588b651fe13675774614f8e6a936a468676387   # v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOYARR_SSH_KEY }}
+
+      - name: Add Deployarr to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.DEPLOYARR_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Sync dist to Deployarr
+        run: |
+          rsync -avz --delete --no-perms --no-owner --no-group \
+            dist/ \
+            deploy@${{ secrets.DEPLOYARR_HOST }}:/mnt/homelab/apps/data/skyline-scroller/dist/
+
+      - name: Smoke test (200 = public, 302 = behind auth gate)
+        run: |
+          for i in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" -L https://skyline-scroller.fidom.link/health || true)
+            if [ "$code" = "200" ] || [ "$code" = "302" ]; then exit 0; fi
+            sleep 5
+          done
+          echo "Health check failed after 30s"
+          exit 1

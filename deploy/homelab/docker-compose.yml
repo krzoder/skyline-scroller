@@ -1,0 +1,18 @@
+services:
+  skyline-scroller:
+    image: nginx:1.27-alpine
+    container_name: skyline-scroller
+    restart: unless-stopped
+    networks:
+      - t3_proxy
+    volumes:
+      - /mnt/homelab/apps/data/skyline-scroller/dist:/usr/share/nginx/html:ro
+      - /mnt/homelab/apps/data/skyline-scroller/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+networks:
+  t3_proxy:
+    external: true

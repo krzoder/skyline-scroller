@@ -1,0 +1,19 @@
+http:
+  routers:
+    skyline-scroller-rtr:
+      rule: "Host(`skyline-scroller.{{env \"DOMAINNAME_1\"}}`)"
+      entryPoints:
+        - websecure-external
+        - websecure-internal
+      middlewares:
+        - chain-no-auth   # PUBLIC — no Authentik gating (user instruction 2026-05-20).
+      service: skyline-scroller-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+  services:
+    skyline-scroller-svc:
+      loadBalancer:
+        servers:
+          - url: "http://skyline-scroller:80"
+        passHostHeader: true

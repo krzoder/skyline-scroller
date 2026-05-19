@@ -60,12 +60,11 @@ export class Landscape extends CityEntity {
         for (let i = 1; i < this.points.length; i++) {
             ctx.lineTo(this.points[i].x, baselineY + this.points[i].y);
         }
-        // Valid Close (bottom right -> bottom left)
-        ctx.lineTo(this.width, this.height * 2); // Way down?
+        // Close shape far below the canvas so the fill always reaches the bottom.
+        ctx.lineTo(this.width, this.height * 2);
         ctx.lineTo(0, this.height * 2);
         ctx.fill();
 
-        // Decorations
         this.decorate(ctx, baselineY);
     }
 
@@ -79,18 +78,12 @@ export class Landscape extends CityEntity {
             const r = this.rng.nextFloat();
             const px = (i / count) * this.width + (r * 20);
 
-            // Find Y on the curve? Approximation: Linear interp between points?
-            // Or just simple raycast. 
-            // Let's just place them randomly on the slope?
-            // Hard to do precise "on the line" without math helper.
-            // Simplification: Place at baselineY - interpolated height.
-
-            // Interpolate height based on shape logic
+            // Approximate decoration height via linear interp around the peak,
+            // rather than raycasting against the actual polyline.
             let py = 0;
-            let peakRatio = 0.5; // Default (Forest/Plains)
+            let peakRatio = 0.5;
 
             if (this.biome === 'desert') peakRatio = 0.4;
-            // Tundra has complex shape, but for now we focus on fixing the Desert/General mismatch
 
             const peakX = this.width * peakRatio;
 
@@ -102,12 +95,10 @@ export class Landscape extends CityEntity {
                 py = -this.height * (1 - t);
             }
 
-            // Draw Prop
             const drawX = px;
             const drawY = baselineY + py;
 
             if (this.biome === 'forest') {
-                // Pine
                 ctx.beginPath();
                 ctx.moveTo(drawX, drawY);
                 ctx.lineTo(drawX - 5, drawY + 15);
@@ -115,12 +106,11 @@ export class Landscape extends CityEntity {
                 ctx.fill();
 
                 ctx.beginPath();
-                ctx.moveTo(drawX, drawY - 10); // Tree
+                ctx.moveTo(drawX, drawY - 10);
                 ctx.lineTo(drawX - 8, drawY + 20);
                 ctx.lineTo(drawX + 8, drawY + 20);
                 ctx.fill();
             }
-            // Cacti moved to foreground trees
         }
     }
 
@@ -143,20 +133,12 @@ export class Landscape extends CityEntity {
     draw(ctx: CanvasRenderingContext2D, offsetX: number): void {
         super.draw(ctx, offsetX);
 
-        // Fix Floating Artifacts:
-        // When we lift layers (yOffset), the bottom of the shape might be exposed if the hill is small.
-        // We need to extend the "ground" downwards indefinitely.
-
-        // Calculate screen coordinates of the base
+        // Extend ground colour downwards indefinitely so lifted layers (yOffset)
+        // don't expose the area below the small hill silhouettes.
         const screenX = this.x - offsetX;
 
-        // CityEntity draws the cached image such that 'this.y' is the baseline.
-        // We want to fill from this.y downwards.
-        // Since we are in a potentially scaled/translated context for the layer, 
-        // we just draw at (x, y) with a large height.
-
         ctx.fillStyle = this.getColor();
-        // Expand slightly X to match overlap logic
+        // 1px X overlap on each side prevents seams between adjacent landscapes.
         ctx.fillRect(screenX - 1, this.y, this.width + 2, 2000);
     }
 }

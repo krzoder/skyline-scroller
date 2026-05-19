@@ -56,10 +56,8 @@ export class Terminal {
     public execute(input: string) {
         if (!input.trim()) return;
 
-        // Echo command
         this.onOutput(`> ${input}`, false);
 
-        // Intercept pending reset confirmation
         if (this.pendingResetTarget) {
             if (input.trim().toLowerCase() === 'y' || input.trim().toLowerCase() === 'yes') {
                 this.executeResetConfirm(this.pendingResetTarget);
@@ -68,7 +66,7 @@ export class Terminal {
             }
             this.pendingResetTarget = null;
             if (input.trim().toLowerCase() === 'y' || input.trim().toLowerCase() === 'yes') {
-                return; // End flow if they just said yes
+                return;
             }
         }
 
