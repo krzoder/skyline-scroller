@@ -1,13 +1,17 @@
 import { CityEntity } from './CityEntity';
 import type { BiomeType } from '../procgen/BiomeSystem';
+import { Random } from '../utils/Random';
 
 export class Landscape extends CityEntity {
     biome: BiomeType;
     points: { x: number, y: number }[];
+    private rng: Random;
 
-    constructor(x: number, width: number, height: number, biome: BiomeType) {
+    constructor(x: number, width: number, height: number, biome: BiomeType, rng?: Random) {
         super(x, width, height);
         this.biome = biome;
+        // Per-instance seeded stream — deterministic when caller passes one.
+        this.rng = rng ?? new Random(`landscape:${x}:${biome}`);
         this.points = this.generateShape();
 
         // Pad for decorations (trees on top)
@@ -35,7 +39,7 @@ export class Landscape extends CityEntity {
             const steps = 5;
             const stepW = this.width / steps;
             for (let i = 0; i < steps; i++) {
-                const h = 50 + Math.random() * (this.height - 50);
+                const h = 50 + this.rng.nextFloat() * (this.height - 50);
                 pts.push({ x: i * stepW, y: -h });
                 pts.push({ x: (i + 1) * stepW, y: -h });
             }
@@ -89,7 +93,7 @@ export class Landscape extends CityEntity {
         ctx.fillStyle = this.getDecorColor();
 
         for (let i = 0; i < count; i++) {
-            const r = Math.random();
+            const r = this.rng.nextFloat();
             const px = (i / count) * this.width + (r * 20);
 
             // Find Y on the curve? Approximation: Linear interp between points?

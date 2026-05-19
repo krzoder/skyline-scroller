@@ -3,6 +3,7 @@ import { Layer } from './Layer';
 import { CityGenerator } from '../procgen/CityGenerator';
 import type { TreeConfig } from '../procgen/TreeConfig';
 import { DEFAULT_TREE_CONFIG } from '../procgen/TreeConfig';
+import { Random } from '../utils/Random';
 
 import { SkySystem } from './SkySystem';
 
@@ -22,6 +23,8 @@ export class Game {
     public treeConfig: TreeConfig; // Custom config
 
     private noisePattern: CanvasPattern | null = null;
+    private rootRng: Random | null = null;
+    private prevCameraX: number = 0;
 
     private readonly scaleFactor = 1.6;
     public timeScale: number = 1.0;
@@ -41,9 +44,8 @@ export class Game {
         // Init config
         this.treeConfig = deepClone(DEFAULT_TREE_CONFIG);
 
-        // Initialize Logic
+        // Initialize Logic (reset seeds rootRng and constructs subsystems).
 
-        this.initNoise();
         this.reset();
 
         if (!this.isPreview) {
@@ -60,7 +62,7 @@ export class Game {
         this.isRunning = false;
     }
 
-    private initNoise() {
+    private initNoise(rng: Random) {
         const w = 256;
         const h = 256;
         const canvas = document.createElement('canvas');
@@ -73,7 +75,7 @@ export class Game {
         const data = idata.data;
 
         for (let i = 0; i < data.length; i += 4) {
-            const val = Math.floor(Math.random() * 255);
+            const val = rng.nextInt(0, 256);
             data[i] = val;     // R
             data[i + 1] = val; // G
             data[i + 2] = val; // B
@@ -103,10 +105,8 @@ export class Game {
 
     private reset() {
         this.cameraX = 0;
-        // Layer Params: speedModifier, zIndex, yOffset
-        // We want the background to be "higher" on screen (hill effect).
-        // Ground is at bottom.
-        // If yOffset is positive, we translate(0, -yOffset), so it moves UP.
+        this.prevCameraX = 0;
+        this.rootRng = new Random(this.seed);
 
         this.layers = [
             new Layer(0.2, 0, 190, 1.3), // Background (Highest up)
@@ -114,12 +114,11 @@ export class Game {
             new Layer(0.6, 2, 50),  // Mid-Fore
             new Layer(1.0, 3, 0)    // Foreground (Ground level)
         ];
-        // Pass current config to generator
-        this.generator = new CityGenerator(this.seed, this.layers.length, this.treeConfig);
-        // this.sky = new SkySystem(this.canvas); // Was this here? I'll re-add it if I saw it before.
-        // Actually, looking at previous diffs, I might have deleted it.
-        // Let's assume it should be there.
-        if (!this.isPreview) this.sky = new SkySystem(this.canvas);
+
+        // Independent sub-streams keep procgen/sky/noise from correlating.
+        this.initNoise(this.rootRng.fork('noise'));
+        this.generator = new CityGenerator(this.seed, this.layers.length, this.treeConfig, this.rootRng.fork('city'));
+        if (!this.isPreview) this.sky = new SkySystem(this.canvas, this.rootRng.fork('sky'));
     }
 
     // The original initNoise method was duplicated in the instruction,
@@ -171,9 +170,12 @@ export class Game {
 
         this.sky?.update(dt, logicalW);
 
-        // Generate new buildings if needed
+        // Generate new buildings if needed; pass real camera-pixel delta so
+        // BiomeSystem.durationRemaining can be measured in pixels, not frames.
         if (this.generator) {
-            this.generator.generate(this.layers, this.cameraX, logicalW);
+            const dx = this.cameraX - this.prevCameraX;
+            this.generator.generate(this.layers, this.cameraX, logicalW, dx);
+            this.prevCameraX = this.cameraX;
         }
 
         // Prune old

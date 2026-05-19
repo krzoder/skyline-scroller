@@ -1,3 +1,5 @@
+import { Random } from '../utils/Random';
+
 export class TextureGenerator {
     static createBrickPattern(width: number, height: number, color: string): HTMLCanvasElement {
         const canvas = document.createElement('canvas');
@@ -23,7 +25,7 @@ export class TextureGenerator {
         return canvas;
     }
 
-    static createWoodPattern(width: number, height: number, color: string): HTMLCanvasElement {
+    static createWoodPattern(width: number, height: number, color: string, rng?: Random): HTMLCanvasElement {
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
@@ -32,13 +34,15 @@ export class TextureGenerator {
         ctx.fillStyle = color;
         ctx.fillRect(0, 0, width, height);
 
+        const r = rng ?? new Random(`wood:${width}:${height}:${color}`);
+
         // Wood grain lines
         ctx.strokeStyle = "rgba(0,0,0,0.15)";
         ctx.lineWidth = 2;
         for (let y = 0; y < height; y += 4) {
             ctx.beginPath();
             ctx.moveTo(0, y);
-            ctx.bezierCurveTo(width / 3, y + Math.random() * 5, width / 3 * 2, y - Math.random() * 5, width, y);
+            ctx.bezierCurveTo(width / 3, y + r.nextFloat() * 5, width / 3 * 2, y - r.nextFloat() * 5, width, y);
             ctx.stroke();
         }
         return canvas;

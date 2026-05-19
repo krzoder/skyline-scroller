@@ -1,5 +1,6 @@
 import type { Renderable } from './Renderable';
 import { TextureGenerator } from './TextureGenerator';
+import { Random } from '../utils/Random';
 
 export type BuildingMaterial = 'wood' | 'brick' | 'stone' | 'plaster';
 export type RoofType = 'flat' | 'gabled' | 'dome' | 'crenelated';
@@ -16,8 +17,9 @@ export class Building implements Renderable {
     roofColor: string;
 
     private cacheCanvas: HTMLCanvasElement;
+    private rng: Random;
 
-    constructor(x: number, width: number, height: number, material: BuildingMaterial, roofType: RoofType, baseColor: string, roofColor: string) {
+    constructor(x: number, width: number, height: number, material: BuildingMaterial, roofType: RoofType, baseColor: string, roofColor: string, rng?: Random) {
         this.x = x;
         this.width = width;
         this.height = height;
@@ -26,6 +28,7 @@ export class Building implements Renderable {
         this.baseColor = baseColor;
         this.roofColor = roofColor;
         this.y = 0;
+        this.rng = rng ?? new Random(`building:${x}:${material}`);
 
         this.cacheCanvas = this.generateTexture();
     }
@@ -48,7 +51,7 @@ export class Building implements Renderable {
             const tex = TextureGenerator.createBrickPattern(this.width, this.height, this.baseColor);
             ctx.drawImage(tex, 0, bodyTopY);
         } else if (this.material === 'wood') {
-            const tex = TextureGenerator.createWoodPattern(this.width, this.height, this.baseColor);
+            const tex = TextureGenerator.createWoodPattern(this.width, this.height, this.baseColor, this.rng);
             ctx.drawImage(tex, 0, bodyTopY);
         } else {
             // Plain/Stone
@@ -59,7 +62,7 @@ export class Building implements Renderable {
                 // Noise
                 ctx.fillStyle = "rgba(0,0,0,0.1)";
                 for (let i = 0; i < 50; i++) {
-                    ctx.fillRect(Math.random() * this.width, bodyTopY + Math.random() * this.height, 2, 2);
+                    ctx.fillRect(this.rng.nextFloat() * this.width, bodyTopY + this.rng.nextFloat() * this.height, 2, 2);
                 }
             }
         }
@@ -71,12 +74,12 @@ export class Building implements Renderable {
         const gapY = 20;
 
         ctx.fillStyle = "#FDF5E6"; // Warm light
-        if (Math.random() > 0.5) ctx.fillStyle = "#87CEEB"; // Day reflection?
+        if (this.rng.nextFloat() > 0.5) ctx.fillStyle = "#87CEEB"; // Day reflection?
 
         // Draw windows grid
         for (let wy = bodyTopY + 20; wy < totalHeight - 20; wy += gapY) {
             for (let wx = 10; wx < this.width - 10; wx += gapX) {
-                if (Math.random() > 0.2) { // mostly present
+                if (this.rng.nextFloat() > 0.2) { // mostly present
                     ctx.fillRect(wx, wy, winW, winH);
                 }
             }

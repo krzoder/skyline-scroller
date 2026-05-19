@@ -1,13 +1,14 @@
 import { CityEntity } from './CityEntity';
+import { Random } from '../utils/Random';
 
 export type TreeType = 'sequoia' | 'pine' | 'oak' | 'bush' | 'hedge' | 'cactus';
 
 export class Tree extends CityEntity {
     type: TreeType;
     hasFlower: boolean = false;
-    flowerPos: 'left' | 'right' | 'top' = 'top';
+    flowerPos: 'left' | 'right' = 'left';
 
-    constructor(x: number, type: TreeType, height: number, flowerChance: number = 0) {
+    constructor(x: number, type: TreeType, height: number, flowerChance: number = 0, rng?: Random) {
         // 1. Determine dimensions first
         let w = 0;
         let h = height; // Use passed height
@@ -31,10 +32,10 @@ export class Tree extends CityEntity {
         super(x, w, h);
         this.type = type;
 
-        if (this.type === 'cactus' && Math.random() < flowerChance) {
+        const r = rng ?? new Random(`tree:${x}:${type}`);
+        if (this.type === 'cactus' && r.nextFloat() < flowerChance) {
             this.hasFlower = true;
-            // Only left or right
-            this.flowerPos = Math.random() < 0.5 ? 'left' : 'right';
+            this.flowerPos = r.nextFloat() < 0.5 ? 'left' : 'right';
         }
 
         this.initCache(padding);
@@ -151,15 +152,15 @@ export class Tree extends CityEntity {
         ctx.fillRect(this.width * 0.6, this.height * 0.5, this.width * 0.25, this.height * 0.12);
         ctx.fillRect(this.width * 0.75, this.height * 0.35, this.width * 0.1, this.height * 0.25);
 
-        // Flower
+        // Flower (only left or right — 'top' branch was unreachable dead code, removed)
         if (this.hasFlower) {
-            let fx = this.width * 0.5;
-            let fy = this.height * 0.2;
+            let fx: number;
+            let fy: number;
 
             if (this.flowerPos === 'left') {
                 fx = this.width * 0.1 + (this.width * 0.12 * 0.5); // Center of left arm
                 fy = this.height * 0.25; // Top of left arm
-            } else if (this.flowerPos === 'right') {
+            } else {
                 fx = this.width * 0.75 + (this.width * 0.1 * 0.5); // Center of right arm top
                 fy = this.height * 0.35; // Top of right arm
             }

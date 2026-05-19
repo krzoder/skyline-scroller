@@ -68,6 +68,67 @@ describe('Random (Mulberry32 PRNG)', () => {
     });
   });
 
+  describe('nextInt edge cases', () => {
+    it('returns min when min === max (no infinite loop, no NaN)', () => {
+      const rng = new Random(1);
+      expect(rng.nextInt(5, 5)).toBe(5);
+    });
+
+    it('returns min when max < min (clamped, not crashed)', () => {
+      const rng = new Random(1);
+      expect(rng.nextInt(10, 3)).toBe(10);
+    });
+  });
+
+  describe('fork(label)', () => {
+    it('returns a Random instance', () => {
+      const parent = new Random(42);
+      const child = parent.fork('test');
+      expect(child).toBeInstanceOf(Random);
+    });
+
+    it('same label on same parent state yields same child stream', () => {
+      const parentA = new Random(42);
+      const parentB = new Random(42);
+      const childA = parentA.fork('foo');
+      const childB = parentB.fork('foo');
+      const seqA = Array.from({ length: 10 }, () => childA.nextFloat());
+      const seqB = Array.from({ length: 10 }, () => childB.nextFloat());
+      expect(seqA).toEqual(seqB);
+    });
+
+    it('different labels yield independent streams', () => {
+      const parent = new Random(42);
+      const childFoo = parent.fork('foo');
+      const childBar = parent.fork('bar');
+      const seqFoo = Array.from({ length: 10 }, () => childFoo.nextFloat());
+      const seqBar = Array.from({ length: 10 }, () => childBar.nextFloat());
+      expect(seqFoo).not.toEqual(seqBar);
+    });
+
+    it('does not advance the parent state', () => {
+      const parent1 = new Random(42);
+      const parent2 = new Random(42);
+      parent1.fork('whatever');
+      // parent1 should still produce the same sequence as a fresh seed-42 stream
+      const seq1 = Array.from({ length: 5 }, () => parent1.nextFloat());
+      const seq2 = Array.from({ length: 5 }, () => parent2.nextFloat());
+      expect(seq1).toEqual(seq2);
+    });
+
+    it('child stream is independent of subsequent parent draws', () => {
+      const parent = new Random(42);
+      const child = parent.fork('child');
+      const childSeq = Array.from({ length: 5 }, () => child.nextFloat());
+      // advance parent
+      for (let i = 0; i < 100; i++) parent.nextFloat();
+      // child sequence already captured — must be unaffected
+      const child2 = new Random(42).fork('child');
+      const child2Seq = Array.from({ length: 5 }, () => child2.nextFloat());
+      expect(childSeq).toEqual(child2Seq);
+    });
+  });
+
   describe('Distribution quality', () => {
     it('produces roughly uniform distribution', () => {
       const rng = new Random(99999);

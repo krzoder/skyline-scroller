@@ -16,13 +16,12 @@ export class BiomeSystem {
         'desert': ['plains', 'city'] // Hot -> Temperate
     };
 
-    constructor(seed: number | string) {
-        this.rng = new Random(seed);
+    constructor(rng: Random) {
+        this.rng = rng;
         // Start random
         const allBiomes: BiomeType[] = ['forest', 'desert', 'tundra', 'plains', 'city'];
         this.currentBiome = allBiomes[this.rng.nextInt(0, allBiomes.length)];
         this.durationRemaining = this.rng.nextInt(3000, 8000); // Pixels
-        console.log(`Initial Biome: ${this.currentBiome}`);
     }
 
     public update(dx: number): BiomeType {
@@ -37,7 +36,6 @@ export class BiomeSystem {
         const options = this.transitions[this.currentBiome];
         this.currentBiome = options[this.rng.nextInt(0, options.length)];
         this.durationRemaining = this.rng.nextInt(3000, 8000); // Random duration
-        console.log(`Biome switched to: ${this.currentBiome}`);
     }
 
     public getCurrentBiome(): BiomeType {

@@ -21,10 +21,13 @@ export class CityGenerator {
     private dna: CityDNA;
     public config: TreeConfig; // Instance config
 
-    constructor(seed: number | string, layerCount: number, config?: TreeConfig) {
-        this.rng = new Random(seed);
+    constructor(seed: number | string, layerCount: number, config?: TreeConfig, rng?: Random) {
+        // Caller can pass a forked stream; otherwise we mint a root for backward compat.
+        const root = rng ?? new Random(seed);
+        this.rng = root;
         this.lastX = new Array(layerCount).fill(0);
-        this.biomeSystem = new BiomeSystem(seed);
+        // BiomeSystem gets its own forked sub-stream so its draws don't correlate with city geometry.
+        this.biomeSystem = new BiomeSystem(root.fork('biome'));
 
         // Load config (passed or default)
         if (config) {
@@ -39,15 +42,11 @@ export class CityGenerator {
             greenery: this.rng.nextRange(0.1, 0.8),
             buildingHeight: this.rng.nextRange(0.8, 1.2)
         };
-
-        console.log("City DNA:", this.dna);
     }
 
-    public generate(layers: Layer[], cameraX: number, viewportWidth: number) {
-        // Update Biome (Background driven)
-        // We assume the background layer (index 0) drives the biome?
-        // Or just global camera movement.
-        const currentBiome = this.biomeSystem.update(1); // Simple tick, or pass actual delta if stored
+    public generate(layers: Layer[], cameraX: number, viewportWidth: number, dx: number = 1) {
+        // Update Biome — dx is camera-pixel delta this frame (real pixels of travel).
+        const currentBiome = this.biomeSystem.update(dx);
 
         layers.forEach((layer, index) => {
             const limitX = (cameraX * layer.speedModifier) + viewportWidth + 500;
@@ -123,7 +122,7 @@ export class CityGenerator {
         if (feature === 'landscape') {
             featureWidth = this.rng.nextInt(200, 500);
             const h = this.rng.nextInt(100, 300);
-            obj = new Landscape(x, featureWidth, h, biome);
+            obj = new Landscape(x, featureWidth, h, biome, this.rng);
 
         } else if (feature === 'building') {
             const minW = 60;
@@ -135,7 +134,7 @@ export class CityGenerator {
             const roof = this.pickRoof(biome);
             const color = this.pickColor(biome);
 
-            obj = new Building(x, featureWidth, h, mat, roof, color.base, color.roof);
+            obj = new Building(x, featureWidth, h, mat, roof, color.base, color.roof, this.rng);
 
         } else if (feature === 'tree') {
             // Pick tree type based on Biome and Config
@@ -145,7 +144,7 @@ export class CityGenerator {
                 const height = this.rng.nextInt(config.minHeight, config.maxHeight);
                 const flowerChance = config.flowerChance;
 
-                obj = new Tree(x, treeType, height, flowerChance);
+                obj = new Tree(x, treeType, height, flowerChance, this.rng);
                 featureWidth = obj.width + this.rng.nextInt(10, 30); // Breathing room
             } else {
                 // No valid tree for this biome? Treat as empty

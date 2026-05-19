@@ -1,19 +1,25 @@
 /**
  * A simple seeded random number generator (Mulberry32).
+ *
+ * Deterministic contract:
+ * - Same seed → same `nextFloat()` sequence.
+ * - `fork(label)` derives an independent child stream by hashing label
+ *   together with the current state. Used to give different consumers
+ *   (procgen, sky, noise, decoration) non-correlated streams from one seed.
  */
 export class Random {
     private state: number;
 
     constructor(seed: number | string) {
         if (typeof seed === 'string') {
-            this.state = this.cyrb128(seed);
+            this.state = Random.cyrb128(seed);
         } else {
             this.state = seed >>> 0;
         }
     }
 
-    // Simple hashing function for string seeds
-    private cyrb128(str: string): number {
+    // String hash. Truncated cyrb128 (XOR-collapsed to u32).
+    private static cyrb128(str: string): number {
         let h1 = 1779033703, h2 = 3144134277,
             h3 = 1013904242, h4 = 2773480762;
         for (let i = 0, k; i < str.length; i++) {
@@ -38,12 +44,22 @@ export class Random {
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     }
 
-    // Returns an integer between min (inclusive) and max (exclusive)
+    // Returns an integer in [min, max). Half-open: nextInt(5, 5) === 5.
     public nextInt(min: number, max: number): number {
+        if (max <= min) return min;
         return Math.floor(this.nextFloat() * (max - min)) + min;
     }
 
     public nextRange(min: number, max: number): number {
         return this.nextFloat() * (max - min) + min;
+    }
+
+    /**
+     * Derive an independent child stream from this one by mixing the label.
+     * Does not advance the parent. Same label always yields the same child.
+     */
+    public fork(label: string): Random {
+        const childSeed = (this.state ^ Random.cyrb128(label)) >>> 0;
+        return new Random(childSeed);
     }
 }
