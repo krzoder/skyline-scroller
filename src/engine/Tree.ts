@@ -9,10 +9,9 @@ export class Tree extends CityEntity {
     flowerPos: 'left' | 'right' = 'left';
 
     constructor(x: number, type: TreeType, height: number, flowerChance: number = 0, rng?: Random) {
-        // 1. Determine dimensions first
         let w = 0;
-        let h = height; // Use passed height
-        let padding = 0; // Default padding
+        let h = height;
+        let padding = 0;
 
         if (type === 'sequoia') {
             w = 70;
@@ -58,13 +57,11 @@ export class Tree extends CityEntity {
     }
 
     private drawSequoia(ctx: CanvasRenderingContext2D) {
-        // Trunk
         ctx.fillStyle = '#6D4C41';
         const trunkW = this.width * 0.4;
         const trunkStart = this.height * 0.2;
         ctx.fillRect((this.width - trunkW) / 2, trunkStart, trunkW, this.height - trunkStart);
 
-        // Foliage
         ctx.fillStyle = '#2E7D32';
         const layers = 8;
         for (let i = 0; i < layers; i++) {
@@ -79,17 +76,15 @@ export class Tree extends CityEntity {
     }
 
     private drawPine(ctx: CanvasRenderingContext2D) {
-        // Trunk
         ctx.fillStyle = '#4E342E';
         ctx.fillRect(this.width * 0.4, this.height * 0.3, this.width * 0.2, this.height * 0.7);
 
-        // Jagged Triangles
         ctx.fillStyle = '#1B5E20';
         const tiers = 4;
         const tierHeight = (this.height * 0.85) / tiers;
 
         for (let i = 0; i < tiers; i++) {
-            const y = i * (tierHeight * 0.8); // Overlap
+            const y = i * (tierHeight * 0.8); // tiers overlap
             const w = this.width * (0.4 + (i * 0.2));
 
             ctx.beginPath();
@@ -104,11 +99,9 @@ export class Tree extends CityEntity {
     }
 
     private drawOak(ctx: CanvasRenderingContext2D) {
-        // Trunk
         ctx.fillStyle = '#5D4037';
         ctx.fillRect(this.width * 0.4, this.height * 0.6, this.width * 0.2, this.height * 0.4);
 
-        // Crown
         ctx.fillStyle = '#43A047';
         const crownCenterY = this.height * 0.35;
         const puffs = [
@@ -141,34 +134,31 @@ export class Tree extends CityEntity {
     }
 
     private drawCactus(ctx: CanvasRenderingContext2D) {
-        ctx.fillStyle = '#2E7D32'; // Green cactus
-        // Main Stem
+        ctx.fillStyle = '#2E7D32';
+        // Main stem
         ctx.fillRect(this.width * 0.4, this.height * 0.2, this.width * 0.2, this.height * 0.8);
-        // Arms
-        // Left
+        // Left arm
         ctx.fillRect(this.width * 0.1, this.height * 0.4, this.width * 0.3, this.height * 0.12);
         ctx.fillRect(this.width * 0.1, this.height * 0.25, this.width * 0.12, this.height * 0.25);
-        // Right
+        // Right arm
         ctx.fillRect(this.width * 0.6, this.height * 0.5, this.width * 0.25, this.height * 0.12);
         ctx.fillRect(this.width * 0.75, this.height * 0.35, this.width * 0.1, this.height * 0.25);
 
-        // Flower (only left or right — 'top' branch was unreachable dead code, removed)
         if (this.hasFlower) {
             let fx: number;
             let fy: number;
 
             if (this.flowerPos === 'left') {
-                fx = this.width * 0.1 + (this.width * 0.12 * 0.5); // Center of left arm
-                fy = this.height * 0.25; // Top of left arm
+                fx = this.width * 0.1 + (this.width * 0.12 * 0.5);
+                fy = this.height * 0.25;
             } else {
-                fx = this.width * 0.75 + (this.width * 0.1 * 0.5); // Center of right arm top
-                fy = this.height * 0.35; // Top of right arm
+                fx = this.width * 0.75 + (this.width * 0.1 * 0.5);
+                fy = this.height * 0.35;
             }
 
-            // Draw Flower: Simple Pink Dot
             const radius = 4;
 
-            ctx.fillStyle = '#E91E63'; // Pink
+            ctx.fillStyle = '#E91E63';
             ctx.beginPath();
             ctx.arc(fx, fy, radius, 0, Math.PI * 2);
             ctx.fill();

@@ -277,11 +277,8 @@ function copyToClipboard(element: HTMLElement | null, textFn: () => string) {
         const text = textFn();
         if (!text) return;
         navigator.clipboard.writeText(text).then(() => {
-            // Use class-based feedback or forcing style and clearing it
-            // To avoid race conditions, we just force green then clear inline style
-            element.style.color = "#4CAF50"; // Green
+            element.style.color = "#4CAF50";
             setTimeout(() => {
-                // Revert to CSS default by clearing inline style
                 element.style.color = "";
             }, 500);
         });
@@ -327,7 +324,6 @@ const settingsWindow = document.getElementById('settings-window')!;
 const btnAdvanced = document.getElementById('btn-advanced')!;
 const advancedWindow = document.getElementById('advanced-window')!;
 const btnAdvClose = document.getElementById('btn-adv-close')!;
-// Global reset restored
 const btnAdvReset = document.getElementById('btn-adv-reset')!;
 
 const btnResetTimeFmt = document.getElementById('btn-reset-time-fmt')!;
@@ -356,29 +352,22 @@ const updateTimeFormatUI = () => {
         }
     });
 
-    // Update Reset Button State
     const isDefault = current === '24h';
     updateResetButton(btnResetTimeFmt, isDefault);
 }
 
-// Init UI State immediately
 updateTimeFormatUI();
 
 
-// Advanced Options Logic
 btnAdvanced.addEventListener('click', () => {
-    // Close settings, open Advanced
     settingsWindow.classList.remove('visible');
     const isVis = advancedWindow.classList.contains('visible');
 
     if (isVis) {
         advancedWindow.classList.remove('visible');
     } else {
-        // Sync state immediately on open
         updateTimeFormatUI();
         advancedWindow.classList.add('visible');
-
-        // Reset global confirm state
         cancelAdvResetConfirm();
     }
 });
@@ -386,25 +375,23 @@ btnAdvanced.addEventListener('click', () => {
 timeFmtButtons.forEach(btn => {
     btn.addEventListener('click', () => {
         const val = btn.dataset.val as '24h' | '12h' | 'score';
-        game.timeFormat = val; // Immediate effect
+        game.timeFormat = val;
         updateTimeFormatUI();
     });
 });
 
 btnResetTimeFmt.addEventListener('click', () => {
-    // Only act if modified (red)
     if (btnResetTimeFmt.classList.contains('modified')) {
-        game.timeFormat = '24h'; // Default
+        game.timeFormat = '24h';
         updateTimeFormatUI();
     }
 });
 
-// Advanced Speed Logic
 const advSpeedSlider = document.getElementById('adv-speed-slider') as HTMLInputElement;
 const advSpeedInput = document.getElementById('adv-speed-input') as HTMLInputElement;
 const btnResetAdvSpeed = document.getElementById('btn-reset-adv-speed')!;
 
-// To be updated when other code registers `updateSpeed`
+// Set when the standard speed slider registers `updateSpeed` further down.
 let globalSpeedUpdateCallback: ((spd: number) => void) | null = null;
 
 let currentAdvSpeedCenter: number = 1.0;
@@ -414,7 +401,9 @@ const getAdvSpeedFromSlider = (sliderVal: number, center: number): number => {
     let maxS = center + 10;
     if (center === 1.0) { minS = -1.0; maxS = 20.0; }
 
-    // Check if the 0-1 slice rule applies
+    // When the range straddles the 0..1 "useful" window, dedicate the lower
+    // 10% of the slider to negative values and the next 40% to 0..1 so the
+    // normal-speed band is easier to hit.
     if (minS < 0 && maxS > 1) {
         if (sliderVal >= 500) {
             const pct = (sliderVal - 500) / 500;
@@ -427,7 +416,6 @@ const getAdvSpeedFromSlider = (sliderVal: number, center: number): number => {
             return minS + ((0 - minS) * pct);
         }
     } else {
-        // Standard linear fallback
         const pct = sliderVal / 1000;
         return minS + ((maxS - minS) * pct);
     }
@@ -463,7 +451,8 @@ const updateAdvSpeedUI = (forceCenter?: boolean) => {
         let maxS = currentAdvSpeedCenter + 10;
         if (currentAdvSpeedCenter === 1.0) { minS = -1.0; maxS = 20.0; }
 
-        // If explicitly forced (e.g., from typing in the box or terminal), or out of bounds, recenter!
+        // Recenter when forced (typed value, terminal) or when current speed
+        // would otherwise fall outside the slider's visible band.
         if (forceCenter || spd < minS || spd > maxS) {
             currentAdvSpeedCenter = spd;
         }
@@ -473,7 +462,6 @@ const updateAdvSpeedUI = (forceCenter?: boolean) => {
     }
 
     if (document.activeElement !== advSpeedInput) {
-        // Only format out a long float if it's crazy
         advSpeedInput.value = Number.isInteger(spd) ? spd.toString() : parseFloat(spd.toFixed(1)).toString();
     }
 
@@ -487,7 +475,7 @@ const executeAdvSpeedSet = (val: number, recenter: boolean) => {
         currentAdvSpeedCenter = clamped;
     }
     game.setTimeScale(clamped);
-    updateAdvSpeedUI(recenter); // Also immediately layout logic based on recenter
+    updateAdvSpeedUI(recenter);
     if (globalSpeedUpdateCallback) globalSpeedUpdateCallback(clamped);
 };
 
@@ -515,7 +503,8 @@ advSpeedInput.addEventListener('change', (e) => {
 });
 
 advSpeedInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') advSpeedInput.blur(); // Triggers change implicitly
+    // Blurring triggers the `change` listener, which applies the value.
+    if (e.key === 'Enter') advSpeedInput.blur();
 });
 
 btnResetAdvSpeed.addEventListener('click', () => {
@@ -525,7 +514,6 @@ btnResetAdvSpeed.addEventListener('click', () => {
     }
 });
 
-// Global Reset Logic
 let isAdvResetConfirming = false;
 const cancelAdvResetConfirm = () => {
     if (isAdvResetConfirming) {
@@ -538,13 +526,11 @@ const cancelAdvResetConfirm = () => {
 btnAdvReset.addEventListener('click', (e) => {
     e.stopPropagation();
     if (isAdvResetConfirming) {
-        // Confirmed
-        // Reset ALL settings here
         game.timeFormat = '24h';
         updateTimeFormatUI();
 
         currentAdvSpeedCenter = 1.0;
-        executeAdvSpeedSet(1.0, false); // Syncs Advanced Speed too
+        executeAdvSpeedSet(1.0, false);
 
         cancelAdvResetConfirm();
     } else {
@@ -555,12 +541,10 @@ btnAdvReset.addEventListener('click', (e) => {
     }
 });
 
-// -- Core Simulation Config --
 let currentVolume = 50;
 let lastVolume = 50;
 let isMuted = false;
 
-// Global UI Volume Syncer
 const setGlobalVolume = (val: number, fromMuteToggle = false) => {
     if (!fromMuteToggle) {
         if (val > 0) {
@@ -582,12 +566,10 @@ const setGlobalVolume = (val: number, fromMuteToggle = false) => {
         }
     }
 
-    // Apply
     volumeSlider.value = currentVolume.toString();
     game.setVolume(currentVolume / 100);
     game.setMuted(isMuted);
 
-    // Update Icon
     const icon = document.getElementById('icon-sound');
     if (icon) {
         if (isMuted) {
@@ -599,7 +581,6 @@ const setGlobalVolume = (val: number, fromMuteToggle = false) => {
 };
 
 
-// Click elsewhere cancels confirm
 advancedWindow.addEventListener('click', (e) => {
     if (e.target !== btnAdvReset) cancelAdvResetConfirm();
 });
@@ -610,13 +591,11 @@ btnAdvClose.addEventListener('click', () => {
 });
 const btnFullscreen = document.getElementById('btn-fullscreen')!;
 const btnCustomGen = document.getElementById('btn-custom-gen')!;
-// btnAdvanced already declared above
 const speedSlider = document.getElementById('speed-slider') as HTMLInputElement;
 
 const customGenWindow = document.getElementById('custom-gen-window')!;
 const btnGenClose = document.getElementById('btn-gen-close')!;
 const btnGenApply = document.getElementById('btn-gen-apply')!;
-// btnGenPreview removed
 const btnGenReset = document.getElementById('btn-gen-reset')!;
 
 const terminalBar = document.getElementById('terminal-bar')!;
@@ -626,7 +605,6 @@ const gestureContainer = document.getElementById('gesture-slider-container')!;
 const gestureSpeedVal = document.getElementById('gesture-speed-val')!;
 const gestureBar = document.getElementById('gesture-slider-bar')!;
 
-// functionality wrappers
 const toggleWindow = (el: HTMLElement) => {
     const isVisible = el.classList.contains('visible');
     if (isVisible) el.classList.remove('visible');
@@ -634,15 +612,12 @@ const toggleWindow = (el: HTMLElement) => {
     return !isVisible;
 };
 
-// 1. Settings Window (Logic moved to Advanced/Settings block above)
-// Removed old alert listener
-
 btnSettings.addEventListener('click', (e) => {
     e.stopPropagation();
     toggleWindow(settingsWindow);
 });
 
-// Close settings when clicking outside
+// Close settings when clicking outside its container.
 window.addEventListener('click', (e) => {
     if (settingsWindow.classList.contains('visible')) {
         if (!settingsWindow.contains(e.target as Node) && !btnSettings.contains(e.target as Node)) {
@@ -651,10 +626,8 @@ window.addEventListener('click', (e) => {
     }
 });
 
-// 1a. Fullscreen// -- Fullscreen --
 const toggleFullscreen = () => {
     if (!document.fullscreenElement && !(document as any).webkitFullscreenElement && !(document as any).mozFullScreenElement && !(document as any).msFullscreenElement) {
-        // Try standard first, then fallbacks
         if (document.documentElement.requestFullscreen) {
             document.documentElement.requestFullscreen();
         } else if ((document.documentElement as any).webkitRequestFullscreen) {
@@ -678,18 +651,14 @@ const toggleFullscreen = () => {
 };
 btnFullscreen.addEventListener('click', toggleFullscreen);
 
-// 1b. Custom Gen & Preview
 let previewGame: Game | null = null;
 const previewCanvas = document.getElementById('gen-preview-canvas') as HTMLCanvasElement;
 
 const openCustomGen = () => {
-
-    // Default Seed: Current Game Seed
     const seedInp = document.getElementById('custom-seed-input') as HTMLInputElement;
     if (seedInp) {
         seedInp.value = game.getSeed();
     }
-    // Check if open, if so close
     if (customGenWindow.classList.contains('visible')) {
         customGenWindow.classList.remove('visible');
         return;
@@ -698,21 +667,17 @@ const openCustomGen = () => {
     settingsWindow.classList.remove('visible');
     customGenWindow.classList.add('visible');
 
-    // Init preview game if needed
     if (!previewGame) {
-        // Init with stored config if available, otherwise it picks up default from Game logic? 
-        // No, Game(isPreview=true) creates default. We need to overwrite it.
         previewGame = new Game(previewCanvas, true);
         previewGame.resize();
     }
 
     previewGame.start();
-    renderTreeSettings(); // Call render when opening
+    renderTreeSettings();
 };
 btnCustomGen.addEventListener('click', openCustomGen);
 btnGenClose.addEventListener('click', () => {
     customGenWindow.classList.remove('visible');
-    // Clear intervals when closing to save perf
     iconIntervals.forEach(i => clearInterval(i));
     // Tear down preview game so its rAF loop and resize handler don't leak.
     if (previewGame) {
@@ -722,23 +687,17 @@ btnGenClose.addEventListener('click', () => {
     cancelResetConfirm();
 });
 
-// ... (HTML injection code skipped) ...
-
-// ... (renderTreeSettings code skipped) ...
-
-// Apply Logic
 btnGenApply.addEventListener('click', () => {
     cancelResetConfirm();
     const seed = (document.getElementById('custom-seed-input') as HTMLInputElement).value;
 
-    // 1. Save Config
     if (previewGame && previewGame.generator) {
         game.treeConfig = deepClone(previewGame.generator.config);
     }
 
-    // 2. Set seed & Reset Game (which uses new treeConfig)
+    // Apply seed (or reload current seed) so the new treeConfig takes effect.
     if (seed) game.setSeed(seed);
-    else game.setSeed(game.getSeed()); // Just reload if no new seed, to apply config
+    else game.setSeed(game.getSeed());
 });
 
 import { DEFAULT_TREE_CONFIG } from './procgen/TreeConfig';
@@ -747,43 +706,32 @@ import type { BiomeType } from './procgen/BiomeSystem';
 
 const treeSettingsContainer = document.getElementById('tree-settings-dropdown-container');
 
-// Inject Tree Settings Container if missing
+// Fallback: inject the container if the HTML template didn't already include it.
 if (!treeSettingsContainer && customGenWindow) {
     const container = document.createElement('div');
     container.id = 'tree-settings-dropdown-container';
     container.style.marginTop = '20px';
-    // Insert before buttons
     const buttons = customGenWindow.querySelector('.buttons');
     if (buttons) customGenWindow.insertBefore(container, buttons);
     else customGenWindow.appendChild(container);
 }
 
-// Tree Config Logic
-// We manipulate previewGame.generator.config directly.
-// On Open: Sync UI with previewGame config (which starts as default).
-
 let isTreeSettingsOpen = false;
 
-import { Tree } from './engine/Tree'; // Ensure Tree is imported
+import { Tree } from './engine/Tree';
 
-// Track intervals to clear them on re-render
+// Track intervals to clear them on close to avoid leaking timers per icon.
 const iconIntervals: number[] = [];
 
-// --- Generator V3 Logic ---
-
-// Helper to Refresh Preview Instantly
-// Helper to Refresh Preview Instantly
 const refreshPreview = () => {
     if (previewGame && previewGame.generator) {
-        // SYNC: Ensure the Game's config matches the Generator's current (modified) config
+        // Keep the Game's config in sync with the in-progress generator config.
         previewGame.treeConfig = deepClone(previewGame.generator.config);
 
-        // Read Seed from Input
         const inp = document.getElementById('custom-seed-input') as HTMLInputElement;
         if (inp && inp.value) {
             previewGame.setSeed(inp.value);
         } else {
-            // Fallback to current if empty
             previewGame.setSeed(previewGame.getSeed());
         }
 
@@ -793,10 +741,6 @@ const refreshPreview = () => {
         }
     }
 };
-
-// --- Bind Global Preview Controls (Once) ---
-// We bind these immediately. Since they are injected statically in the main HTML string,
-// they should exist by the time this script runs (deferred).
 const btnGenRefresh = document.getElementById('btn-gen-refresh');
 const btnGenPause = document.getElementById('btn-gen-pause');
 const genSpeedSlider = document.getElementById('gen-speed-slider') as HTMLInputElement;
@@ -809,7 +753,8 @@ if (btnRandomPreviewSeed) {
         const inp = document.getElementById('custom-seed-input') as HTMLInputElement;
         if (inp) inp.value = newSeed;
 
-        // Preserve Camera Position (Simulation Time)
+        // Preserve camera position across the regenerate so the user
+        // doesn't get yanked back to the start of the world.
         let savedX = 0;
         if (previewGame) savedX = previewGame.getCameraX();
 
@@ -833,11 +778,9 @@ if (btnGenPause) {
     btnGenPause.onclick = () => {
         if (!previewGame) return;
         if (previewGame.timeScale === 0) {
-            // Resume
             previewGame.timeScale = parseFloat(genSpeedSlider.value) || 1.0;
             if (iconGenPause) iconGenPause.innerHTML = `<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>`;
         } else {
-            // Pause
             previewGame.timeScale = 0;
             if (iconGenPause) iconGenPause.innerHTML = `<polygon points="5 3 19 12 5 21 5 3"></polygon>`;
         }
@@ -849,8 +792,6 @@ if (genSpeedSlider) {
         if (!previewGame) return;
         const val = parseFloat(genSpeedSlider.value);
         previewGame.timeScale = val;
-        // If not paused, this updates speed. If paused, it updates 'resume' speed but stays paused visually?
-        // User behavior: dragging slider usually expects feedback.
         if (val > 0 && previewGame.timeScale > 0 && iconGenPause) {
             iconGenPause.innerHTML = `<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>`;
         }
@@ -858,11 +799,8 @@ if (genSpeedSlider) {
 }
 
 
-
-// Helper for Icon Scales (Zoom per type)
-// Helper for Icon Scales (Zoom per type)
+// Target height: roughly 80-90px so the tree fills the 100x100 icon box.
 const getTreeIconScale = (type: TreeType) => {
-    // Target height: Fill most of the 100px box (e.g., 80-90px)
     switch (type) {
         case 'sequoia': return 0.6;
         case 'pine': return 0.8;
@@ -874,18 +812,15 @@ const getTreeIconScale = (type: TreeType) => {
     }
 };
 
-// Helper to check modification with float precision (reused from V2, robust)
 const isTreeModified = (type: TreeType): boolean => {
     if (!previewGame || !previewGame.generator) return false;
     const current = previewGame.generator.config[type];
     const def = DEFAULT_TREE_CONFIG[type];
-    // Deep comparison but handle floating point for flowerChance
     if (type === 'cactus') {
+        // Float comparison: flowerChance is a 0..1 ratio so use an epsilon.
         if (Math.abs(current.flowerChance - def.flowerChance) > 0.001) return true;
     }
-    // Check other props
     if (current.enabled !== def.enabled) return true;
-    // Biomes sort check
     if (JSON.stringify([...current.biomes].sort()) !== JSON.stringify([...def.biomes].sort())) return true;
     if (current.minHeight !== def.minHeight) return true;
     if (current.maxHeight !== def.maxHeight) return true;
@@ -901,14 +836,14 @@ const updateTreeResetButton = (type: TreeType, btn?: HTMLButtonElement) => {
 
     if (isTreeModified(type)) {
         btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
-        btn.style.background = "#d32f2f"; // Red
+        btn.style.background = "#d32f2f";
         btn.style.borderColor = "#b71c1c";
         btn.style.color = "white";
         btn.title = "Modified - Click to Reset";
         btn.style.cursor = "pointer";
     } else {
         btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
-        btn.style.background = "#FBC02D"; // Yellow
+        btn.style.background = "#FBC02D";
         btn.style.borderColor = "#F9A825";
         btn.style.color = "#333";
         btn.title = "Default Settings";
@@ -920,7 +855,6 @@ const renderTreeSettings = () => {
     const container = document.getElementById('tree-settings-dropdown-container');
     if (!container || !previewGame || !previewGame.generator) return;
 
-    // Helper to Update Global Reset Button (Moved to top of scope)
     const updateGlobalResetButton = () => {
         const btn = document.getElementById('tree-settings-reset-all');
         if (!btn || !previewGame || !previewGame.generator) return;
@@ -945,7 +879,6 @@ const renderTreeSettings = () => {
         }
     };
 
-    // 1. Dropdown Header
     let headerRow = document.getElementById('tree-settings-header');
     if (!headerRow) {
         headerRow = document.createElement('div');
@@ -954,7 +887,6 @@ const renderTreeSettings = () => {
         headerRow.style.marginBottom = '5px';
         container.appendChild(headerRow);
 
-        // Toggle Button
         const btnToggle = document.createElement('button');
         btnToggle.id = 'tree-settings-toggle';
         btnToggle.className = 'btn-small';
@@ -964,14 +896,13 @@ const renderTreeSettings = () => {
         btnToggle.onclick = () => {
             isTreeSettingsOpen = !isTreeSettingsOpen;
             renderTreeSettings();
-            // Ensure button state is consistent when toggling
+            // Re-evaluate the global reset button after the list re-renders.
             setTimeout(updateGlobalResetButton, 0);
         };
         headerRow.appendChild(btnToggle);
 
-        // Global Reset (Right of Toggle)
         const btnResetAll = document.createElement('button');
-        btnResetAll.id = 'tree-settings-reset-all'; // Add ID
+        btnResetAll.id = 'tree-settings-reset-all';
         btnResetAll.className = 'btn-smart-reset default';
         btnResetAll.style.width = '24px';
         btnResetAll.style.height = '24px';
@@ -988,14 +919,12 @@ const renderTreeSettings = () => {
         headerRow.appendChild(btnResetAll);
     }
 
-    // Update Toggle Text
     const btnToggle = document.getElementById('tree-settings-toggle');
     if (btnToggle) {
         const arrow = isTreeSettingsOpen ? '▼' : '▶';
         btnToggle.innerHTML = `<span>Tree Settings</span> <span>${arrow}</span>`;
     }
 
-    // 2. Content List
     let list = document.getElementById('tree-settings-list');
     if (!isTreeSettingsOpen) {
         if (list) list.style.display = 'none';
@@ -1007,7 +936,7 @@ const renderTreeSettings = () => {
         list.id = 'tree-settings-list';
         list.style.marginTop = '5px';
         list.style.maxHeight = '500px';
-        list.style.overflowY = 'auto'; // Internal scroll
+        list.style.overflowY = 'auto';
         list.style.borderLeft = '2px solid #555';
         list.style.paddingLeft = '5px';
         container.appendChild(list);
@@ -1016,11 +945,10 @@ const renderTreeSettings = () => {
 
     const config = previewGame.generator.config;
     (Object.keys(config) as TreeType[]).forEach(type => {
-        // Helper to get fresh config object (since interactions replace the generator)
+        // Fetch the live config entry — handlers may replace the generator.
         const getFreshItem = () => previewGame!.generator!.config[type];
-        const item = getFreshItem(); // Initial reference for rendering logic only
+        const item = getFreshItem();
 
-        // 3. Wrapper
         let wrapper = document.getElementById(`tree-wrapper-${type}`);
         if (!wrapper) {
             wrapper = document.createElement('div');
@@ -1214,27 +1142,7 @@ const renderTreeSettings = () => {
             if (document.activeElement !== sliderMinEl) sliderMinEl.value = Math.max(rangeMin, Math.min(rangeMax, v1)).toString();
             if (document.activeElement !== sliderMaxEl) sliderMaxEl.value = Math.max(rangeMin, Math.min(rangeMax, v2)).toString();
 
-            // Track
-
-
-            // Fix: visual offset for thumb width (approx 16px)
-            // If p1 is 0%, standard input has thumb center at 8px (approx).
-            // We want green bar to start at 8px?
-            // Actually, if we just use standard % left, it starts at 0px.
-            // If we want exact center alignment:
-            // CSS: left: calc(p1% + offset)
-            // Simpler: Just rely on % but clamp nicely.
-            // If the user says "green fill behind dot", maybe they mean the bar extends PAST the dot?
-            // That happens if p2 is too high.
-            // Let's stick to strict %. If it persists, we need CSS changes.
-            // But wait, if v1=min, p1=0. Green bar starts at 0. Thumb center is at ~8px.
-            // So green bar starts 8px to the LEFT of the thumb center. That might be the "behind" issue on the left side.
-            // Same for right side.
-            // To fix: p1 should be `calc(p1% + ...)`?
-            // Actually, if we use % for both, they align.
-            // Is the thumb transparent?
-
-            // Track Visuals (Accounting for 16px thumb width)
+            // Track visuals (accounting for 16px thumb width)
             const p1Val = Math.max(0, Math.min(100, ((v1 - rangeMin) / rangeSpan) * 100));
             const p2Val = Math.max(0, Math.min(100, ((v2 - rangeMin) / rangeSpan) * 100));
 
@@ -1857,14 +1765,12 @@ window.addEventListener('dblclick', (e) => {
     }
 });
 
-// Scroll Volume (Global on window logic?)
-// User said: "always manipulate volume when the user scrolls, so wherever i am"
+// Scroll-to-adjust-volume works anywhere on the page, except over UI windows
+// and terminal output (which have their own scroll behaviour).
 window.addEventListener('wheel', (e) => {
-    // Maybe exclude if hovering a scrollable div?
-    // Check if target is inside Settings or Custom Gen?
     const target = e.target as HTMLElement;
-    if (target.closest('.ui-window')) return; // Don't hijack window scrolling if any (tho overflow hidden)
-    if (target.closest('#terminal-output-container')) return; // Stop terminal scroll from affecting volume
+    if (target.closest('.ui-window')) return;
+    if (target.closest('#terminal-output-container')) return;
 
     let baseVol = isMuted ? (lastVolume || 50) : currentVolume;
     let newVol = baseVol;
@@ -1888,12 +1794,9 @@ window.addEventListener('wheel', (e) => {
         c.appendChild(b);
         document.body.appendChild(c);
 
-        // Re-get for safety in this closure?
-        // Actually we can just use c and b direct
         c.classList.add('visible');
         b.style.height = currentVolume + '%';
 
-        // Auto fade out
         (window as any).volFadeTimer = setTimeout(() => {
             c.classList.remove('visible');
         }, 1500);
@@ -1907,5 +1810,3 @@ window.addEventListener('wheel', (e) => {
         }, 1500);
     }
 });
-
-// Żadna komórka mózgowa nie ucierpiała w produkcji tego czegoś. Całość kodu jest dziełem pióra bazyliszka. Zielone to nie commity, to reprezentacyjna ilość gibrzdyli zutylizowanych w procesie twórczym.

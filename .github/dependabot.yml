@@ -1,0 +1,51 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '08:00'
+      timezone: Europe/Warsaw
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - npm
+    commit-message:
+      prefix: 'deps'
+      prefix-development: 'deps-dev'
+      include: scope
+    groups:
+      vite-ecosystem:
+        patterns: ['vite', 'vitest', '@vitest/*', 'rollup', 'esbuild']
+        update-types: [minor, patch]
+      typescript:
+        patterns: ['typescript', '@types/*']
+        update-types: [minor, patch]
+      production-major:
+        applies-to: version-updates
+        patterns: ['*']
+        update-types: [major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '08:30'
+      timezone: Europe/Warsaw
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: 'ci'
+      include: scope
+    groups:
+      actions-minor-patch:
+        patterns: ['*']
+        update-types: [minor, patch]
+      actions-major:
+        patterns: ['*']
+        update-types: [major]

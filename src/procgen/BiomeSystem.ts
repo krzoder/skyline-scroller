@@ -18,10 +18,9 @@ export class BiomeSystem {
 
     constructor(rng: Random) {
         this.rng = rng;
-        // Start random
         const allBiomes: BiomeType[] = ['forest', 'desert', 'tundra', 'plains', 'city'];
         this.currentBiome = allBiomes[this.rng.nextInt(0, allBiomes.length)];
-        this.durationRemaining = this.rng.nextInt(3000, 8000); // Pixels
+        this.durationRemaining = this.rng.nextInt(3000, 8000); // pixels
     }
 
     public update(dx: number): BiomeType {
@@ -35,7 +34,7 @@ export class BiomeSystem {
     private switchBiome() {
         const options = this.transitions[this.currentBiome];
         this.currentBiome = options[this.rng.nextInt(0, options.length)];
-        this.durationRemaining = this.rng.nextInt(3000, 8000); // Random duration
+        this.durationRemaining = this.rng.nextInt(3000, 8000);
     }
 
     public getCurrentBiome(): BiomeType {

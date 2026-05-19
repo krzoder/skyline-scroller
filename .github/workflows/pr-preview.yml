@@ -2,10 +2,10 @@ name: PR Preview
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types: [opened, synchronize, reopened, closed, labeled]
 
 concurrency:
-  group: pr-preview-${{ github.ref }}
+  group: pr-preview-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
@@ -13,28 +13,59 @@ permissions:
   pull-requests: write
 
 jobs:
-  preview:
+  guard:
+    name: Authorize preview
     runs-on: ubuntu-latest
+    outputs:
+      allowed: ${{ steps.check.outputs.allowed }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - id: check
+        env:
+          IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'safe-preview') }}
+        run: |
+          if [ "$IS_FORK" = "false" ] || [ "$HAS_LABEL" = "true" ]; then
+            echo "allowed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "allowed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Fork PR without 'safe-preview' label — skipping preview deploy."
+          fi
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+  preview:
+    name: Build and deploy preview
+    needs: guard
+    if: needs.guard.outputs.allowed == 'true' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    env:
+      # DEC-06 Worker serves preview under /pr/<n>/, not /pr-preview/pr-<n>/.
+      PUBLIC_BASE_PATH: /pr/${{ github.event.pull_request.number }}/
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: ./.github/actions/setup
       - name: Run tests
         run: npm test
-
-      - name: Build
-        run: npx vite build --base=/skyline-scroller/pr-preview/pr-${{ github.event.pull_request.number }}/
-
+      - name: Build preview
+        run: npm run build
       - name: Deploy PR Preview
-        uses: rossjrw/pr-preview-action@v1
+        uses: rossjrw/pr-preview-action@f31d5aa7b364955ea86228b9dcd346dc3f29c408 # v1.4.7
         with:
           source-dir: ./dist
+          preview-branch: gh-pages
+          umbrella-dir: pr
+          action: deploy
+
+  cleanup:
+    name: Tear down preview
+    needs: guard
+    if: needs.guard.outputs.allowed == 'true' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: rossjrw/pr-preview-action@f31d5aa7b364955ea86228b9dcd346dc3f29c408 # v1.4.7
+        with:
+          source-dir: ./dist
+          preview-branch: gh-pages
+          umbrella-dir: pr
+          action: remove

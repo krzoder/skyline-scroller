@@ -35,7 +35,7 @@ export class Landscape extends CityEntity {
             pts.push({ x: this.width * 0.8, y: peak * 0.9 });
             pts.push({ x: this.width, y: 0 });
         } else {
-            // City: Silhouette of distant buildings
+            // City: silhouette of distant buildings
             const steps = 5;
             const stepW = this.width / steps;
             for (let i = 0; i < steps; i++) {
@@ -49,25 +49,8 @@ export class Landscape extends CityEntity {
     }
 
     protected drawToCache(ctx: CanvasRenderingContext2D): void {
-        // Draw the shape
-        // Note: CityEntity translates by padding. 
-        // Our shape points are relative to (0,0) baseline? 
-        // Logic check: in generateShape, y goes negative (up).
-        // Standard draw: ScreenY + point.y. ScreenY is this.y (bottom).
-        // In Cache: we want (0, Height + Padding) to be the "baseline"?
-
-        // Let's rely on standard CityEntity logic:
-        // We draw at (x, y - height).
-        // Shape goes from 0 to -height.
-        // If we draw locally at (0, Height), then (0, 0) in shape is bottom left.
-        // Actually CityEntity draws image at `y - height`.
-        // So content at (0, 0) in cache appears at (x, y - height).
-        // If we want the base to be at y, we need the base to be at Height in the cache?
-        // Wait, CityEntity assumes the canvas contains the object.
-        // If `this.height` is the peak, then cache height is roughly `this.height`.
-        // We should draw the shape such that the bottom is at `this.height`.
-        // Decoration ( trees) will be above that.
-
+        // Shape points use y=0 as base, negative y going up. Cache draws content
+        // so its baseline lands at this.height; decorations live above that.
         const baselineY = this.height;
 
         ctx.fillStyle = this.getColor();

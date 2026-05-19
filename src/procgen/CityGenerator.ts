@@ -19,7 +19,7 @@ export class CityGenerator {
     private lastX: number[];
     private biomeSystem: BiomeSystem;
     private dna: CityDNA;
-    public config: TreeConfig; // Instance config
+    public config: TreeConfig;
 
     constructor(seed: number | string, layerCount: number, config?: TreeConfig, rng?: Random) {
         // Caller can pass a forked stream; otherwise we mint a root for backward compat.
@@ -29,14 +29,12 @@ export class CityGenerator {
         // BiomeSystem gets its own forked sub-stream so its draws don't correlate with city geometry.
         this.biomeSystem = new BiomeSystem(root.fork('biome'));
 
-        // Load config (passed or default)
         if (config) {
             this.config = deepClone(config);
         } else {
             this.config = deepClone(DEFAULT_TREE_CONFIG);
         }
 
-        // Generate DNA
         this.dna = {
             density: this.rng.nextRange(0.4, 0.9),
             greenery: this.rng.nextRange(0.1, 0.8),
@@ -45,7 +43,7 @@ export class CityGenerator {
     }
 
     public generate(layers: Layer[], cameraX: number, viewportWidth: number, dx: number = 1) {
-        // Update Biome — dx is camera-pixel delta this frame (real pixels of travel).
+        // dx is camera-pixel delta this frame (real pixels of travel).
         const currentBiome = this.biomeSystem.update(dx);
 
         layers.forEach((layer, index) => {
@@ -66,45 +64,27 @@ export class CityGenerator {
     }
 
     private addChunk(layer: Layer, layerIndex: number, biome: BiomeType) {
-        // A "Chunk" is a segment of ground + feature (Building OR Tree OR Empty)
         const x = this.lastX[layerIndex];
         let chunkWidth = 0;
 
-        // 1. Determine Ground Type
-        // Foreground (last layer) gets diverse ground. Backgrounds simplify.
         let groundType: GroundType = 'grass';
-        if (layerIndex === 3) { // Front
-            // Logic to transition?
-            // If previous was Water and now Not Water -> Shore?
-            // If previous was Not Water and now Water -> Shore?
-            // We need state per layer.
-
+        if (layerIndex === 3) {
             const r = this.rng.nextFloat();
-            // Simple random clumps
             if (r < 0.6) groundType = 'pavement';
             else if (r < 0.8) groundType = 'grass';
             else groundType = 'water';
-
-            // NOTE: Ideally we check `layer.lastGroundType` or similar if we wanted logical continuity.
-            // For now, let's keep it random but maybe add 'sand' if we can.
-            // Actually, let's stick to simple types for PoC, maybe 'dirt' acts as shore?
         } else {
-            // Background biomes
-            if (biome === 'desert') groundType = 'dirt'; // Sand-ish
+            if (biome === 'desert') groundType = 'dirt';
             else if (biome === 'forest') groundType = 'grass';
             else if (biome === 'city') groundType = 'pavement';
-            else groundType = 'dirt'; // Default
+            else groundType = 'dirt';
         }
 
-        // 2. Determine Feature
         let feature: 'building' | 'tree' | 'landscape' | 'none' = 'none';
 
         if (layerIndex <= 1) {
-            // Background Layers: Mostly Landscapes
-            // Using noise or Random for continuity could be better but random chunks work for PoC
             feature = 'landscape';
         } else {
-            // Foreground
             if (groundType !== 'water') {
                 const roll = this.rng.nextFloat();
                 if (roll < this.dna.density) {
@@ -115,7 +95,6 @@ export class CityGenerator {
             }
         }
 
-        // 3. Generate Objects
         let featureWidth = 0;
         let obj: any = null;
 
@@ -137,7 +116,6 @@ export class CityGenerator {
             obj = new Building(x, featureWidth, h, mat, roof, color.base, color.roof, this.rng);
 
         } else if (feature === 'tree') {
-            // Pick tree type based on Biome and Config
             const treeType = this.pickTreeType(biome);
             if (treeType) {
                 const config = this.config[treeType];
@@ -145,39 +123,33 @@ export class CityGenerator {
                 const flowerChance = config.flowerChance;
 
                 obj = new Tree(x, treeType, height, flowerChance, this.rng);
-                featureWidth = obj.width + this.rng.nextInt(10, 30); // Breathing room
+                featureWidth = obj.width + this.rng.nextInt(10, 30);
             } else {
-                // No valid tree for this biome? Treat as empty
                 obj = null;
                 featureWidth = this.rng.nextInt(20, 100);
             }
         } else {
-            // Empty / Gap
             featureWidth = this.rng.nextInt(20, 100);
         }
 
-        // Enforce water width if water
         if (groundType === 'water') {
-            featureWidth = Math.max(featureWidth, 100); // Minimum river width
-            obj = null; // No object on water
+            featureWidth = Math.max(featureWidth, 100);
+            obj = null;
         }
 
         chunkWidth = featureWidth;
 
-        // Add Ground
         const ground = new Ground(x, chunkWidth, groundType);
         layer.add(ground);
 
-        // Add Feature (if any)
         if (obj) {
             layer.add(obj);
         }
 
-        this.lastX[layerIndex] += chunkWidth - 1; // Overlap by 1px
+        this.lastX[layerIndex] += chunkWidth - 1; // Overlap by 1px to hide seams
     }
 
     private pickTreeType(biome: BiomeType): TreeType | null {
-        // Filter enabled trees for this biome
         const availableTypes: TreeType[] = [];
 
         for (const type of Object.keys(this.config) as TreeType[]) {
@@ -189,7 +161,6 @@ export class CityGenerator {
 
         if (availableTypes.length === 0) return null;
 
-        // Weighting? For now uniform random from available
         return availableTypes[this.rng.nextInt(0, availableTypes.length)];
     }
 
@@ -210,22 +181,20 @@ export class CityGenerator {
     }
 
     private pickColor(biome: BiomeType): { base: string, roof: string } {
-        // HSL gen
         let h = this.rng.nextInt(0, 360);
         let s = 50;
         let l = 50;
 
-        // Biome influence
         if (biome === 'desert') {
-            h = this.rng.nextInt(30, 60); // Orange/Yellow
+            h = this.rng.nextInt(30, 60);
             s = 40;
             l = 70;
         } else if (biome === 'tundra') {
-            h = this.rng.nextInt(180, 240); // Cyan/Blue
+            h = this.rng.nextInt(180, 240);
             s = 30;
             l = 80;
         } else if (biome === 'forest') {
-            h = this.rng.nextInt(90, 150); // Green-ish
+            h = this.rng.nextInt(90, 150);
         }
 
         return { base: `hsl(${h}, ${s}%, ${l}%)`, roof: `hsl(${h}, ${s}%, ${l - 20}%)` };

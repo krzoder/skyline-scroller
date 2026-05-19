@@ -1,0 +1,108 @@
+name: Auto-merge
+
+# Enables GitHub auto-merge (squash) on a PR when:
+#   1. CI has completed successfully on the PR head SHA.
+#   2. The PR carries the `auto-merge` label.
+#   3. The user who applied the label / opened the PR is the repo owner.
+#
+# Once enabled, GitHub merges the PR automatically as soon as all required
+# status checks pass and branch-protection conditions are satisfied. If any
+# precondition is not met, the workflow is a no-op.
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+  pull_request_target:
+    types: [labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: auto-merge-${{ github.event.pull_request.number || github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  enable-auto-merge:
+    name: Enable auto-merge
+    runs-on: ubuntu-latest
+    if: >-
+      (github.event_name == 'pull_request_target' &&
+       github.event.label.name == 'auto-merge') ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'pull_request')
+    steps:
+      - name: Resolve PR and owner check
+        id: resolve
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const repoOwner = context.repo.owner;
+            let prNumber = null;
+            let actor = context.actor;
+
+            if (context.eventName === 'pull_request_target') {
+              prNumber = context.payload.pull_request.number;
+              actor = context.payload.sender?.login || context.actor;
+            } else if (context.eventName === 'workflow_run') {
+              const prs = context.payload.workflow_run.pull_requests || [];
+              if (prs.length === 0) {
+                core.info('workflow_run has no associated PRs — skipping.');
+                core.setOutput('proceed', 'false');
+                return;
+              }
+              prNumber = prs[0].number;
+              actor = context.payload.workflow_run.actor?.login || context.actor;
+            }
+
+            if (!prNumber) {
+              core.info('No PR number resolved — skipping.');
+              core.setOutput('proceed', 'false');
+              return;
+            }
+
+            // Owner check: only the repo owner can authorise auto-merge.
+            if (actor !== repoOwner) {
+              core.warning(`Actor ${actor} is not the repo owner (${repoOwner}) — refusing to enable auto-merge.`);
+              core.setOutput('proceed', 'false');
+              return;
+            }
+
+            // Verify the PR carries the auto-merge label.
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+
+            const hasLabel = pr.labels.some(l => l.name === 'auto-merge');
+            if (!hasLabel) {
+              core.info(`PR #${prNumber} does not carry the 'auto-merge' label — skipping.`);
+              core.setOutput('proceed', 'false');
+              return;
+            }
+
+            if (pr.state !== 'open') {
+              core.info(`PR #${prNumber} is not open (${pr.state}) — skipping.`);
+              core.setOutput('proceed', 'false');
+              return;
+            }
+
+            core.setOutput('proceed', 'true');
+            core.setOutput('pr-number', String(prNumber));
+
+      - name: Checkout (for gh CLI repo context)
+        if: steps.resolve.outputs.proceed == 'true'
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Enable auto-merge via gh
+        if: steps.resolve.outputs.proceed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.resolve.outputs.pr-number }}
+        run: |
+          gh pr merge --auto --squash "$PR_NUMBER"

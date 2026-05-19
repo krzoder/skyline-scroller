@@ -34,8 +34,7 @@ export class Building implements Renderable {
     }
 
     private generateTexture(): HTMLCanvasElement {
-        // Total height = body + roof max height
-        const roofHeight = 30; // Max roof height
+        const roofHeight = 30; // Max roof height; reserved at top of canvas
         const totalHeight = this.height + roofHeight;
 
         const canvas = document.createElement('canvas');
@@ -43,10 +42,8 @@ export class Building implements Renderable {
         canvas.height = totalHeight;
         const ctx = canvas.getContext('2d')!;
 
-        // Draw Body (from bottom up)
         const bodyTopY = roofHeight;
 
-        // Draw Material
         if (this.material === 'brick') {
             const tex = TextureGenerator.createBrickPattern(this.width, this.height, this.baseColor);
             ctx.drawImage(tex, 0, bodyTopY);
@@ -59,7 +56,6 @@ export class Building implements Renderable {
             ctx.fillRect(0, bodyTopY, this.width, this.height);
 
             if (this.material === 'stone') {
-                // Noise
                 ctx.fillStyle = "rgba(0,0,0,0.1)";
                 for (let i = 0; i < 50; i++) {
                     ctx.fillRect(this.rng.nextFloat() * this.width, bodyTopY + this.rng.nextFloat() * this.height, 2, 2);
@@ -67,25 +63,22 @@ export class Building implements Renderable {
             }
         }
 
-        // Windows
         const winW = 6;
         const winH = 10;
         const gapX = 10;
         const gapY = 20;
 
         ctx.fillStyle = "#FDF5E6"; // Warm light
-        if (this.rng.nextFloat() > 0.5) ctx.fillStyle = "#87CEEB"; // Day reflection?
+        if (this.rng.nextFloat() > 0.5) ctx.fillStyle = "#87CEEB"; // Day reflection
 
-        // Draw windows grid
         for (let wy = bodyTopY + 20; wy < totalHeight - 20; wy += gapY) {
             for (let wx = 10; wx < this.width - 10; wx += gapX) {
-                if (this.rng.nextFloat() > 0.2) { // mostly present
+                if (this.rng.nextFloat() > 0.2) {
                     ctx.fillRect(wx, wy, winW, winH);
                 }
             }
         }
 
-        // Draw Roof
         ctx.fillStyle = this.roofColor;
         if (this.roofType === 'flat') {
             ctx.fillRect(0, bodyTopY - 5, this.width, 5); // Simple cornice
@@ -112,15 +105,6 @@ export class Building implements Renderable {
 
     draw(ctx: CanvasRenderingContext2D, offsetX: number): void {
         const screenX = this.x - offsetX;
-        // The texture includes roof + body.
-        // this.height is body height.
-        // The drawImage should position the body bottom at this.y
-        // The texture height is body + roofHeight.
-        // So we draw at y - texture.height + offset?
-        // Actually, let's look at generation: body starts at roofHeight. Body height is this.height.
-        // So bottom of texture is roofHeight + this.height.
-        // We want bottom of texture to be at this.y
-
         ctx.drawImage(this.cacheCanvas, screenX, this.y - this.cacheCanvas.height);
     }
 

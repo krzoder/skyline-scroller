@@ -20,7 +20,6 @@ export class Ground implements Renderable {
     draw(ctx: CanvasRenderingContext2D, offsetX: number): void {
         const screenX = this.x - offsetX;
 
-        // Draw Ground
         switch (this.type) {
             case 'grass':
                 ctx.fillStyle = '#4CAF50';
@@ -40,7 +39,6 @@ export class Ground implements Renderable {
                 ctx.fillRect(screenX, this.y + 5, this.width, this.height - 5); // Recessed
                 ctx.fillStyle = '#BBDEFB'; // simple reflection/foam
                 ctx.fillRect(screenX, this.y + 5, this.width, 2);
-                // Reflections handled elsewhere or simple effect
                 break;
             case 'dirt':
                 ctx.fillStyle = '#795548';

@@ -1,13 +1,12 @@
-import { deepClone } from '../utils/deepClone';
 import type { TreeType } from '../engine/Tree';
 import type { BiomeType } from './BiomeSystem';
 
 export interface TreeConfigItem {
     enabled: boolean;
-    biomes: BiomeType[]; // Which biomes this tree CAN appear in
+    biomes: BiomeType[];
     minHeight: number;
     maxHeight: number;
-    flowerChance: number; // 0 to 1 (Only used for Cactus currently, but good to have generic)
+    flowerChance: number; // 0 to 1; currently only Cactus uses non-zero
 }
 
 export type TreeConfig = Record<TreeType, TreeConfigItem>;
@@ -36,7 +35,7 @@ export const DEFAULT_TREE_CONFIG: TreeConfig = {
     },
     'bush': {
         enabled: true,
-        biomes: ['forest', 'plains'], // Bushes are generic
+        biomes: ['forest', 'plains'],
         minHeight: 30,
         maxHeight: 50,
         flowerChance: 0
@@ -54,16 +53,5 @@ export const DEFAULT_TREE_CONFIG: TreeConfig = {
         minHeight: 30,
         maxHeight: 40,
         flowerChance: 0
-    }
-};
-
-// Start with a copy of defaults
-export let currentTreeConfig: TreeConfig = deepClone(DEFAULT_TREE_CONFIG);
-
-export const resetTreeConfigToDefault = (type?: TreeType) => {
-    if (type) {
-        currentTreeConfig[type] = deepClone(DEFAULT_TREE_CONFIG[type]);
-    } else {
-        currentTreeConfig = deepClone(DEFAULT_TREE_CONFIG);
     }
 };

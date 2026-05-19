@@ -53,7 +53,6 @@ function tokenize(input: string): Token[] {
         if (c >= '0' && c <= '9' || c === '.') {
             let j = i;
             while (j < s.length && (s[j] >= '0' && s[j] <= '9' || s[j] === '.')) j++;
-            // optional exponent
             if (j < s.length && (s[j] === 'e' || s[j] === 'E')) {
                 j++;
                 if (j < s.length && (s[j] === '+' || s[j] === '-')) j++;

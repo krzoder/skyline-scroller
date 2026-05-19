@@ -7,11 +7,9 @@ export class TextureGenerator {
         canvas.height = height;
         const ctx = canvas.getContext('2d')!;
 
-        // Background color
         ctx.fillStyle = color;
         ctx.fillRect(0, 0, width, height);
 
-        // Brick details
         ctx.fillStyle = "rgba(0,0,0,0.1)";
         const brickHeight = 10;
         const brickWidth = 20;
@@ -36,7 +34,6 @@ export class TextureGenerator {
 
         const r = rng ?? new Random(`wood:${width}:${height}:${color}`);
 
-        // Wood grain lines
         ctx.strokeStyle = "rgba(0,0,0,0.15)";
         ctx.lineWidth = 2;
         for (let y = 0; y < height; y += 4) {

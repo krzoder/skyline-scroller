@@ -1,7 +1,7 @@
 {
   "name": "skyline-scroller",
   "private": true,
-  "version": "1.0.0-beta",
+  "version": "1.1.2",
   "type": "module",
   "scripts": {
     "dev": "vite",

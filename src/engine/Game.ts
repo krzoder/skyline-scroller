@@ -43,10 +43,7 @@ export class Game {
             throw new Error("Could not get 2D context");
         }
 
-        // Init config
         this.treeConfig = deepClone(DEFAULT_TREE_CONFIG);
-
-        // Initialize Logic (reset seeds rootRng and constructs subsystems).
 
         this.reset();
 
@@ -129,15 +126,6 @@ export class Game {
         if (!this.isPreview) this.sky = new SkySystem(this.canvas, this.rootRng.fork('sky'));
     }
 
-    // The original initNoise method was duplicated in the instruction,
-    // but it seems the intent was to add properties and modify the constructor/reset.
-    // The actual initNoise method should remain as it was, or be removed if it's truly a duplicate.
-    // Based on the context, the first initNoise is the correct one.
-    // The second one in the original document was a placeholder comment.
-    // private initNoise() {
-    //     // Simple noise init if needed
-    // }
-
     public resize() {
         this.canvas.width = this.canvas.clientWidth;
         this.canvas.height = this.canvas.clientHeight;
@@ -187,10 +175,9 @@ export class Game {
             this.prevCameraX = this.cameraX;
         }
 
-        // Prune old
         this.layers.forEach(l => l.prune(this.cameraX));
 
-        // Update Debug UI (Only for main game)
+        // Debug UI only runs in the main game, not the preview canvas.
         if (!this.isPreview) {
             const uiSeedVal = document.getElementById('ui-seed-val');
             const uiTimeVal = document.getElementById('ui-time-val');
@@ -226,8 +213,6 @@ export class Game {
         this.ctx.save();
         this.ctx.scale(this.scaleFactor, this.scaleFactor);
 
-        // Clear screen
-        // Draw Sky first
         if (this.sky) {
             this.sky.draw(this.ctx, logicalW, logicalH);
         } else {
@@ -246,30 +231,28 @@ export class Game {
 
         this.ctx.restore();
 
-        // Draw Solid Earth below groundY to hide sky
-        this.ctx.fillStyle = "#2e2e2e"; // Dark earth color
+        // Solid earth below groundY hides sky pixels that would otherwise show through.
+        this.ctx.fillStyle = "#2e2e2e";
         this.ctx.fillRect(0, groundY, logicalW, 80);
 
-        // 3. Ambient Light Overlay (Global Filter - Multiply)
+        // Ambient light overlay via multiply blending.
         if (this.sky) {
             const ambient = this.sky.getAmbientColor();
 
-            // Multiply blending for smooth lighting
             this.ctx.globalCompositeOperation = 'multiply';
             this.ctx.fillStyle = ambient;
             this.ctx.fillRect(0, 0, logicalW, logicalH);
 
-            // Reset composite operation
             this.ctx.globalCompositeOperation = 'source-over';
         }
 
-        // 4. Noise Dithering (Fixes banding)
+        // Noise dithering fixes gradient banding.
         if (this.noisePattern) {
             this.ctx.fillStyle = this.noisePattern;
             this.ctx.fillRect(0, 0, logicalW, logicalH);
         }
 
-        this.ctx.restore(); // Restore scale
+        this.ctx.restore();
     }
 
     public setTimeScale(scale: number) {
@@ -282,8 +265,6 @@ export class Game {
 
     public setVolume(vol: number) {
         this.volume = vol;
-        // TODO: Apply to audio context
-        console.log("Volume set to:", vol);
     }
 
     public getMuted(): boolean {
@@ -292,7 +273,5 @@ export class Game {
 
     public setMuted(muted: boolean) {
         this.isMuted = muted;
-        // TODO: Apply to audio context
-        console.log("Muted:", muted);
     }
 }

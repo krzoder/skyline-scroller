@@ -1,0 +1,57 @@
+name: Dependency Audit
+
+on:
+  schedule:
+    - cron: '23 4 * * *'  # Daily 04:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: ./.github/actions/setup
+
+      - name: Audit production deps (high+)
+        id: audit-prod
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Audit dev deps (high+)
+        id: audit-dev
+        if: success() || failure()
+        run: npm audit --include=dev --audit-level=high
+
+      - name: Compose issue body on failure
+        if: failure()
+        run: |
+          {
+            echo "## npm audit failure — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo ""
+            echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo ""
+            echo "### Production audit"
+            echo '```'
+            npm audit --omit=dev --json || true
+            echo '```'
+            echo ""
+            echo "### Dev audit"
+            echo '```'
+            npm audit --include=dev --json || true
+            echo '```'
+          } > audit-report.md
+
+      - name: Open issue on failure
+        if: failure()
+        uses: peter-evans/create-issue-from-file@e8ef132d6df98ed982188e460ebb3b5d4ef3a9cd # v5.0.0
+        with:
+          title: "npm audit: high-severity advisory detected ($(date -u +%Y-%m-%d))"
+          content-filepath: audit-report.md
+          labels: |
+            security
+            dependencies
+            automated
