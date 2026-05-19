@@ -418,7 +418,6 @@ export class Terminal {
                     ctx.game.timeFormat = '24h';
                     ctx.output(`Time format reset to default (HH:MM).`);
                 } else if (target === 'seed') {
-                    // Re-randomize seed upon reset
                     const rnd = Math.floor(Math.random() * 100000).toString();
                     ctx.game.setSeed(rnd);
                     ctx.output(`Seed restarted randomly.`);
@@ -522,11 +521,10 @@ export class Terminal {
 
                 ctx.output(outStr);
 
-                // Apply config changes immediately
                 if (ctx.game.generator) {
                     ctx.game.generator.config = deepClone(ctx.game.treeConfig);
                 }
-                ctx.game.setSeed(ctx.game.getSeed()); // Force live internal canvas rebuild instantly
+                ctx.game.setSeed(ctx.game.getSeed()); // Forces a re-seed so the new config rebuilds caches.
             },
             autocomplete: (args) => {
                 if (args.length === 0) return [
@@ -537,7 +535,6 @@ export class Terminal {
                     { value: 'cactus', description: 'Desert cactus plant' },
                     { value: 'hedge', description: 'Rectangular foliage block' }
                 ];
-                // Return key-value pair autocomplete hints universally for all positions after tree type
                 return [
                     { value: 'true', description: 'Enable globally' },
                     { value: 'false', description: 'Disable globally' },

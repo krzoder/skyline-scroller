@@ -1540,24 +1540,19 @@ const toggleTerminal = () => {
 };
 btnTerminal.addEventListener('click', toggleTerminal);
 
-// Init Volume UI
 setGlobalVolume(currentVolume, false);
 
-// Shortcuts
 window.addEventListener('keydown', (e) => {
-    // If we are actively focused inside an input box, we ONLY want to intercept Escape or Enter
+    // While focused inside any input, only Escape is hijacked (to blur / close
+    // the terminal). Enter is left to the native input behaviour.
     if (document.activeElement?.tagName === 'INPUT') {
         if (e.key === 'Escape') {
-            // Priority Close System (intercepted while typing inside an input)
             if (terminalBar.style.display === 'flex') {
-                toggleTerminal(); // This safely blurs and closes in one step
+                toggleTerminal();
             } else {
                 (document.activeElement as HTMLElement).blur();
             }
             e.preventDefault();
-        } else if (e.key === 'Enter') {
-            // Usually inputs handle their own Enter keys natively (seed submission, terminal submission)
-            // so we don't globally hijack it here.
         }
         return;
     }
@@ -1565,7 +1560,6 @@ window.addEventListener('keydown', (e) => {
     if (e.key === 'f') {
         toggleFullscreen();
     } else if (e.key === 'g') {
-        // Toggle Gen Window
         if (customGenWindow.classList.contains('visible')) {
             cancelResetConfirm();
             customGenWindow.classList.remove('visible');
@@ -1578,16 +1572,16 @@ window.addEventListener('keydown', (e) => {
     } else if (e.key === 's') {
         toggleWindow(settingsWindow);
     } else if (e.key === 'a') {
-        // Toggle Advanced
         if (advancedWindow.classList.contains('visible')) {
             advancedWindow.classList.remove('visible');
         } else {
-            settingsWindow.classList.remove('visible'); // Close settings
+            settingsWindow.classList.remove('visible');
             advancedWindow.classList.add('visible');
         }
     } else if (e.key === 'm') {
         btnSound.click();
     } else if (e.key === 't' || e.key === 'Enter') {
+        // Don't steal Enter when a window with its own buttons is open.
         if (e.key === 'Enter' && (
             settingsWindow.classList.contains('visible') ||
             customGenWindow.classList.contains('visible') ||
@@ -1598,24 +1592,22 @@ window.addEventListener('keydown', (e) => {
         e.preventDefault();
         toggleTerminal();
     } else if (e.key === 'Escape') {
-        // Priority Close System (Global Execution Order)
-
-        // 1. Highest Priority: Terminal
+        // Close priority: terminal > windows > pointer lock. Fullscreen exit
+        // is left to the browser (we don't preventDefault below).
         if (terminalBar.style.display === 'flex') {
             toggleTerminal();
             e.preventDefault();
             return;
         }
 
-        // 2. Medium Priority: UI Windows
         if (customGenWindow.classList.contains('visible')) {
-            btnGenClose.click(); // Safely triggers cancelResetConfirm internally
+            btnGenClose.click();
             e.preventDefault();
             return;
         }
 
         if (advancedWindow.classList.contains('visible')) {
-            btnAdvClose.click(); // Safely cleans up binds internally
+            btnAdvClose.click();
             e.preventDefault();
             return;
         }
@@ -1626,16 +1618,11 @@ window.addEventListener('keydown', (e) => {
             return;
         }
 
-        // Pointer Lock Cleanup
         if (document.pointerLockElement) {
             document.exitPointerLock();
             e.preventDefault();
             return;
         }
-
-        // 3. Lowest Priority: Fullscreen Native Exit
-        // We leave e.preventDefault() OFF here deliberately so if they hit Escape 
-        // to exit fullscreen, the browser natively handles its own teardown hooks.
     }
 });
 
