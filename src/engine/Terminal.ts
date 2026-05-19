@@ -565,7 +565,6 @@ export class Terminal {
             this.game.setVolume(0.5);
             this.game.setMuted(false);
             this.game.timeFormat = '24h';
-            // Randomize seed
             const rnd = Math.floor(Math.random() * 100000).toString();
             this.game.setSeed(rnd);
             import('../procgen/TreeConfig').then(module => {

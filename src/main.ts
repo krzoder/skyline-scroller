@@ -257,17 +257,14 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
 const game = new Game(canvas);
 
-// Random start
 const initialSeed = Math.floor(Math.random() * 100000).toString();
 game.setSeed(initialSeed);
 game.start();
 
-// UI Logic
 const seedInput = document.getElementById('seed-input') as HTMLInputElement;
 const setSeedBtn = document.getElementById('set-seed-btn') as HTMLButtonElement;
 const randomSeedBtn = document.getElementById('random-seed-btn') as HTMLButtonElement;
 
-// New UI Elements
 const uiSeedVal = document.getElementById('ui-seed-val');
 const uiTimeVal = document.getElementById('ui-time-val');
 
@@ -310,9 +307,6 @@ randomSeedBtn.addEventListener('click', () => {
     randomSeedBtn.blur();
 });
 
-// --- Advanced Control Panel Logic ---
-
-// Elements
 const btnTerminal = document.getElementById('btn-terminal')!;
 const btnSound = document.getElementById('btn-sound')!;
 const soundContainer = document.getElementById('sound-container')!;
@@ -1626,26 +1620,24 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// Mouse Gestures (Speed) - Pointer Lock
+// Mouse-hold-drag speed gesture via pointer lock.
 let isDragging = false;
-let currentSpeedLog = 0; // Log value
-const MAX_LOG = 1; // 10^1 = 10
-const MIN_LOG = -1; // 10^-1 = 0.1
+let currentSpeedLog = 0;
+const MAX_LOG = 1;  // 10^1 = 10x
+const MIN_LOG = -1; // 10^-1 = 0.1x
 
 window.addEventListener('mousedown', (e) => {
-    // Only verify on MAIN canvas
     if ((e.target as HTMLElement).id === 'game-canvas') {
-        // Hold detection
+        // 200ms hold threshold so plain clicks aren't hijacked.
         const holdTimer = setTimeout(() => {
             isDragging = true;
             canvas.requestPointerLock();
 
-            // Initial value from slider (log value)
             currentSpeedLog = parseFloat(speedSlider.value);
 
             gestureContainer.style.display = 'block';
             gestureContainer.style.left = e.clientX + 'px';
-            gestureContainer.style.top = (e.clientY - 50) + 'px'; // Centered above
+            gestureContainer.style.top = (e.clientY - 50) + 'px';
         }, 200);
 
         const cancelHold = () => {
@@ -1658,12 +1650,9 @@ window.addEventListener('mousedown', (e) => {
 
 document.addEventListener('mousemove', (e) => {
     if (isDragging && document.pointerLockElement === canvas) {
-        // Pointer lock movement
         const dx = e.movementX;
 
-        // Sensitivity (resistance)
-        // User asked for "slowed down" cursor movement feeling, pointer lock gives infinite canvas
-        // We just scale the dx significantly
+        // Low sensitivity gives the gesture a "heavy" feel.
         const sensitivity = 0.005;
         currentSpeedLog += dx * sensitivity;
         currentSpeedLog = Math.max(MIN_LOG, Math.min(MAX_LOG, currentSpeedLog));
@@ -1674,10 +1663,8 @@ document.addEventListener('mousemove', (e) => {
 
         gestureSpeedVal.innerText = newSpeed.toFixed(2) + 'x';
 
-        // Visual bar logic (-1 to 1 -> 0% to 100%)
         const percent = ((currentSpeedLog - MIN_LOG) / (MAX_LOG - MIN_LOG)) * 100;
         gestureBar.style.width = percent + '%';
-        // Color gradient for fanciness?
         gestureBar.style.backgroundColor = `hsl(${percent}, 70%, 50%)`;
     }
 });
@@ -1713,12 +1700,11 @@ window.addEventListener('wheel', (e) => {
     }
     setGlobalVolume(newVol, false);
 
-    // Visual Bar Logic
     const volContainer = document.getElementById('volume-visual-container');
     const volBar = document.getElementById('volume-visual-bar');
 
     if (!volContainer && document.body) {
-        // Lazy inject
+        // Lazy-inject the visual volume bar on first scroll.
         const c = document.createElement('div');
         c.id = 'volume-visual-container';
         const b = document.createElement('div');
