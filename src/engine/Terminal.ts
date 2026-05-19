@@ -1,4 +1,5 @@
 import { deepClone } from '../utils/deepClone';
+import { evalExpression } from '../utils/Expression';
 import type { Game } from './Game';
 import type { TreeType } from './Tree';
 import type { BiomeType } from '../procgen/BiomeSystem';
@@ -197,21 +198,13 @@ export class Terminal {
                     ctx.output(`Current speed: ${ctx.game.timeScale}`);
                     return;
                 }
-                let inputStr = args.join(' ');
-
-                // User convenience symbol substitutions
-                inputStr = inputStr.replace(/π/g, 'Math.PI');
+                const inputStr = args.join(' ');
 
                 let val: number;
                 try {
-                    // Safe-ish evaluation of math equations provided by the user, injecting Math scope
-                    val = Function(`
-                        "use strict";
-                        const { ${Object.getOwnPropertyNames(Math).join(', ')} } = Math;
-                        return (${inputStr});
-                    `)();
+                    val = evalExpression(inputStr);
                     if (typeof val !== 'number' || isNaN(val)) throw new Error('Not a valid number');
-                } catch (e: any) {
+                } catch {
                     ctx.output(`Invalid speed equation: ${inputStr}`, true);
                     return;
                 }
