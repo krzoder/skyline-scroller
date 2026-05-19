@@ -213,6 +213,60 @@ html {
 }
 
 /* --- Terminal --- */
+#terminal-output-container {
+    position: absolute;
+    bottom: 60px; /* Above terminal bar */
+    left: 20px;
+    width: 600px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.85);
+    border: 1px solid #336;
+    color: #0f0;
+    font-family: monospace;
+    padding: 10px;
+    z-index: 150;
+    display: none;
+    pointer-events: auto;
+    font-size: 14px;
+    border-radius: 4px;
+}
+
+.terminal-line {
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 2px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.terminal-line:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.terminal-copied {
+    background: rgba(0, 255, 0, 0.4) !important;
+    color: #fff !important;
+}
+
+#terminal-output-container:empty {
+    display: none !important;
+}
+
+#terminal-output-container::-webkit-scrollbar {
+    width: 6px;
+}
+#terminal-output-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+#terminal-output-container::-webkit-scrollbar-thumb {
+    background: #446;
+    border-radius: 4px;
+}
+#terminal-output-container::-webkit-scrollbar-thumb:hover {
+    background: #668;
+}
+
 #terminal-bar {
     position: absolute;
     bottom: 20px;

@@ -57,6 +57,14 @@ export class CityGenerator {
         });
     }
 
+    public forceBiome(b: BiomeType) {
+        this.biomeSystem.forceBiome(b);
+    }
+
+    public getCurrentBiome(): BiomeType {
+        return this.biomeSystem.getCurrentBiome();
+    }
+
     private addChunk(layer: Layer, layerIndex: number, biome: BiomeType) {
         // A "Chunk" is a segment of ground + feature (Building OR Tree OR Empty)
         const x = this.lastX[layerIndex];

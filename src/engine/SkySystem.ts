@@ -3,7 +3,6 @@ import { Random } from '../utils/Random';
 export class SkySystem {
     private time: number = 0; // 0 to 24
     private speed: number = 0.1; // 5x Slower
-    private canvas: HTMLCanvasElement;
 
     // Gradient Keyframes - Refined Day/Night Cycle
     private keyframes = [
@@ -39,8 +38,7 @@ export class SkySystem {
     }[] = [];
     private rng: Random;
 
-    constructor(canvas: HTMLCanvasElement) {
-        this.canvas = canvas;
+    constructor(_canvas: HTMLCanvasElement) {
         this.rng = new Random(Date.now());
         this.time = this.rng.nextRange(0, 24);
         this.initClouds();

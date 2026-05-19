@@ -35,7 +35,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <!-- Sound Button -->
     <div id="sound-container" style="position: relative;">
       <div id="volume-popup">
-        <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="1" orient="vertical">
+        <input type="range" id="volume-slider" min="0" max="100" step="1" value="50" orient="vertical">
       </div>
       <button id="btn-sound" class="control-btn" title="Mute (m)">
         <svg id="icon-sound" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -89,7 +89,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div id="advanced-window" class="ui-window">
         <h3>Advanced Options</h3>
         
-        <div class="setting-group" style="margin-top:20px;">
+         <div class="setting-group" style="margin-top:20px;">
           <div class="row" style="align-items: center; justify-content: space-between;">
              <label style="margin-right: 10px;">Time Format</label>
              <div id="time-fmt-selector" style="display: flex; gap: 5px; flex: 1;">
@@ -98,6 +98,22 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
                  <button class="btn-small" data-val="score">Ingame Time</button>
              </div>
              <button id="btn-reset-time-fmt" class="btn-smart-reset default" title="Reset to Default" style="margin-left: 10px;">
+               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                 <line x1="18" y1="6" x2="6" y2="18"></line>
+                 <line x1="6" y1="6" x2="18" y2="18"></line>
+               </svg>
+             </button>
+          </div>
+        </div>
+
+        <div class="setting-group" style="margin-top:20px;">
+          <div class="row" style="align-items: center; justify-content: space-between;">
+             <label style="margin-right: 10px;">Speed</label>
+              <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
+                  <input type="range" id="adv-speed-slider" min="0" max="1000" step="1" value="500" style="flex: 1;">
+                  <input type="text" id="adv-speed-input" style="width: 80px; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #555; color: white; text-align: center;" value="1.0">
+             </div>
+             <button id="btn-reset-adv-speed" class="btn-smart-reset default" title="Reset to Default" style="margin-left: 10px;">
                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                  <line x1="18" y1="6" x2="6" y2="18"></line>
                  <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -134,6 +150,16 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
                 <span style="margin-right: 5px; font-size: 0.9em; font-weight: bold; color: #ccc;">Seed:</span>
                 <input type="text" id="custom-seed-input" placeholder="Seed" style="flex: 1; padding: 4px; background: rgba(0,0,0,0.5); border: 1px solid #555; color: white;">
              </div>
+             <label style="color:white; font-size:0.9em; font-weight:bold; margin-right:10px; display:flex; align-items:center; gap:5px;">Biome: 
+                 <select id="custom-biome-select" style="background:rgba(0,0,0,0.5); color:white; border:1px solid #555; padding:3px; border-radius:3px; font-size: 0.9em;">
+                     <option value="auto">Auto (Seed)</option>
+                     <option value="forest">Forest</option>
+                     <option value="desert">Desert</option>
+                     <option value="tundra">Tundra</option>
+                     <option value="plains">Plains</option>
+                     <option value="city">City</option>
+                 </select>
+             </label>
              <button id="btn-random-preview-seed" title="Randomize Seed" style="width: 24px; height: 24px; border-radius: 4px; border: none; background: #1565C0; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
@@ -183,7 +209,9 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   </div>
 
   <!-- Terminal Bar -->
+  <div id="terminal-output-container"></div>
   <div id="terminal-bar">
+    <div id="terminal-hints-container" style="position: absolute; bottom: 100%; left: -1px; width: calc(100% + 2px); padding: 6px 10px; display: none; gap: 10px; background: rgba(10,10,15,0.95); border: 1px solid #336; border-bottom: none; z-index: 10001; font-family: monospace; overflow-x: auto; white-space: nowrap; box-sizing: border-box;"></div>
     <span style="font-weight: bold; margin-right: 10px; color:#0f0;">&gt;_</span>
     <input type="text" id="terminal-input" autocomplete="off" spellcheck="false">
   </div>
@@ -345,6 +373,132 @@ btnResetTimeFmt.addEventListener('click', () => {
     }
 });
 
+// Advanced Speed Logic
+const advSpeedSlider = document.getElementById('adv-speed-slider') as HTMLInputElement;
+const advSpeedInput = document.getElementById('adv-speed-input') as HTMLInputElement;
+const btnResetAdvSpeed = document.getElementById('btn-reset-adv-speed')!;
+
+// To be updated when other code registers `updateSpeed`
+let globalSpeedUpdateCallback: ((spd: number) => void) | null = null;
+
+let currentAdvSpeedCenter: number = 1.0;
+
+const getAdvSpeedFromSlider = (sliderVal: number, center: number): number => {
+    let minS = center - 10;
+    let maxS = center + 10;
+    if (center === 1.0) { minS = -1.0; maxS = 20.0; }
+
+    // Check if the 0-1 slice rule applies
+    if (minS < 0 && maxS > 1) {
+        if (sliderVal >= 500) {
+            const pct = (sliderVal - 500) / 500;
+            return 1 + ((maxS - 1) * pct);
+        } else if (sliderVal >= 100) {
+            const pct = (sliderVal - 100) / 400;
+            return 0 + (1 * pct);
+        } else {
+            const pct = sliderVal / 100;
+            return minS + ((0 - minS) * pct);
+        }
+    } else {
+        // Standard linear fallback
+        const pct = sliderVal / 1000;
+        return minS + ((maxS - minS) * pct);
+    }
+};
+
+const getSliderFromAdvSpeed = (speed: number, center: number): number => {
+    let minS = center - 10;
+    let maxS = center + 10;
+    if (center === 1.0) { minS = -1.0; maxS = 20.0; }
+
+    if (minS < 0 && maxS > 1) {
+        if (speed >= 1) {
+            const pct = (speed - 1) / (maxS - 1);
+            return 500 + (500 * pct);
+        } else if (speed >= 0) {
+            const pct = speed / 1;
+            return 100 + (400 * pct);
+        } else {
+            const pct = (speed - minS) / (0 - minS);
+            return 0 + (100 * pct);
+        }
+    } else {
+        const pct = (speed - minS) / (maxS - minS);
+        return 0 + (1000 * pct);
+    }
+};
+
+const updateAdvSpeedUI = (forceCenter?: boolean) => {
+    const spd = game.timeScale;
+
+    if (document.activeElement !== advSpeedSlider) {
+        let minS = currentAdvSpeedCenter - 10;
+        let maxS = currentAdvSpeedCenter + 10;
+        if (currentAdvSpeedCenter === 1.0) { minS = -1.0; maxS = 20.0; }
+
+        // If explicitly forced (e.g., from typing in the box or terminal), or out of bounds, recenter!
+        if (forceCenter || spd < minS || spd > maxS) {
+            currentAdvSpeedCenter = spd;
+        }
+
+        const rawSliderVal = getSliderFromAdvSpeed(spd, currentAdvSpeedCenter);
+        advSpeedSlider.value = Math.round(rawSliderVal).toString();
+    }
+
+    if (document.activeElement !== advSpeedInput) {
+        // Only format out a long float if it's crazy
+        advSpeedInput.value = Number.isInteger(spd) ? spd.toString() : parseFloat(spd.toFixed(1)).toString();
+    }
+
+    const isDefault = spd === 1.0;
+    updateResetButton(btnResetAdvSpeed, isDefault);
+};
+
+const executeAdvSpeedSet = (val: number, recenter: boolean) => {
+    const clamped = Math.max(-10000, Math.min(10000, val));
+    if (recenter) {
+        currentAdvSpeedCenter = clamped;
+    }
+    game.setTimeScale(clamped);
+    updateAdvSpeedUI(recenter); // Also immediately layout logic based on recenter
+    if (globalSpeedUpdateCallback) globalSpeedUpdateCallback(clamped);
+};
+
+const applyAdvInputText = (valStr: string) => {
+    try {
+        const val = Function(`
+            "use strict";
+            const { ${Object.getOwnPropertyNames(Math).join(', ')} } = Math;
+            return (${valStr});
+        `)();
+        if (typeof val === 'number' && !isNaN(val)) {
+            executeAdvSpeedSet(val, true);
+        }
+    } catch (e) { }
+};
+
+advSpeedSlider.addEventListener('input', (e) => {
+    const sliderVal = parseFloat((e.target as HTMLInputElement).value);
+    const speed = getAdvSpeedFromSlider(sliderVal, currentAdvSpeedCenter);
+    executeAdvSpeedSet(speed, false);
+});
+
+advSpeedInput.addEventListener('change', (e) => {
+    applyAdvInputText((e.target as HTMLInputElement).value);
+});
+
+advSpeedInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') advSpeedInput.blur(); // Triggers change implicitly
+});
+
+btnResetAdvSpeed.addEventListener('click', () => {
+    if (btnResetAdvSpeed.classList.contains('modified')) {
+        currentAdvSpeedCenter = 1.0;
+        executeAdvSpeedSet(1.0, false);
+    }
+});
+
 // Global Reset Logic
 let isAdvResetConfirming = false;
 const cancelAdvResetConfirm = () => {
@@ -363,13 +517,61 @@ btnAdvReset.addEventListener('click', (e) => {
         game.timeFormat = '24h';
         updateTimeFormatUI();
 
+        currentAdvSpeedCenter = 1.0;
+        executeAdvSpeedSet(1.0, false); // Syncs Advanced Speed too
+
         cancelAdvResetConfirm();
     } else {
         isAdvResetConfirming = true;
-        btnAdvReset.innerText = "Confirm Reset?";
-        btnAdvReset.style.background = "#8b0000";
+        btnAdvReset.innerText = "Are you sure?";
+        btnAdvReset.style.background = "#d32f2f";
+        setTimeout(cancelAdvResetConfirm, 3000);
     }
 });
+
+// -- Core Simulation Config --
+let currentVolume = 50;
+let lastVolume = 50;
+let isMuted = false;
+
+// Global UI Volume Syncer
+const setGlobalVolume = (val: number, fromMuteToggle = false) => {
+    if (!fromMuteToggle) {
+        if (val > 0) {
+            currentVolume = val;
+            lastVolume = val;
+            isMuted = false;
+        } else {
+            currentVolume = 0;
+            isMuted = true;
+        }
+    } else {
+        if (isMuted) {
+            isMuted = false;
+            currentVolume = lastVolume || 50;
+        } else {
+            isMuted = true;
+            if (currentVolume > 0) lastVolume = currentVolume;
+            currentVolume = 0;
+        }
+    }
+
+    // Apply
+    volumeSlider.value = currentVolume.toString();
+    game.setVolume(currentVolume / 100);
+    game.setMuted(isMuted);
+
+    // Update Icon
+    const icon = document.getElementById('icon-sound');
+    if (icon) {
+        if (isMuted) {
+            icon.innerHTML = `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>`;
+        } else {
+            icon.innerHTML = `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>`;
+        }
+    }
+};
+
 
 // Click elsewhere cancels confirm
 advancedWindow.addEventListener('click', (e) => {
@@ -423,12 +625,29 @@ window.addEventListener('click', (e) => {
     }
 });
 
-// 1a. Fullscreen
+// 1a. Fullscreen// -- Fullscreen --
 const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
+    if (!document.fullscreenElement && !(document as any).webkitFullscreenElement && !(document as any).mozFullScreenElement && !(document as any).msFullscreenElement) {
+        // Try standard first, then fallbacks
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+        } else if ((document.documentElement as any).webkitRequestFullscreen) {
+            (document.documentElement as any).webkitRequestFullscreen(); // Chrome/Safari Base
+        } else if ((document.documentElement as any).mozRequestFullScreen) {
+            (document.documentElement as any).mozRequestFullScreen(); // Firefox
+        } else if ((document.documentElement as any).msRequestFullscreen) {
+            (document.documentElement as any).msRequestFullscreen(); // IE/Edge
+        }
     } else {
-        document.exitFullscreen();
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+            (document as any).webkitExitFullscreen();
+        } else if ((document as any).mozCancelFullScreen) {
+            (document as any).mozCancelFullScreen();
+        } else if ((document as any).msExitFullscreen) {
+            (document as any).msExitFullscreen();
+        }
     }
 };
 btnFullscreen.addEventListener('click', toggleFullscreen);
@@ -535,6 +754,11 @@ const refreshPreview = () => {
             // Fallback to current if empty
             previewGame.setSeed(previewGame.getSeed());
         }
+
+        const bSelect = document.getElementById('custom-biome-select') as HTMLSelectElement;
+        if (bSelect && bSelect.value !== 'auto') {
+            previewGame.generator?.forceBiome(bSelect.value as BiomeType);
+        }
     }
 };
 
@@ -561,6 +785,11 @@ if (btnRandomPreviewSeed) {
 
         if (previewGame) previewGame.setCameraX(savedX);
     };
+}
+
+const customBiomeSelect = document.getElementById('custom-biome-select') as HTMLSelectElement;
+if (customBiomeSelect) {
+    customBiomeSelect.addEventListener('change', () => refreshPreview());
 }
 
 
@@ -954,8 +1183,7 @@ const renderTreeSettings = () => {
             if (document.activeElement !== sliderMaxEl) sliderMaxEl.value = Math.max(rangeMin, Math.min(rangeMax, v2)).toString();
 
             // Track
-            let p1 = Math.max(0, Math.min(100, ((v1 - rangeMin) / rangeSpan) * 100));
-            let p2 = Math.max(0, Math.min(100, ((v2 - rangeMin) / rangeSpan) * 100));
+
 
             // Fix: visual offset for thumb width (approx 16px)
             // If p1 is 0%, standard input has thumb center at 8px (approx).
@@ -1177,20 +1405,35 @@ const getSliderFromSpeed = (val: number) => {
 };
 
 const updateSpeed = (speed: number) => {
-    // Clamp
+    // Clamp standard slider interactions
     speed = Math.max(0.1, Math.min(10, speed));
 
     // Update Slider UI
-    // Avoid double firing?
     const sliderVal = getSliderFromSpeed(speed);
-    // Only update slider if not currently being dragged closely? 
-    // Actually exact sync is fine
     if (document.activeElement !== speedSlider) {
         speedSlider.value = sliderVal.toString();
     }
 
     // Update Game
     (game as any).setTimeScale?.(speed);
+
+    // Sync Advanced Speed UI, forcing a recenter if updated globally via terminal or normal slider
+    if (typeof updateAdvSpeedUI === 'function') updateAdvSpeedUI(true);
+};
+
+// Bind for upstream usage in Advanced Window
+globalSpeedUpdateCallback = (spd: number) => {
+    // We only visually update the slider if it's within standard range 0.1 - 10 to prevent math errors
+    if (spd >= 0.1 && spd <= 10) {
+        if (document.activeElement !== speedSlider) {
+            speedSlider.value = getSliderFromSpeed(spd).toString();
+        }
+    } else {
+        // If outside normal bounds, we snap the regular slider to 0 to indicate manual override
+        if (document.activeElement !== speedSlider) {
+            speedSlider.value = "0";
+        }
+    }
 };
 
 speedSlider.addEventListener('input', (e) => {
@@ -1210,19 +1453,9 @@ speedSlider.addEventListener('dblclick', () => {
 
 
 // 2. Sound
-let isMuted = false;
-let volume = 0.5; // Default 50%
-const svgSpeaker = `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>`;
-const svgMuted = `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>`;
 
 btnSound.addEventListener('click', () => {
-    isMuted = !isMuted;
-    const icon = btnSound.querySelector('svg');
-    if (icon) {
-        // Replace inner SVG or path? Easier to replace SVG content or whole SVG
-        btnSound.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${isMuted ? svgMuted : svgSpeaker}</svg>`;
-    }
-    (game as any).setMuted?.(isMuted);
+    setGlobalVolume(0, true);
 });
 
 // Sound Hover Logic (Wrapper)
@@ -1234,33 +1467,229 @@ soundContainer.addEventListener('mouseleave', () => {
 });
 
 volumeSlider.addEventListener('input', (e) => {
-    volume = parseFloat((e.target as HTMLInputElement).value);
-    (game as any).setVolume?.(volume);
+    setGlobalVolume(parseFloat((e.target as HTMLInputElement).value), false);
 });
 
 // 3. Terminal
+import { Terminal, type AutocompleteSuggestion } from './engine/Terminal';
+
+const terminalOutputContainer = document.getElementById('terminal-output-container')!;
+const terminalHintsContainer = document.getElementById('terminal-hints-container')!;
+
+let terminalHintsList: AutocompleteSuggestion[] = [];
+let terminalActiveHintIndex: number = -1;
+
+const renderTerminalHints = () => {
+    if (terminalHintsList.length === 0) {
+        terminalHintsContainer.style.display = 'none';
+        terminalHintsContainer.innerHTML = '';
+        return;
+    }
+    terminalHintsContainer.style.display = 'flex';
+    terminalHintsContainer.innerHTML = '';
+
+    terminalHintsContainer.style.alignItems = 'center';
+
+    terminalHintsList.forEach((hint, idx) => {
+        const el = document.createElement('div');
+        el.style.borderRadius = '4px';
+        el.style.transition = 'all 0.1s ease-in-out';
+        if (idx === terminalActiveHintIndex) {
+            el.innerHTML = `
+                <span style="font-weight:bold; font-size:1.05em; color:#fff;">${hint.value}</span>
+                <span style="color:rgba(255,255,255,0.4); margin:0 6px;">|</span>
+                <span style="font-size:0.9em; color:#00E676;">${hint.description}</span>
+            `;
+            el.style.background = 'rgba(0, 200, 80, 0.15)';
+            el.style.color = '#fff';
+            el.style.boxShadow = '0 2px 6px rgba(0, 200, 80, 0.2)';
+            el.style.border = '1px solid rgba(0, 200, 80, 0.4)';
+            el.style.padding = '4px 10px';
+            el.style.display = 'flex';
+            el.style.alignItems = 'center';
+            el.style.zIndex = '10';
+            el.style.whiteSpace = 'nowrap';
+        } else {
+            el.innerText = hint.value;
+            el.style.background = 'rgba(255, 255, 255, 0.1)';
+            el.style.color = '#eee';
+            el.style.padding = '4px 8px';
+            el.style.border = '1px solid transparent';
+            el.style.display = 'flex';
+            el.style.alignItems = 'center';
+        }
+        terminalHintsContainer.appendChild(el);
+    });
+};
+
+const updateTerminalHints = () => {
+    terminalHintsList = terminal.getSuggestions(terminalInput.value);
+    terminalActiveHintIndex = -1;
+    renderTerminalHints();
+};
+
+terminalInput.addEventListener('input', updateTerminalHints);
+
+const syncUIFromTerminal = () => {
+    // 1. Force Slider Bindings to adapt to global float speed changes silently:
+    if (globalSpeedUpdateCallback) globalSpeedUpdateCallback(game.timeScale);
+    updateAdvSpeedUI();
+
+    // 2. Extract Native Volume State, converting floats to generic integer arrays:
+    const gVol = Math.round(game.getVolume() * 100);
+    if (currentVolume !== gVol) {
+        setGlobalVolume(gVol, false);
+    }
+
+    // 3. Extract Mute Boolean Flags directly into volume UI array overrides:
+    const gMuted = game.getMuted();
+    if (isMuted !== gMuted) {
+        setGlobalVolume(0, true);
+    }
+
+    // 4. Force synchronization of generator configuration
+    if (typeof previewGame !== 'undefined' && previewGame && previewGame.generator) {
+        previewGame.generator.config = JSON.parse(JSON.stringify(game.treeConfig));
+        previewGame.treeConfig = JSON.parse(JSON.stringify(game.treeConfig));
+    }
+
+    // 5. Fire standard sub-component layout redraws
+    updateTimeFormatUI();
+    if (customGenWindow.classList.contains('visible')) {
+        renderTreeSettings();
+        if (typeof refreshPreview === 'function') refreshPreview();
+    }
+};
+
+const commandHistory: string[] = [];
+let historyIndex: number = -1;
+let currentInputBuffer: string = "";
+
+const terminal = new Terminal(
+    game,
+    (msg, isErr) => {
+        const line = document.createElement('div');
+        line.className = 'terminal-line';
+        line.style.color = isErr ? '#ff5555' : '#00ff00';
+        line.innerText = msg;
+
+        // Click to copy functionality
+        line.addEventListener('click', () => {
+            const copyText = msg.startsWith('> ') ? msg.substring(2) : msg;
+            navigator.clipboard.writeText(copyText).then(() => {
+                line.classList.add('terminal-copied');
+                setTimeout(() => {
+                    line.classList.remove('terminal-copied');
+                }, 300);
+            }).catch(() => {
+                // Fallback if clipboard API fails
+            });
+        });
+
+        terminalOutputContainer.appendChild(line);
+        terminalOutputContainer.scrollTop = terminalOutputContainer.scrollHeight;
+    },
+    () => {
+        terminalOutputContainer.innerHTML = '';
+    },
+    syncUIFromTerminal
+);
+
+terminalInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        if (terminalHintsList.length > 0) {
+            terminalActiveHintIndex = (terminalActiveHintIndex + 1) % terminalHintsList.length;
+            renderTerminalHints();
+        }
+    } else if (e.key === ' ' && terminalActiveHintIndex >= 0) {
+        e.preventDefault();
+        const selection = terminalHintsList[terminalActiveHintIndex].value;
+        const val = terminalInput.value;
+        if (val.endsWith(' ')) {
+            terminalInput.value = val + selection + " ";
+        } else {
+            const lastSpace = val.lastIndexOf(' ');
+            if (lastSpace === -1) {
+                terminalInput.value = selection + " ";
+            } else {
+                terminalInput.value = val.substring(0, lastSpace + 1) + selection + " ";
+            }
+        }
+        updateTerminalHints();
+    } else if (e.key === 'Enter') {
+        e.stopPropagation();
+        const val = terminalInput.value;
+        if (val.trim()) {
+            const existingIdx = commandHistory.indexOf(val.trim());
+            if (existingIdx !== -1) commandHistory.splice(existingIdx, 1);
+            commandHistory.unshift(val.trim());
+
+            terminal.execute(val);
+            terminalInput.value = '';
+
+            historyIndex = -1;
+            currentInputBuffer = "";
+            updateTerminalHints();
+        }
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (historyIndex === -1) {
+            currentInputBuffer = terminalInput.value;
+        }
+        if (commandHistory.length > 0 && historyIndex < commandHistory.length - 1) {
+            historyIndex++;
+            terminalInput.value = commandHistory[historyIndex];
+        }
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (historyIndex > 0) {
+            historyIndex--;
+            terminalInput.value = commandHistory[historyIndex];
+        } else if (historyIndex === 0) {
+            historyIndex = -1;
+            terminalInput.value = currentInputBuffer;
+        }
+    }
+});
+
 const toggleTerminal = () => {
     const isVis = terminalBar.style.display === 'flex';
     terminalBar.style.display = isVis ? 'none' : 'flex';
     if (!isVis) {
+        terminalOutputContainer.style.display = 'block';
         terminalInput.focus();
+        updateTerminalHints();
+    } else {
+        terminal.cancelPendingReset();
+        terminalOutputContainer.style.display = 'none';
+        terminalHintsContainer.style.display = 'none';
+        terminalInput.blur();
     }
 };
 btnTerminal.addEventListener('click', toggleTerminal);
 
 // Init Volume UI
-volumeSlider.value = volume.toString();
-// Defer game volume set slightly to ensure game init? 
-// Or just call it, optional chaining protects us
-setTimeout(() => {
-    (game as any).setVolume?.(volume);
-}, 100);
+setGlobalVolume(currentVolume, false);
 
 // Shortcuts
 window.addEventListener('keydown', (e) => {
-    // Ignore if typing in an input (unless Esc)
+    // If we are actively focused inside an input box, we ONLY want to intercept Escape or Enter
     if (document.activeElement?.tagName === 'INPUT') {
-        if (e.key === 'Escape') (document.activeElement as HTMLElement).blur();
+        if (e.key === 'Escape') {
+            // Priority Close System (intercepted while typing inside an input)
+            if (terminalBar.style.display === 'flex') {
+                toggleTerminal(); // This safely blurs and closes in one step
+            } else {
+                (document.activeElement as HTMLElement).blur();
+            }
+            e.preventDefault();
+        } else if (e.key === 'Enter') {
+            // Usually inputs handle their own Enter keys natively (seed submission, terminal submission)
+            // so we don't globally hijack it here.
+        }
         return;
     }
 
@@ -1289,28 +1718,55 @@ window.addEventListener('keydown', (e) => {
         }
     } else if (e.key === 'm') {
         btnSound.click();
-    } else if (e.key === 't') {
+    } else if (e.key === 't' || e.key === 'Enter') {
+        if (e.key === 'Enter' && (
+            settingsWindow.classList.contains('visible') ||
+            customGenWindow.classList.contains('visible') ||
+            advancedWindow.classList.contains('visible')
+        )) {
+            return;
+        }
         e.preventDefault();
         toggleTerminal();
     } else if (e.key === 'Escape') {
-        // Priority Close
-        if (document.fullscreenElement) {
-            // Let default Esc handle fullscreen exit
+        // Priority Close System (Global Execution Order)
+
+        // 1. Highest Priority: Terminal
+        if (terminalBar.style.display === 'flex') {
+            toggleTerminal();
+            e.preventDefault();
+            return;
         }
 
-        // Close Windows in order of priority
+        // 2. Medium Priority: UI Windows
         if (customGenWindow.classList.contains('visible')) {
-            cancelResetConfirm();
-            customGenWindow.classList.remove('visible');
-        } else if (advancedWindow.classList.contains('visible')) {
-            advancedWindow.classList.remove('visible');
-        } else if (settingsWindow.classList.contains('visible')) {
-            settingsWindow.classList.remove('visible');
-        } else if (document.pointerLockElement) {
-            document.exitPointerLock();
-        } else if (terminalBar.style.display === 'flex') {
-            toggleTerminal();
+            btnGenClose.click(); // Safely triggers cancelResetConfirm internally
+            e.preventDefault();
+            return;
         }
+
+        if (advancedWindow.classList.contains('visible')) {
+            btnAdvClose.click(); // Safely cleans up binds internally
+            e.preventDefault();
+            return;
+        }
+
+        if (settingsWindow.classList.contains('visible')) {
+            settingsWindow.classList.remove('visible');
+            e.preventDefault();
+            return;
+        }
+
+        // Pointer Lock Cleanup
+        if (document.pointerLockElement) {
+            document.exitPointerLock();
+            e.preventDefault();
+            return;
+        }
+
+        // 3. Lowest Priority: Fullscreen Native Exit
+        // We leave e.preventDefault() OFF here deliberately so if they hit Escape 
+        // to exit fullscreen, the browser natively handles its own teardown hooks.
     }
 });
 
@@ -1358,9 +1814,7 @@ document.addEventListener('mousemove', (e) => {
 
         const newSpeed = getSpeedFromSlider(currentSpeedLog);
 
-        // Update slider visually (bypass guard)
-        speedSlider.value = currentSpeedLog.toString();
-        (game as any).setTimeScale?.(newSpeed);
+        updateSpeed(newSpeed);
 
         gestureSpeedVal.innerText = newSpeed.toFixed(2) + 'x';
 
@@ -1394,14 +1848,16 @@ window.addEventListener('wheel', (e) => {
     // Check if target is inside Settings or Custom Gen?
     const target = e.target as HTMLElement;
     if (target.closest('.ui-window')) return; // Don't hijack window scrolling if any (tho overflow hidden)
+    if (target.closest('#terminal-output-container')) return; // Stop terminal scroll from affecting volume
 
+    let baseVol = isMuted ? (lastVolume || 50) : currentVolume;
+    let newVol = baseVol;
     if (e.deltaY < 0) {
-        volume = Math.min(1, volume + 0.05);
+        newVol = Math.min(100, baseVol + 5);
     } else {
-        volume = Math.max(0, volume - 0.05);
+        newVol = Math.max(0, baseVol - 5);
     }
-    volumeSlider.value = volume.toString();
-    (game as any).setVolume?.(volume);
+    setGlobalVolume(newVol, false);
 
     // Visual Bar Logic
     const volContainer = document.getElementById('volume-visual-container');
@@ -1419,7 +1875,7 @@ window.addEventListener('wheel', (e) => {
         // Re-get for safety in this closure?
         // Actually we can just use c and b direct
         c.classList.add('visible');
-        b.style.height = (volume * 100) + '%';
+        b.style.height = currentVolume + '%';
 
         // Auto fade out
         (window as any).volFadeTimer = setTimeout(() => {
@@ -1427,7 +1883,7 @@ window.addEventListener('wheel', (e) => {
         }, 1500);
     } else if (volContainer && volBar) {
         volContainer.classList.add('visible');
-        volBar.style.height = (volume * 100) + '%';
+        volBar.style.height = currentVolume + '%';
 
         clearTimeout((window as any).volFadeTimer);
         (window as any).volFadeTimer = setTimeout(() => {

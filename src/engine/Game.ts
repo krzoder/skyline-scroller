@@ -264,10 +264,18 @@ export class Game {
         this.timeScale = scale;
     }
 
+    public getVolume(): number {
+        return this.volume;
+    }
+
     public setVolume(vol: number) {
         this.volume = vol;
         // TODO: Apply to audio context
         console.log("Volume set to:", vol);
+    }
+
+    public getMuted(): boolean {
+        return this.isMuted;
     }
 
     public setMuted(muted: boolean) {

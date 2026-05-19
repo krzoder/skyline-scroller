@@ -43,4 +43,9 @@ export class BiomeSystem {
     public getCurrentBiome(): BiomeType {
         return this.currentBiome;
     }
+
+    public forceBiome(b: BiomeType) {
+        this.currentBiome = b;
+        this.durationRemaining = 8000;
+    }
 }
