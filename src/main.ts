@@ -1,4 +1,5 @@
 import { deepClone } from './utils/deepClone';
+import { evalExpression } from './utils/Expression';
 import './style.css'
 
 // Non-blocking HUD toast for uncaught errors. Replaces a modal alert()
@@ -474,11 +475,7 @@ const executeAdvSpeedSet = (val: number, recenter: boolean) => {
 
 const applyAdvInputText = (valStr: string) => {
     try {
-        const val = Function(`
-            "use strict";
-            const { ${Object.getOwnPropertyNames(Math).join(', ')} } = Math;
-            return (${valStr});
-        `)();
+        const val = evalExpression(valStr);
         if (typeof val === 'number' && !isNaN(val)) {
             executeAdvSpeedSet(val, true);
         }
@@ -1003,7 +1000,8 @@ const renderTreeSettings = () => {
                 const drawIcon = () => {
                     if (!previewGame || !previewGame.generator) return;
                     ctx.clearRect(0, 0, 100, 100);
-                    const h = Math.floor(previewGame!.generator.config[type].minHeight + Math.random() * (previewGame!.generator.config[type].maxHeight - previewGame!.generator.config[type].minHeight));
+                    const cfg = previewGame!.generator.config[type];
+                    const h = Math.floor((cfg.minHeight + cfg.maxHeight) / 2);
                     const flowerChance = previewGame!.generator.config[type].flowerChance;
 
                     const scale = getTreeIconScale(type);
