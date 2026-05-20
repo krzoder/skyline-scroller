@@ -256,76 +256,21 @@ export class SkySystem {
     }
 
     private drawCelestialBody(ctx: CanvasRenderingContext2D, w: number) {
-        // 0..24 maps horizontally to [-pad, w+pad] so the body enters/exits off-screen.
         const pad = 150;
         const totalW = w + (pad * 2);
         const x = -pad + (this.time / 24) * totalW;
-
         const cy = 125 + Math.sin((this.time - 6) * Math.PI / 12) * -75;
 
         const flipWin = 0.15;
         const rayWin = 0.5;
-
-        let scaleX = 1;
-        let drawSun = (this.time > 6 && this.time < 18);
-
-        let currentCore = drawSun ? 40 : 30;
-        let currentBloom = drawSun ? 1 : 0;
-
-        if (this.time > 12 && this.time < 24) {
-            // Sunset / dusk side around 18:00.
-            const t = this.time;
-            const flipStart = 18 - flipWin;
-            const rayStart = 18 - rayWin;
-
-            if (t >= rayStart && t < flipStart) {
-                const p = (t - rayStart) / (flipStart - rayStart);
-                currentBloom = 1 - p;
-                currentCore = 40 - (10 * p);
-            } else if (t >= flipStart && t < 18 + flipWin) {
-                currentBloom = 0;
-                currentCore = 30;
-
-                const p = (t - flipStart) / (flipWin * 2);
-                const angle = p * Math.PI;
-                scaleX = Math.cos(angle);
-
-                if (p >= 0.5) drawSun = false;
-                else drawSun = true;
-            } else if (t >= 18 + flipWin) {
-                drawSun = false;
-                currentBloom = 0;
-                currentCore = 30;
-            }
-        } else {
-            // Sunrise side around 06:00.
-            const t = this.time;
-            const flipStart = 6 - flipWin;
-            const flipEnd = 6 + flipWin;
-            const rayEnd = 6 + rayWin;
-
-            if (t < flipStart) {
-                drawSun = false;
-            } else if (t >= flipStart && t < flipEnd) {
-                currentBloom = 0;
-                currentCore = 30;
-                const p = (t - flipStart) / (flipWin * 2);
-                const angle = p * Math.PI;
-                scaleX = Math.cos(angle);
-
-                if (p < 0.5) drawSun = false;
-                else drawSun = true;
-            } else if (t >= flipEnd && t < rayEnd) {
-                drawSun = true;
-                const p = (t - flipEnd) / (rayEnd - flipEnd);
-                currentBloom = p;
-                currentCore = 30 + (10 * p);
-            } else {
-                drawSun = true;
-                currentBloom = 1;
-                currentCore = 40;
-            }
-        }
+        const isSunset = this.time > 12 && this.time < 24;
+        const { drawSun, currentBloom, currentCore, scaleX } = computeCelestialPhase(
+            this.time,
+            isSunset ? 18 : 6,
+            !isSunset,
+            flipWin,
+            rayWin,
+        );
 
         ctx.save();
         ctx.translate(x, cy);
@@ -355,4 +300,52 @@ export class SkySystem {
 
         ctx.restore();
     }
+}
+
+interface CelestialPhase {
+    drawSun: boolean;
+    currentBloom: number;
+    currentCore: number;
+    scaleX: number;
+}
+
+function computeCelestialPhase(
+    t: number,
+    peakHour: number,
+    rising: boolean,
+    flipWin: number,
+    rayWin: number,
+): CelestialPhase {
+    // Defaults reflect the outer day/night state. Branches below override
+    // them within the transition windows; outside the windows the defaults
+    // hold.
+    let drawSun = t > 6 && t < 18;
+    let currentBloom = drawSun ? 1 : 0;
+    let currentCore = drawSun ? 40 : 30;
+    let scaleX = 1;
+
+    const flipStart = peakHour - flipWin;
+    const flipEnd = peakHour + flipWin;
+
+    if (t >= flipStart && t < flipEnd) {
+        // Sun is flipping. Core+bloom go quiet; horizontal cos scale.
+        currentBloom = 0;
+        currentCore = 30;
+        const p = (t - flipStart) / (flipWin * 2);
+        scaleX = Math.cos(p * Math.PI);
+        drawSun = rising ? p >= 0.5 : p < 0.5;
+    } else if (rising && t >= flipEnd && t < peakHour + rayWin) {
+        // Sunrise rays growing: bloom 0->1, core 30->40.
+        drawSun = true;
+        const p = (t - flipEnd) / ((peakHour + rayWin) - flipEnd);
+        currentBloom = p;
+        currentCore = 30 + 10 * p;
+    } else if (!rising && t >= peakHour - rayWin && t < flipStart) {
+        // Sunset rays decaying: bloom 1->0, core 40->30.
+        const p = (t - (peakHour - rayWin)) / (flipStart - (peakHour - rayWin));
+        currentBloom = 1 - p;
+        currentCore = 40 - 10 * p;
+    }
+
+    return { drawSun, currentBloom, currentCore, scaleX };
 }
