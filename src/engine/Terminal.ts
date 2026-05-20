@@ -164,6 +164,24 @@ export class Terminal {
         });
 
         this.registerCommand({
+            name: 'debug-state',
+            aliases: ['debug', 'state'],
+            description: 'Dumps current game state (seed, cameraX, biome, sky time, etc) for bug reports.',
+            usage: 'debug-state',
+            execute: (_args, ctx) => {
+                const state = ctx.game.getDebugState();
+                const json = JSON.stringify(state, null, 2);
+                ctx.output(json);
+                if (navigator.clipboard?.writeText) {
+                    navigator.clipboard.writeText(json).then(
+                        () => ctx.output('(copied to clipboard)'),
+                        () => { /* clipboard denied, the JSON is still visible above */ }
+                    );
+                }
+            },
+        });
+
+        this.registerCommand({
             name: 'seed',
             aliases: ['s'],
             description: 'Sets or displays the current seed.',
