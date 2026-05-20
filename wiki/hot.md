@@ -4,9 +4,11 @@ description: Rolling current-state snapshot of the project. Overwrite each subst
 type: hot
 ---
 
-# Hot — 2026-05-20 (autonomous loop complete)
+# Hot — 2026-05-20 (autonomous loop complete + README PL)
 
 **Status**: 11 commits pushed to main. All 17 verified defects addressed (D1-D13 + D16-D17 directly; D14/D15/D11 closed; D5 deferred). 44/44 tests pass. Build 79 kB gzipped 22 kB.
+
+**Najnowsze (2026-05-20 wieczór)**: `README.md` przepisany po polsku dla osoby nietechnicznej — opis pipeline'u (CI → GH Pages + fidom), krok-po-kroku flow PR-ów (branch → push → PR → squash merge → auto-deploy ~2-3 min), etykieta `auto-merge`, linki do workflowów i wiki. Plik niezaocommitowany.
 
 ## What was delivered
 
