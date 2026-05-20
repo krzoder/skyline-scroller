@@ -1,35 +1,9 @@
 import { deepClone } from './utils/deepClone';
 import { evalExpression } from './utils/Expression';
+import { installGlobalErrorHandlers } from './ui/error-toast';
 import './style.css'
 
-// Non-blocking HUD toast for uncaught errors. Replaces a modal alert()
-// that used to spam users on any production exception. The toast lives
-// for 4 s, debounced — repeated errors collapse into one visible message.
-function showErrorToast(message: string) {
-    let toast = document.getElementById('error-toast');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'error-toast';
-        toast.setAttribute('role', 'alert');
-        toast.setAttribute('aria-live', 'assertive');
-        document.body.appendChild(toast);
-    }
-    toast.textContent = message;
-    toast.classList.add('visible');
-    clearTimeout((toast as HTMLElement & { _hideTimer?: number })._hideTimer);
-    (toast as HTMLElement & { _hideTimer?: number })._hideTimer = window.setTimeout(() => {
-        toast?.classList.remove('visible');
-    }, 4000);
-}
-
-window.addEventListener('error', (event) => {
-    console.error('Runtime error:', event.error ?? event.message, event.filename, event.lineno);
-    showErrorToast(`Error: ${event.message}`);
-});
-window.addEventListener('unhandledrejection', (event) => {
-    console.error('Unhandled rejection:', event.reason);
-    showErrorToast(`Promise rejected: ${event.reason}`);
-});
+installGlobalErrorHandlers();
 
 import { Game } from './engine/Game'
 
