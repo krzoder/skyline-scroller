@@ -1,5 +1,6 @@
 import { Random } from '../utils/Random';
 import { REGIONS, ALL_BIOMES } from '../regions/_index';
+import { BIOME_DURATION_MIN, BIOME_DURATION_MAX } from '../config';
 
 export type BiomeType = 'forest' | 'desert' | 'tundra' | 'plains' | 'city';
 
@@ -11,7 +12,7 @@ export class BiomeSystem {
     constructor(rng: Random) {
         this.rng = rng;
         this.currentBiome = ALL_BIOMES[this.rng.nextInt(0, ALL_BIOMES.length)];
-        this.durationRemaining = this.rng.nextInt(3000, 8000);
+        this.durationRemaining = this.rng.nextInt(BIOME_DURATION_MIN, BIOME_DURATION_MAX);
     }
 
     public update(dx: number): BiomeType {
@@ -25,7 +26,7 @@ export class BiomeSystem {
     private switchBiome() {
         const options = REGIONS[this.currentBiome].transitionsTo;
         this.currentBiome = options[this.rng.nextInt(0, options.length)];
-        this.durationRemaining = this.rng.nextInt(3000, 8000);
+        this.durationRemaining = this.rng.nextInt(BIOME_DURATION_MIN, BIOME_DURATION_MAX);
     }
 
     public getCurrentBiome(): BiomeType {
@@ -34,6 +35,6 @@ export class BiomeSystem {
 
     public forceBiome(b: BiomeType) {
         this.currentBiome = b;
-        this.durationRemaining = 8000;
+        this.durationRemaining = BIOME_DURATION_MAX;
     }
 }

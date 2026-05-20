@@ -4,6 +4,7 @@ import { CityGenerator } from '../procgen/CityGenerator';
 import type { TreeConfig } from '../procgen/TreeConfig';
 import { DEFAULT_TREE_CONFIG } from '../procgen/TreeConfig';
 import { Random } from '../utils/Random';
+import { CAMERA_SPEED_PX_PER_S, GROUND_HEIGHT_PX } from '../config';
 
 import { SkySystem } from './SkySystem';
 
@@ -14,7 +15,7 @@ export class Game {
     private isRunning: boolean = false;
 
     private cameraX: number = 0;
-    private cameraSpeed: number = 100; // Pixels per second
+    private cameraSpeed: number = CAMERA_SPEED_PX_PER_S;
 
     private layers: Layer[] = [];
     public generator: CityGenerator | null = null;
@@ -233,7 +234,7 @@ export class Game {
             this.ctx.fillRect(0, 0, logicalW, logicalH);
         }
 
-        const groundY = logicalH - 80; // Lift baseline so we see the ground/road
+        const groundY = logicalH - GROUND_HEIGHT_PX;
 
         this.ctx.save();
         this.ctx.translate(0, groundY);
