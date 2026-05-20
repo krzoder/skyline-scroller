@@ -38,9 +38,11 @@ export class SkySystem {
     }[] = [];
     private rng: Random;
 
-    constructor(_canvas: HTMLCanvasElement, rng?: Random) {
-        // Deterministic when caller passes a forked rng; legacy path stays non-deterministic.
-        this.rng = rng ?? new Random(Date.now());
+    constructor(_canvas: HTMLCanvasElement, rng: Random) {
+        // Caller must pass a forked rng; the previous Date.now() fallback was
+        // a determinism trap (DEC-01) - any caller that forgot the arg would
+        // silently produce non-reproducible sky output.
+        this.rng = rng;
         this.time = this.rng.nextRange(0, 24);
         this.initClouds();
     }

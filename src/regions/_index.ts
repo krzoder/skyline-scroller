@@ -94,7 +94,11 @@ export const REGIONS: Record<BiomeType, BiomeDefinition> = {
     },
 };
 
-export const ALL_BIOMES: BiomeType[] = Object.keys(REGIONS) as BiomeType[];
+// Frozen at module load so consumers (BiomeSystem index draw, UI
+// dropdowns, Terminal validation) can't mutate the order and silently
+// shift DEC-01 seed -> initial-biome mapping. Callers needing a
+// sorted/filtered view must copy first: [...ALL_BIOMES].sort().
+export const ALL_BIOMES: readonly BiomeType[] = Object.freeze(Object.keys(REGIONS) as BiomeType[]);
 
 export function getRegion(biome: BiomeType): BiomeDefinition {
     return REGIONS[biome];
