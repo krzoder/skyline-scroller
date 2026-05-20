@@ -1,5 +1,4 @@
 import { deepClone } from './utils/deepClone';
-import { evalExpression } from './utils/Expression';
 import { installGlobalErrorHandlers } from './ui/error-toast';
 import { initSeedControls } from './ui/seed-controls';
 import { initFullscreenToggle, initSpeedGestures, toggleFullscreen } from './ui/gestures';
@@ -7,6 +6,7 @@ import { initAudioControls } from './ui/audio-controls';
 import { toggleWindow } from './ui/window-manager';
 import { initSettingsWindow } from './ui/settings-window';
 import { installKeyboardShortcuts } from './ui/keyboard-shortcuts';
+import { initAdvancedWindow } from './ui/advanced-window';
 import './style.css'
 
 installGlobalErrorHandlers();
@@ -281,259 +281,11 @@ const volumeSlider = document.getElementById('volume-slider') as HTMLInputElemen
 
 const btnSettings = document.getElementById('btn-settings')!;
 const settingsWindow = document.getElementById('settings-window')!;
-const btnAdvanced = document.getElementById('btn-advanced')!;
 const advancedWindow = document.getElementById('advanced-window')!;
 const btnAdvClose = document.getElementById('btn-adv-close')!;
-const btnAdvReset = document.getElementById('btn-adv-reset')!;
 
-const btnResetTimeFmt = document.getElementById('btn-reset-time-fmt')!;
-const timeFmtSelector = document.getElementById('time-fmt-selector')!;
-const timeFmtButtons = timeFmtSelector.querySelectorAll('button');
-
-const btnResetTimeMode = document.getElementById('btn-reset-time-mode')!;
-const timeModeSelector = document.getElementById('time-mode-selector')!;
-const timeModeButtons = timeModeSelector.querySelectorAll('button');
-
-// Remembered clock-face preference (24h/12h) - kept across Ingame-Time
-// detours so toggling Display back to Clock restores the last choice.
-let lastClockFormat: '24h' | '12h' = '24h';
-
-const updateResetButton = (btn: HTMLElement, isDefault: boolean) => {
-    if (isDefault) {
-        btn.classList.add('default');
-        btn.classList.remove('modified');
-        btn.title = "Default";
-    } else {
-        btn.classList.add('modified');
-        btn.classList.remove('default');
-        btn.title = "Reset to Default";
-    }
-};
-
-const updateTimeFormatUI = () => {
-    const current = game.timeFormat || '24h';
-    const mode: 'clock' | 'score' = current === 'score' ? 'score' : 'clock';
-    const clockFmt: '24h' | '12h' = current === '12h' ? '12h' : (current === '24h' ? '24h' : lastClockFormat);
-
-    timeModeButtons.forEach(btn => {
-        btn.classList.toggle('btn-selected', btn.dataset.val === mode);
-    });
-    timeFmtButtons.forEach(btn => {
-        btn.classList.toggle('btn-selected', btn.dataset.val === clockFmt);
-    });
-
-    updateResetButton(btnResetTimeMode, mode === 'clock');
-    updateResetButton(btnResetTimeFmt, clockFmt === '24h');
-}
-
-updateTimeFormatUI();
-
-btnAdvanced.addEventListener('click', () => {
-    settingsWindow.classList.remove('visible');
-    const isVis = advancedWindow.classList.contains('visible');
-
-    if (isVis) {
-        advancedWindow.classList.remove('visible');
-    } else {
-        updateTimeFormatUI();
-        advancedWindow.classList.add('visible');
-        cancelAdvResetConfirm();
-    }
-});
-
-timeModeButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-        const mode = btn.dataset.val as 'clock' | 'score';
-        game.timeFormat = mode === 'score' ? 'score' : lastClockFormat;
-        updateTimeFormatUI();
-    });
-});
-
-timeFmtButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-        const fmt = btn.dataset.val as '24h' | '12h';
-        lastClockFormat = fmt;
-        // Picking a clock face implies Display = Clock; switch mode if needed.
-        game.timeFormat = fmt;
-        updateTimeFormatUI();
-    });
-});
-
-btnResetTimeMode.addEventListener('click', () => {
-    if (btnResetTimeMode.classList.contains('modified')) {
-        game.timeFormat = lastClockFormat;
-        updateTimeFormatUI();
-    }
-});
-
-btnResetTimeFmt.addEventListener('click', () => {
-    if (btnResetTimeFmt.classList.contains('modified')) {
-        lastClockFormat = '24h';
-        if (game.timeFormat !== 'score') game.timeFormat = '24h';
-        updateTimeFormatUI();
-    }
-});
-
-const advSpeedSlider = document.getElementById('adv-speed-slider') as HTMLInputElement;
-const advSpeedInput = document.getElementById('adv-speed-input') as HTMLInputElement;
-const btnResetAdvSpeed = document.getElementById('btn-reset-adv-speed')!;
-
-// Set when the standard speed slider registers `updateSpeed` further down.
-let globalSpeedUpdateCallback: ((spd: number) => void) | null = null;
-
-let currentAdvSpeedCenter: number = 1.0;
-
-const getAdvSpeedFromSlider = (sliderVal: number, center: number): number => {
-    let minS = center - 10;
-    let maxS = center + 10;
-    if (center === 1.0) { minS = -1.0; maxS = 20.0; }
-
-    // When the range straddles the 0..1 "useful" window, dedicate the lower
-    // 10% of the slider to negative values and the next 40% to 0..1 so the
-    // normal-speed band is easier to hit.
-    if (minS < 0 && maxS > 1) {
-        if (sliderVal >= 500) {
-            const pct = (sliderVal - 500) / 500;
-            return 1 + ((maxS - 1) * pct);
-        } else if (sliderVal >= 100) {
-            const pct = (sliderVal - 100) / 400;
-            return 0 + (1 * pct);
-        } else {
-            const pct = sliderVal / 100;
-            return minS + ((0 - minS) * pct);
-        }
-    } else {
-        const pct = sliderVal / 1000;
-        return minS + ((maxS - minS) * pct);
-    }
-};
-
-const getSliderFromAdvSpeed = (speed: number, center: number): number => {
-    let minS = center - 10;
-    let maxS = center + 10;
-    if (center === 1.0) { minS = -1.0; maxS = 20.0; }
-
-    if (minS < 0 && maxS > 1) {
-        if (speed >= 1) {
-            const pct = (speed - 1) / (maxS - 1);
-            return 500 + (500 * pct);
-        } else if (speed >= 0) {
-            const pct = speed / 1;
-            return 100 + (400 * pct);
-        } else {
-            const pct = (speed - minS) / (0 - minS);
-            return 0 + (100 * pct);
-        }
-    } else {
-        const pct = (speed - minS) / (maxS - minS);
-        return 0 + (1000 * pct);
-    }
-};
-
-const updateAdvSpeedUI = (forceCenter?: boolean) => {
-    const spd = game.timeScale;
-
-    if (document.activeElement !== advSpeedSlider) {
-        let minS = currentAdvSpeedCenter - 10;
-        let maxS = currentAdvSpeedCenter + 10;
-        if (currentAdvSpeedCenter === 1.0) { minS = -1.0; maxS = 20.0; }
-
-        // Recenter when forced (typed value, terminal) or when current speed
-        // would otherwise fall outside the slider's visible band.
-        if (forceCenter || spd < minS || spd > maxS) {
-            currentAdvSpeedCenter = spd;
-        }
-
-        const rawSliderVal = getSliderFromAdvSpeed(spd, currentAdvSpeedCenter);
-        advSpeedSlider.value = Math.round(rawSliderVal).toString();
-    }
-
-    if (document.activeElement !== advSpeedInput) {
-        advSpeedInput.value = Number.isInteger(spd) ? spd.toString() : parseFloat(spd.toFixed(1)).toString();
-    }
-
-    const isDefault = spd === 1.0;
-    updateResetButton(btnResetAdvSpeed, isDefault);
-};
-
-const executeAdvSpeedSet = (val: number, recenter: boolean) => {
-    const clamped = Math.max(-10000, Math.min(10000, val));
-    if (recenter) {
-        currentAdvSpeedCenter = clamped;
-    }
-    game.setTimeScale(clamped);
-    updateAdvSpeedUI(recenter);
-    if (globalSpeedUpdateCallback) globalSpeedUpdateCallback(clamped);
-};
-
-const applyAdvInputText = (valStr: string) => {
-    try {
-        const val = evalExpression(valStr);
-        if (typeof val === 'number' && !isNaN(val)) {
-            executeAdvSpeedSet(val, true);
-        }
-    } catch (e) { }
-};
-
-advSpeedSlider.addEventListener('input', (e) => {
-    const sliderVal = parseFloat((e.target as HTMLInputElement).value);
-    const speed = getAdvSpeedFromSlider(sliderVal, currentAdvSpeedCenter);
-    executeAdvSpeedSet(speed, false);
-});
-
-advSpeedInput.addEventListener('change', (e) => {
-    applyAdvInputText((e.target as HTMLInputElement).value);
-});
-
-advSpeedInput.addEventListener('keydown', (e) => {
-    // Blurring triggers the `change` listener, which applies the value.
-    if (e.key === 'Enter') advSpeedInput.blur();
-});
-
-btnResetAdvSpeed.addEventListener('click', () => {
-    if (btnResetAdvSpeed.classList.contains('modified')) {
-        currentAdvSpeedCenter = 1.0;
-        executeAdvSpeedSet(1.0, false);
-    }
-});
-
-let isAdvResetConfirming = false;
-const cancelAdvResetConfirm = () => {
-    if (isAdvResetConfirming) {
-        isAdvResetConfirming = false;
-        btnAdvReset.innerText = "Reset Default";
-        btnAdvReset.style.background = "#c62828";
-    }
-}
-
-btnAdvReset.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (isAdvResetConfirming) {
-        game.timeFormat = '24h';
-        updateTimeFormatUI();
-
-        currentAdvSpeedCenter = 1.0;
-        executeAdvSpeedSet(1.0, false);
-
-        cancelAdvResetConfirm();
-    } else {
-        isAdvResetConfirming = true;
-        btnAdvReset.innerText = "Are you sure?";
-        btnAdvReset.style.background = "#d32f2f";
-        setTimeout(cancelAdvResetConfirm, 3000);
-    }
-});
-
+const advanced = initAdvancedWindow({ game, settingsWindow });
 const audio = initAudioControls({ game, btnSound, soundContainer, volumePopup, volumeSlider });
-
-advancedWindow.addEventListener('click', (e) => {
-    if (e.target !== btnAdvReset) cancelAdvResetConfirm();
-});
-
-btnAdvClose.addEventListener('click', () => {
-    cancelAdvResetConfirm();
-    advancedWindow.classList.remove('visible');
-});
 const btnFullscreen = document.getElementById('btn-fullscreen')!;
 const btnCustomGen = document.getElementById('btn-custom-gen')!;
 const speedSlider = document.getElementById('speed-slider') as HTMLInputElement;
@@ -1199,22 +951,19 @@ const updateSpeed = (speed: number) => {
 
     (game as any).setTimeScale?.(speed);
 
-    if (typeof updateAdvSpeedUI === 'function') updateAdvSpeedUI(true);
+    advanced.updateUI(true);
 };
 
-globalSpeedUpdateCallback = (spd: number) => {
+advanced.onSpeedChange((spd: number) => {
     // The base slider only covers 0.1..10. If the advanced speed is outside
     // that range, snap the base slider to 0 to signal "manual override".
+    if (document.activeElement === speedSlider) return;
     if (spd >= 0.1 && spd <= 10) {
-        if (document.activeElement !== speedSlider) {
-            speedSlider.value = getSliderFromSpeed(spd).toString();
-        }
+        speedSlider.value = getSliderFromSpeed(spd).toString();
     } else {
-        if (document.activeElement !== speedSlider) {
-            speedSlider.value = "0";
-        }
+        speedSlider.value = "0";
     }
-};
+});
 
 speedSlider.addEventListener('input', (e) => {
     const val = parseFloat((e.target as HTMLInputElement).value);
@@ -1294,9 +1043,7 @@ terminalInput.addEventListener('input', updateTerminalHints);
 // Called by the Terminal after a command runs so the UI reflects any
 // game-state changes that bypassed the normal UI handlers.
 const syncUIFromTerminal = () => {
-    if (globalSpeedUpdateCallback) globalSpeedUpdateCallback(game.timeScale);
-    updateAdvSpeedUI();
-
+    advanced.updateUI();
     audio.syncFromGame();
 
     if (previewGame && previewGame.generator) {
@@ -1304,7 +1051,6 @@ const syncUIFromTerminal = () => {
         previewGame.treeConfig = deepClone(game.treeConfig);
     }
 
-    updateTimeFormatUI();
     if (customGenWindow.classList.contains('visible')) {
         renderTreeSettings();
         refreshPreview();
