@@ -8,7 +8,7 @@ const TOAST_TTL_MS = 4000;
 
 type ToastEl = HTMLElement & { _hideTimer?: number };
 
-export function showErrorToast(message: string): void {
+function showErrorToast(message: string): void {
     let toast = document.getElementById('error-toast') as ToastEl | null;
     if (!toast) {
         toast = document.createElement('div') as ToastEl;
