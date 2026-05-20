@@ -3,90 +3,65 @@ import { evalExpression, ExpressionError } from '../src/utils/Expression';
 
 describe('evalExpression', () => {
   describe('basic arithmetic', () => {
-    it('integers', () => {
-      expect(evalExpression('1 + 2')).toBe(3);
-      expect(evalExpression('5 - 3')).toBe(2);
-      expect(evalExpression('4 * 6')).toBe(24);
-      expect(evalExpression('10 / 4')).toBe(2.5);
+    it.each([
+      ['1 + 2', 3],
+      ['5 - 3', 2],
+      ['4 * 6', 24],
+      ['10 / 4', 2.5],
+      ['0.5 + 0.25', 0.75],
+      ['1.5 * 2', 3],
+      ['1e3', 1000],
+      ['2.5e-2', 0.025],
+      ['1 + 2 * 3', 7],
+      ['(1 + 2) * 3', 9],
+      ['2 + 3 * 4 - 1', 13],
+      ['-5', -5],
+      ['-(1 + 2)', -3],
+      ['5 - -3', 8],
+      ['--5', 5],
+      ['+5', 5],
+      ['+(1 + 2)', 3],
+      ['1/2', 0.5],
+    ])('%s -> %s', (input, expected) => {
+      expect(evalExpression(input)).toBe(expected);
     });
 
-    it('decimals', () => {
-      expect(evalExpression('0.5 + 0.25')).toBe(0.75);
-      expect(evalExpression('1.5 * 2')).toBe(3);
-    });
-
-    it('scientific notation', () => {
-      expect(evalExpression('1e3')).toBe(1000);
-      expect(evalExpression('2.5e-2')).toBe(0.025);
-    });
-
-    it('operator precedence', () => {
-      expect(evalExpression('1 + 2 * 3')).toBe(7);
-      expect(evalExpression('(1 + 2) * 3')).toBe(9);
-      expect(evalExpression('2 + 3 * 4 - 1')).toBe(13);
-    });
-
-    it('unary minus', () => {
-      expect(evalExpression('-5')).toBe(-5);
-      expect(evalExpression('-(1 + 2)')).toBe(-3);
-      expect(evalExpression('5 - -3')).toBe(8);
-      expect(evalExpression('--5')).toBe(5);
-    });
-
-    it('unary plus', () => {
-      expect(evalExpression('+5')).toBe(5);
-      expect(evalExpression('+(1 + 2)')).toBe(3);
-    });
-
-    it('division', () => {
-      expect(evalExpression('1/2')).toBe(0.5);
+    it('1/3 (approximate)', () => {
       expect(evalExpression('1/3')).toBeCloseTo(0.3333, 3);
     });
   });
 
   describe('constants', () => {
-    it('π / pi', () => {
-      expect(evalExpression('π')).toBe(Math.PI);
-      expect(evalExpression('pi')).toBe(Math.PI);
-      expect(evalExpression('2*π')).toBeCloseTo(2 * Math.PI, 10);
+    it.each([
+      ['π', Math.PI],
+      ['pi', Math.PI],
+      ['e', Math.E],
+    ])('%s -> %s', (input, expected) => {
+      expect(evalExpression(input)).toBe(expected);
     });
 
-    it('e', () => {
-      expect(evalExpression('e')).toBe(Math.E);
-      expect(evalExpression('e*2')).toBeCloseTo(2 * Math.E, 10);
+    it.each([
+      ['2*π', 2 * Math.PI],
+      ['e*2', 2 * Math.E],
+    ])('%s (approximate)', (input, expected) => {
+      expect(evalExpression(input)).toBeCloseTo(expected, 10);
     });
   });
 
-  describe('safety — rejects code-exec attempts', () => {
-    it('arrow function IIFE locks rejected', () => {
-      expect(() => evalExpression('(()=>1)()')).toThrow(ExpressionError);
-    });
-
-    it('infinite loop syntax rejected', () => {
-      expect(() => evalExpression('(()=>{while(1);})()')).toThrow(ExpressionError);
-    });
-
-    it('member access rejected', () => {
-      expect(() => evalExpression('Math.PI')).toThrow(ExpressionError);
-    });
-
-    it('identifiers rejected', () => {
-      expect(() => evalExpression('alert')).toThrow(ExpressionError);
-      expect(() => evalExpression('x + 1')).toThrow(ExpressionError);
-    });
-
-    it('function calls rejected', () => {
-      expect(() => evalExpression('sin(1)')).toThrow(ExpressionError);
-    });
-
-    it('empty input rejected', () => {
-      expect(() => evalExpression('')).toThrow(ExpressionError);
-      expect(() => evalExpression('   ')).toThrow(ExpressionError);
-    });
-
-    it('mismatched parens rejected', () => {
-      expect(() => evalExpression('(1 + 2')).toThrow(ExpressionError);
-      expect(() => evalExpression('1 + 2)')).toThrow(ExpressionError);
+  describe('safety - rejects code-exec attempts', () => {
+    it.each([
+      ['arrow function IIFE', '(()=>1)()'],
+      ['infinite loop syntax', '(()=>{while(1);})()'],
+      ['member access', 'Math.PI'],
+      ['identifier alert', 'alert'],
+      ['identifier x', 'x + 1'],
+      ['function call sin', 'sin(1)'],
+      ['empty input', ''],
+      ['whitespace input', '   '],
+      ['unclosed paren', '(1 + 2'],
+      ['extra closing paren', '1 + 2)'],
+    ])('rejects: %s', (_label, input) => {
+      expect(() => evalExpression(input)).toThrow(ExpressionError);
     });
   });
 });
