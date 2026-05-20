@@ -690,7 +690,7 @@ btnGenApply.addEventListener('click', () => {
 });
 
 import { DEFAULT_TREE_CONFIG } from './procgen/TreeConfig';
-import type { TreeType } from './engine/Tree';
+import type { TreeType } from './procgen/entities/Tree';
 import type { BiomeType } from './procgen/BiomeSystem';
 
 const treeSettingsContainer = document.getElementById('tree-settings-dropdown-container');
@@ -707,7 +707,7 @@ if (!treeSettingsContainer && customGenWindow) {
 
 let isTreeSettingsOpen = false;
 
-import { Tree } from './engine/Tree';
+import { Tree } from './procgen/entities/Tree';
 
 // Track intervals to clear them on close to avoid leaking timers per icon.
 const iconIntervals: number[] = [];

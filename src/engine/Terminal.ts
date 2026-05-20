@@ -1,7 +1,7 @@
 import { deepClone } from '../utils/deepClone';
 import { evalExpression } from '../utils/Expression';
 import type { Game } from './Game';
-import type { TreeType } from './Tree';
+import type { TreeType } from '../procgen/entities/Tree';
 import type { BiomeType } from '../procgen/BiomeSystem';
 
 export interface CommandContext {

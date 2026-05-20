@@ -1,5 +1,5 @@
 import { CityEntity } from './CityEntity';
-import { Random } from '../utils/Random';
+import { Random } from '../../utils/Random';
 
 export type TreeType = 'sequoia' | 'pine' | 'oak' | 'bush' | 'hedge' | 'cactus';
 

@@ -1,4 +1,4 @@
-import type { Renderable } from './Renderable';
+import type { Renderable } from '../../engine/Renderable';
 
 export type GroundType = 'grass' | 'pavement' | 'water' | 'dirt';
 

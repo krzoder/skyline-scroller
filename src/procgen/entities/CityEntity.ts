@@ -1,4 +1,4 @@
-import type { Renderable } from './Renderable';
+import type { Renderable } from '../../engine/Renderable';
 
 export abstract class CityEntity implements Renderable {
     x: number;

@@ -1,6 +1,6 @@
-import type { Renderable } from './Renderable';
+import type { Renderable } from '../../engine/Renderable';
 import { createBrickPattern, createWoodPattern } from './TextureGenerator';
-import { Random } from '../utils/Random';
+import { Random } from '../../utils/Random';
 
 export type BuildingMaterial = 'wood' | 'brick' | 'stone' | 'plaster';
 export type RoofType = 'flat' | 'gabled' | 'dome' | 'crenelated';

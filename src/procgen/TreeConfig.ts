@@ -1,4 +1,4 @@
-import type { TreeType } from '../engine/Tree';
+import type { TreeType } from './entities/Tree';
 import type { BiomeType } from './BiomeSystem';
 
 export interface TreeConfigItem {
