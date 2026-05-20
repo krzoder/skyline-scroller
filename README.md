@@ -1,181 +1,227 @@
 # Skyline Scroller
 
-Proceduralnie generowany, scrollujący się pejzaż miasta z efektem paralaksy, cyklem dnia i nocy oraz pogodą. Wszystko rysuje się na HTML5 Canvas - bez zewnętrznych bibliotek graficznych, tylko czysty TypeScript.
+Procedurally generated parallax city scroller with a day/night cycle and weather, rendered entirely to an HTML5 Canvas - no graphics libraries, just plain TypeScript.
 
-**Wersja**: 1.2.0
+**Version**: 1.2.0
 
-## Gdzie to zobaczyć
+## Where to see it
 
-Aplikacja jest dostępna pod dwoma adresami - oba pokazują dokładnie tę samą wersję:
+Two URLs with different purposes:
 
-- **GitHub Pages** - https://krzoder.github.io/skyline-scroller/
-- **fidom.link** (homelab) - https://skyline-scroller.fidom.link/
+| URL | What's there | When it updates |
+|---|---|---|
+| **[krzoder.github.io/skyline-scroller/](https://krzoder.github.io/skyline-scroller/)** | Production - always reflects `main` | ~2 min after each merge |
+| **[skyline-scroller.fidom.link](https://skyline-scroller.fidom.link/)** | PR preview - the **most recently pushed PR HEAD**, or `main` when no PR is open | ~1 min after each PR commit |
 
-Repozytorium: https://github.com/krzoder/skyline-scroller
-
----
-
-## Jak to działa - od kodu do strony w internecie
-
-Cały proces jest zautomatyzowany. Kiedy ktoś wrzuca zmiany do gałęzi `main`, GitHub sam buduje aplikację i publikuje ją na obu stronach. Krok po kroku:
-
-### 1. Ktoś robi zmianę i otwiera Pull Request
-
-Każda zmiana zaczyna się w osobnej gałęzi (branchu). Pull Request (PR) to taki "wniosek o włączenie zmiany do głównej wersji" - ktoś inny może go obejrzeć i zatwierdzić, zanim zmiana trafi do `main`.
-
-### 2. GitHub uruchamia testy (CI)
-
-Gdy tylko powstaje PR, GitHub w tle:
-
-- sprawdza, czy kod nie ma błędów składniowych (TypeScript),
-- uruchamia **67 testów automatycznych**,
-- buduje aplikację, żeby się upewnić, że da się ją zbudować.
-
-Plik konfiguracyjny: [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
-
-Jeśli coś się sypnie - pojawia się czerwony krzyżyk przy PR i nie da się go zmergować, dopóki nie będzie naprawione.
-
-### 3. Merge do `main`
-
-Gdy CI jest zielony i ktoś zatwierdzi PR, można go zmergować do gałęzi `main`. To moment, w którym zmiana staje się "oficjalna".
-
-### 4. Automatyczna publikacja na GitHub Pages
-
-Zaraz po merge do `main`:
-
-- workflow [`deploy.yml`](.github/workflows/deploy.yml) pobiera już zbudowaną wersję z CI,
-- wgrywa ją na gałąź `gh-pages`,
-- GitHub serwuje ją pod adresem **krzoder.github.io/skyline-scroller/**.
-
-Cała publikacja trwa około **2-3 minuty** od momentu mergea. Nic nie trzeba klikać ręcznie.
-
-### 5. Publikacja na fidom.link (homelab)
-
-Druga lokalizacja (`skyline-scroller.fidom.link`) jest na prywatnym serwerze (homelab) z proxy Traefik + kontener nginx.
-
-Workflow [`deploy-fidom.yml`](.github/workflows/deploy-fidom.yml) uruchamia się **ręcznie** (przyciskiem "Run workflow" w zakładce Actions na GitHubie). Buduje aplikację i wgrywa pliki bezpośrednio na serwer przez self-hosted runner. Docelowo będzie odpalał się automatycznie po każdym pushu do `main`, ale na razie wymaga jednego kliknięcia.
-
-Pełne stawianie kontenera + Traefik route + nginx config jest opisane w osobnym workflow w repo `fszalaj/homelab` - `deploy-skyline-scroller.yml`.
+Repository: https://github.com/krzoder/skyline-scroller
 
 ---
 
-## Jak samemu wprowadzić zmianę - instrukcja krok po kroku
+## The pipeline at a glance
 
-Załóżmy, że chcesz coś poprawić w aplikacji. Oto pełna ścieżka:
-
-### Krok 1 - Utwórz nową gałąź
-
-Na lokalnej kopii repozytorium (albo bezpośrednio w GitHubie):
-
-```bash
-git checkout -b moja-zmiana
+```
+PR commit ──► CI (lint, typecheck, test, build) ──┐
+                                                  │
+              build dist on ubuntu-hosted runner ─┤
+                                                  ▼
+                  artifact downloaded by self-hosted homelab runner
+                                                  │
+                  atomic-swap into nginx data dir │
+                                                  ▼
+                          fidom.link shows the PR
+                                                  │
+                  sticky PR comment with preview URL
+                                                  │
+                  await-approval job pauses for manual review
+                                                  ▼
+              user tests fidom -> clicks Approve in GitHub UI
+                                                  │
+                  branch-protected merge unlocks
+                                                  ▼
+              squash-merge -> deploy.yml -> GitHub Pages
+                                                  ▼
+                          krzoder.github.io serves main
 ```
 
-Nazwa gałęzi może być dowolna, ale dobrze, żeby opisywała co robisz, np. `fix-color-bug` albo `dodaj-nowy-biom`.
+## How an end-to-end change actually goes
 
-### Krok 2 - Zrób zmiany i zacommituj
+### 1. Open a PR
 
 ```bash
+git checkout -b my-change
+# ... edit ...
 git add .
-git commit -m "krótki opis tego, co zmieniłeś"
-git push -u origin moja-zmiana
+git commit -m "short description"
+git push -u origin my-change
 ```
 
-### Krok 3 - Otwórz Pull Request
+Open the PR via the link GitHub prints.
 
-GitHub po pushu pokaże Ci link typu:
+### 2. CI runs automatically (a few green checks)
 
-> https://github.com/krzoder/skyline-scroller/pull/new/moja-zmiana
+- **Lint & Typecheck** - `tsc --noEmit`
+- **Test** - 67 vitest cases, must all pass
+- **Build (Node 24)** - production bundle compiles
+- **CodeQL** - security/quality scan
 
-Klikasz, opisujesz **co i dlaczego** zmieniłeś, klikasz "Create pull request".
+If any check is red, fix it. Push the fix - everything below reruns.
 
-### Krok 4 - Poczekaj na CI
+### 3. PR preview deploys to fidom.link
 
-Pod PR-em zobaczysz checklistę:
+After CI is green, the `PR Preview on fidom.link` workflow runs:
 
-- ✅ Lint & Typecheck
-- ✅ Test
-- ✅ Build (Node 24)
-- ✅ CodeQL
-- ✅ Build and deploy preview
+1. Builds the PR commit on a GitHub-hosted ubuntu runner (untrusted code stays here, never on your homelab box).
+2. Uploads `dist/` as a workflow artifact.
+3. A self-hosted runner on the homelab downloads the artifact and **atomic-swaps** it into nginx (`mv -T` so nginx never serves a half-written tree).
+4. Smoke-tests `https://skyline-scroller.fidom.link/health` returns 200.
+5. Posts a sticky comment on the PR:
 
-Jeśli wszystko zielone - dobrze. Jeśli coś czerwone - klikasz w nazwę i czytasz, co się wywaliło.
+> 🚀 **Preview live**: https://skyline-scroller.fidom.link/
+>
+> Built from `<sha>`.
+>
+> **Next step**:
+> 1. Open https://skyline-scroller.fidom.link/ and verify everything works.
+> 2. Go to the deployment approval page and click **Review deployments → fidom-verified → Approve and deploy**.
+> 3. After approval, the `await-approval` status check turns green and you can **Squash and merge**.
 
-### Krok 5 - Merge do main
+### 4. Test on fidom.link
 
-Klikasz zielony przycisk **"Squash and merge"** (preferowana metoda - łączy wszystkie commity z PR-a w jeden). Potwierdzasz.
+Click the preview link. Verify your change actually works in production-like conditions:
+- Does the canvas render?
+- Are the new biome/tree/UI buttons functioning?
+- Did you break the terminal or the keyboard shortcuts?
+- Run `debug-state` in the in-app terminal, copy the JSON, attach to the PR if anything looks off.
 
-### Krok 6 - Czekasz 2-3 minuty
+### 5. Approve the deployment
 
-W zakładce [Actions](https://github.com/krzoder/skyline-scroller/actions) zobaczysz, że ruszył workflow "Deploy to GitHub Pages". Jak skończy - zmiana jest na żywo pod **krzoder.github.io/skyline-scroller/**.
+The PR has a status check called `await-approval` that's **stuck on "pending"**. It's a job in the workflow that's waiting on a GitHub Environment called `fidom-verified` with you set as a required reviewer.
 
-Dla fidom.link - wchodzisz w [Actions → Deploy fidom.link](https://github.com/krzoder/skyline-scroller/actions/workflows/deploy-fidom.yml) i klikasz **Run workflow**.
+To approve:
+- Either click the link in the sticky comment, or go to **Actions → the latest "PR Preview on fidom.link" run for your PR**.
+- You'll see a yellow banner: **"Review deployments"** → click it.
+- Tick **`fidom-verified`** → click **"Approve and deploy"**.
 
-### Etykieta `auto-merge` (skrót dla zaufanych zmian)
+The `await-approval` job now succeeds. Status check goes green. The merge button unblocks.
 
-Jeśli dodasz do PR-a etykietę **`auto-merge`**, to po przejściu wszystkich testów PR sam się zmerguje - nie trzeba klikać przycisku. Pasuje do drobnych zmian (literówki, bumpy zależności).
+> **Important**: Pushing a new commit invalidates the prior approval. fidom rebuilds, the approval gate resets, and you must approve again. This is by design - each commit must be re-verified.
+
+### 6. Squash and merge
+
+Click the green **"Squash and merge"** button. Confirm.
+
+### 7. Production deploys automatically
+
+`deploy.yml` triggers on every push to `main`:
+- Downloads the dist artifact built by CI (the one from the merged PR).
+- Publishes to the `gh-pages` branch.
+- GitHub Pages serves it at https://krzoder.github.io/skyline-scroller/.
+
+End-to-end: ~3 minutes from "Squash and merge" to the change being live on production.
+
+### 8. fidom.link cleans up
+
+After the PR closes (merged or abandoned), the workflow rebuilds `main` and redeploys to fidom. No stale PR content survives the PR.
 
 ---
 
-## Dla developerów - lokalne uruchomienie
+## One-time repo setup for the approval gate
 
-Wymagania: **Node.js 24+** (Active LTS). `package.json` ma `engines.node: ">=24.0.0 <27.0.0"` i `scripts/dev-setup.sh` sprawdza wersję przed instalacją.
+**You only do this once, per repository owner.**
+
+1. Go to **Settings → Environments → New environment**.
+2. Name it `fidom-verified`.
+3. Under **Deployment protection rules**, tick **"Required reviewers"** and add yourself.
+4. (Optional) Set **"Wait timer"** to 0 (default).
+5. Save.
+
+Then add a branch protection rule on `main`:
+1. **Settings → Branches → Branch protection rules → Add rule**.
+2. Branch name pattern: `main`.
+3. Tick **"Require status checks to pass before merging"**.
+4. Add the check called `Await manual fidom verification` (the job's display name from `pr-preview.yml`).
+5. Save.
+
+After this, no PR can merge into `main` until you've clicked Approve on its deployment to `fidom-verified` for the current HEAD SHA.
+
+---
+
+## Workflow files
+
+| File | What it does |
+|---|---|
+| [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | Lint, typecheck, test, build. Runs on PR + push to main. |
+| [`.github/workflows/pr-preview.yml`](.github/workflows/pr-preview.yml) | The full PR-preview-on-fidom + approval-gate flow above. |
+| [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) | Builds main → publishes to GitHub Pages. Triggers on CI success on main. |
+| [`.github/workflows/deploy-fidom.yml`](.github/workflows/deploy-fidom.yml) | Emergency manual lever: rebuild main and rsync to fidom. workflow_dispatch only. |
+| [`.github/workflows/auto-merge.yml`](.github/workflows/auto-merge.yml) | If a PR has the `auto-merge` label and all checks pass (including `await-approval`), GitHub auto-merges. Useful when you've already approved and want to walk away. |
+| [`.github/workflows/codeql.yml`](.github/workflows/codeql.yml) | Weekly + PR security scan. |
+| [`.github/workflows/dep-audit.yml`](.github/workflows/dep-audit.yml) | Daily `npm audit`. Opens issue if high+ vulnerability appears. |
+| [`.github/workflows/release.yml`](.github/workflows/release.yml) | Drafts GitHub release notes from PRs since last tag. |
+
+The container + Traefik route + nginx config for fidom.link live in `fszalaj/homelab`. See [`wiki/decisions/DEC-09-homelab-deploy.md`](wiki/decisions/DEC-09-homelab-deploy.md) and [`wiki/decisions/DEC-10-pr-preview-on-fidom.md`](wiki/decisions/DEC-10-pr-preview-on-fidom.md).
+
+---
+
+## Local development
+
+Requirements: **Node.js 24+** (Active LTS). `package.json` has `engines.node: ">=24.0.0 <27.0.0"` and `scripts/dev-setup.sh` checks the version before installing.
 
 ```bash
-# pierwszy raz po sklonowaniu repo:
+# first time after cloning:
 git clone https://github.com/krzoder/skyline-scroller
 cd skyline-scroller
 bash scripts/dev-setup.sh
 
-# dalej:
-npm run dev        # serwer deweloperski (http://localhost:5173)
-npm run build      # produkcyjny build do katalogu dist/
-npx vitest run     # uruchom testy (67 case'ów)
+# from then on:
+npm run dev        # dev server (http://localhost:5173)
+npm run build      # production build to dist/
+npx vitest run     # run the test suite (67 cases)
 ```
 
-### Konsola deweloperska w aplikacji
+### In-app developer console
 
-Wbudowany terminal: klawisz `t` lub `Enter` z głównego ekranu. Dostępne komendy:
+Built-in terminal: press `t` or `Enter` from the main view. Commands:
 
-- `seed [wartość|random]` - pokaż lub ustaw seed
-- `speed <wartość>` - tempo czasu (akceptuje wyrażenia typu `2*pi`)
-- `biome [nazwa]` - wymuś biom (lub pokaż aktualny)
-- `debug-state` - dumpuje stan gry (seed, cameraX, biome, sky time, etc.) jako JSON do clipboardu - bardzo przydatne do zgłoszeń bugów
-- `format [24h|12h|score]` - format wyświetlania czasu
-- `help` - lista wszystkich komend
+- `seed [value|random]` - show or set the world seed
+- `speed <value>` - time scale (accepts expressions like `2*pi`)
+- `biome [name]` - force a biome (or show the current one)
+- `debug-state` - dumps current state (seed, cameraX, biome, sky time, etc.) as JSON to the clipboard - useful for bug reports
+- `format [24h|12h|score]` - clock display format
+- `help` - list all commands
 
-### Struktura kodu
+### Codebase layout
 
-- `src/main.ts` (427 LOC) - orchestrator: tworzy `Game`, wpina moduły UI, składa keyboard shortcuts.
-- `src/ui/` - 10 modułów odpowiedzialnych za poszczególne kawałki interfejsu (settings, advanced, custom-gen, terminal-bind, gestures, audio-controls, error-toast, seed-controls, keyboard-shortcuts, window-manager).
-- `src/engine/` - silnik renderowania (`Game`, `Layer`, `SkySystem`, `Terminal`, `Renderable`).
-- `src/procgen/` - generacja proceduralna (`CityGenerator`, `BiomeSystem`, `TreeConfig`).
-- `src/procgen/entities/` - rysowane obiekty (`Building`, `Tree`, `Landscape`, `Ground`, `CityEntity`, `TextureGenerator`).
-- `src/regions/` - rejestr biomów (declarative table z trees, materials, roofs, palette).
-- `src/utils/` - kontrakty: `Random` (deterministyczny RNG z `.fork(label)`), `Expression` (sandboxowany parser zamiast `eval()`), `deepClone` (`structuredClone`).
-- `src/config.ts` - centralne stałe (czasy trwania biomów, prędkość kamery, zakresy wysokości feature'ów).
+- `src/main.ts` (~427 LOC) - orchestrator: creates `Game`, wires up UI modules, installs keyboard shortcuts.
+- `src/ui/` - 10 modules covering individual UI slices (settings, advanced, custom-gen, terminal-bind, gestures, audio-controls, error-toast, seed-controls, keyboard-shortcuts, window-manager).
+- `src/engine/` - rendering engine (`Game`, `Layer`, `SkySystem`, `Terminal`, `Renderable`).
+- `src/procgen/` - procedural generation (`CityGenerator`, `BiomeSystem`, `TreeConfig`).
+- `src/procgen/entities/` - drawable entities (`Building`, `Tree`, `Landscape`, `Ground`, `CityEntity`, `TextureGenerator`).
+- `src/regions/` - declarative biome registry (trees, materials, roofs, palette).
+- `src/utils/` - contract modules: `Random` (seeded RNG with `.fork(label)`), `Expression` (sandboxed parser instead of `eval()`), `deepClone` (`structuredClone`).
+- `src/config.ts` - central tunable constants (biome durations, camera speed, feature height ranges).
 
-Pełna dokumentacja techniczna i architektura projektu są w katalogu [`wiki/`](wiki/) - to baza wiedzy w formacie Obsidian. Wystarczy otworzyć katalog `wiki/` jako vault w aplikacji Obsidian.
+Full technical documentation and architecture notes live in the [`wiki/`](wiki/) directory - it's an Obsidian vault. Open the `wiki/` folder as a vault in Obsidian.
 
-Najważniejsze strony:
+Most useful entry points:
 
-- [`wiki/index.md`](wiki/index.md) - spis treści
-- [`wiki/hot.md`](wiki/hot.md) - aktualny stan projektu
-- [`wiki/decisions/`](wiki/decisions/) - decyzje architektoniczne (DEC-NN)
+- [`wiki/index.md`](wiki/index.md) - table of contents
+- [`wiki/hot.md`](wiki/hot.md) - current project state
+- [`wiki/decisions/`](wiki/decisions/) - architecture decisions (DEC-NN)
 
 ---
 
-## Stos technologiczny
+## Tech stack
 
-- **TypeScript** (kompilator: tsc)
+- **TypeScript** (compiler: `tsc`)
 - **Vite** (bundler)
-- **Vitest** (testy - 67 case'ów w 5 plikach)
-- **Canvas API 2D** (rendering, bez WebGL i bez bibliotek graficznych)
-- **Zero zewnętrznych zależności w runtime** - w przeglądarce ląduje czysty kod aplikacji (~79 kB, ~22 kB po gzipie).
+- **Vitest** (67 test cases across 5 files)
+- **Canvas API 2D** (rendering - no WebGL, no graphics libraries)
+- **Zero runtime dependencies** - the bundle that lands in the browser is purely the app code (~79 kB, ~22 kB gzipped).
 
 ## Hosting
 
-- **GitHub Pages** - darmowy hosting GitHuba, automatyczny po merge do `main`.
-- **fidom.link** - własny serwer (homelab) z Traefikiem i nginxem, dostęp publiczny (bez logowania).
+- **GitHub Pages** - free static hosting, deploys automatically on every merge to `main`.
+- **fidom.link** - self-hosted on a homelab box (Traefik + nginx), public access (no auth).
 
-Decyzja architektoniczna i konfiguracja homelaba: [`wiki/decisions/DEC-09-homelab-deploy.md`](wiki/decisions/DEC-09-homelab-deploy.md).
+Architecture decisions and homelab config: [`wiki/decisions/DEC-09-homelab-deploy.md`](wiki/decisions/DEC-09-homelab-deploy.md), [`wiki/decisions/DEC-10-pr-preview-on-fidom.md`](wiki/decisions/DEC-10-pr-preview-on-fidom.md).
