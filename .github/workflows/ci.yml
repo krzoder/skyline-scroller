@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    # Weekly sanity check on next-major Node (Mondays 08:00 UTC).
+    - cron: '0 8 * * 1'
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -14,22 +17,13 @@ permissions:
   contents: read
 
 jobs:
-  lint:
-    name: Lint
+  lint-and-typecheck:
+    name: Lint & Typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup
-      - name: Run lint
-        run: npx tsc --noEmit  # tsc-as-linter, per DEC-05 constraint of no new dev deps
-
-  typecheck:
-    name: Typecheck
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: ./.github/actions/setup
-      - name: Type check
+      - name: Type check (tsc as linter)
         run: npx tsc --noEmit --pretty false
 
   test:
@@ -47,7 +41,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['22', '24']
+        # On PR/push: Node 24 (current Active LTS).
+        # On weekly schedule: also exercise the next-major lane.
+        node: ${{ github.event_name == 'schedule' && fromJSON('["24", "26"]') || fromJSON('["24"]') }}
     env:
       PUBLIC_BASE_PATH: /skyline-scroller/
     steps:
@@ -58,7 +54,7 @@ jobs:
       - name: Build
         run: npm run build
       - name: Upload build artefact
-        if: matrix.node == '22'
+        if: matrix.node == '24'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dist-${{ github.sha }}

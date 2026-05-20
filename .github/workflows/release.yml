@@ -22,14 +22,10 @@ jobs:
         with:
           fetch-depth: 0  # release-drafter needs full history to enumerate PRs
 
-      - name: Read version from src/config/version.ts
+      - name: Read version from package.json
         id: version
         run: |
-          VERSION=$(node -e "const fs=require('fs');const m=fs.readFileSync('src/config/version.ts','utf8').match(/['\"]([^'\"]+)['\"]/);if(!m)process.exit(1);process.stdout.write(m[1]);" || true)
-          if [ -z "$VERSION" ]; then
-            # fallback: read from package.json (DEC-05 says package.json is canonical)
-            VERSION=$(node -p "require('./package.json').version")
-          fi
+          VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
 
