@@ -1,26 +1,96 @@
 /**
- * Biome registry. Each `Region` is a declarative `BiomeDefinition`.
- * To add a new biome:
- *   1. Add `MyBiome` to the `BiomeType` union in `procgen/BiomeSystem.ts`.
- *   2. Create `src/regions/myBiome.ts` exporting a `BiomeDefinition`.
- *   3. Import and add it to `REGIONS` below.
- * No other engine code needs to change.
+ * Biome registry. Each region is a declarative BiomeDefinition. To add a
+ * new biome, extend the BiomeType union in `procgen/BiomeSystem.ts` and
+ * add an entry to REGIONS below - no engine changes needed.
  */
 
 import type { BiomeType } from '../procgen/BiomeSystem';
-import type { BiomeDefinition } from './types';
-import { forest } from './forest';
-import { desert } from './desert';
-import { tundra } from './tundra';
-import { plains } from './plains';
-import { city } from './city';
+import type { TreeType } from '../engine/Tree';
+import type { BuildingMaterial, RoofType } from '../engine/Building';
+import type { GroundType } from '../engine/Ground';
+
+export interface BiomeDefinition {
+    id: BiomeType;
+    label: string;
+    transitionsTo: BiomeType[];
+    backgroundGround: GroundType;
+    trees: TreeType[];
+    materials: BuildingMaterial[];
+    roofs: RoofType[];
+    paletteHue: { min: number; max: number } | null;
+    paletteSaturation: number;
+    paletteLightness: number;
+    duration: { min: number; max: number };
+}
+
+const DEFAULT_DURATION = { min: 3000, max: 8000 };
 
 export const REGIONS: Record<BiomeType, BiomeDefinition> = {
-    forest,
-    desert,
-    tundra,
-    plains,
-    city,
+    forest: {
+        id: 'forest',
+        label: 'Forest',
+        transitionsTo: ['tundra', 'plains'],
+        backgroundGround: 'grass',
+        trees: ['sequoia', 'pine', 'oak', 'bush'],
+        materials: ['wood', 'stone'],
+        roofs: ['gabled'],
+        paletteHue: { min: 90, max: 150 },
+        paletteSaturation: 50,
+        paletteLightness: 50,
+        duration: DEFAULT_DURATION,
+    },
+    desert: {
+        id: 'desert',
+        label: 'Desert',
+        transitionsTo: ['plains', 'city'],
+        backgroundGround: 'dirt',
+        trees: ['cactus'],
+        materials: ['stone', 'plaster'],
+        roofs: ['flat', 'dome'],
+        paletteHue: { min: 30, max: 60 },
+        paletteSaturation: 40,
+        paletteLightness: 70,
+        duration: DEFAULT_DURATION,
+    },
+    tundra: {
+        id: 'tundra',
+        label: 'Tundra',
+        transitionsTo: ['forest', 'plains'],
+        backgroundGround: 'dirt',
+        trees: ['pine'],
+        materials: ['stone'],
+        roofs: ['gabled'],
+        paletteHue: { min: 180, max: 240 },
+        paletteSaturation: 30,
+        paletteLightness: 80,
+        duration: DEFAULT_DURATION,
+    },
+    plains: {
+        id: 'plains',
+        label: 'Plains',
+        transitionsTo: ['forest', 'desert', 'city'],
+        backgroundGround: 'dirt',
+        trees: ['oak', 'bush', 'hedge'],
+        materials: ['brick', 'stone'],
+        roofs: ['flat', 'crenelated'],
+        paletteHue: null,
+        paletteSaturation: 50,
+        paletteLightness: 50,
+        duration: DEFAULT_DURATION,
+    },
+    city: {
+        id: 'city',
+        label: 'City',
+        transitionsTo: ['plains', 'desert'],
+        backgroundGround: 'pavement',
+        trees: ['hedge'],
+        materials: ['brick', 'stone'],
+        roofs: ['flat', 'crenelated'],
+        paletteHue: null,
+        paletteSaturation: 50,
+        paletteLightness: 50,
+        duration: DEFAULT_DURATION,
+    },
 };
 
 export const ALL_BIOMES: BiomeType[] = Object.keys(REGIONS) as BiomeType[];

@@ -1,5 +1,5 @@
 import type { Renderable } from './Renderable';
-import { TextureGenerator } from './TextureGenerator';
+import { createBrickPattern, createWoodPattern } from './TextureGenerator';
 import { Random } from '../utils/Random';
 
 export type BuildingMaterial = 'wood' | 'brick' | 'stone' | 'plaster';
@@ -45,10 +45,10 @@ export class Building implements Renderable {
         const bodyTopY = roofHeight;
 
         if (this.material === 'brick') {
-            const tex = TextureGenerator.createBrickPattern(this.width, this.height, this.baseColor);
+            const tex = createBrickPattern(this.width, this.height, this.baseColor);
             ctx.drawImage(tex, 0, bodyTopY);
         } else if (this.material === 'wood') {
-            const tex = TextureGenerator.createWoodPattern(this.width, this.height, this.baseColor, this.rng);
+            const tex = createWoodPattern(this.width, this.height, this.baseColor, this.rng);
             ctx.drawImage(tex, 0, bodyTopY);
         } else {
             // Plain/Stone

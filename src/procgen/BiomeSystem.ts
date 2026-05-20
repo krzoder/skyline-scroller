@@ -1,4 +1,5 @@
 import { Random } from '../utils/Random';
+import { REGIONS, ALL_BIOMES } from '../regions/_index';
 
 export type BiomeType = 'forest' | 'desert' | 'tundra' | 'plains' | 'city';
 
@@ -7,20 +8,10 @@ export class BiomeSystem {
     private currentBiome: BiomeType;
     private durationRemaining: number;
 
-    // Adjacency Graph
-    private transitions: Record<BiomeType, BiomeType[]> = {
-        'tundra': ['forest', 'plains'], // Cold -> Temperate
-        'forest': ['tundra', 'plains'],
-        'plains': ['forest', 'desert', 'city'],
-        'city': ['plains', 'desert'],
-        'desert': ['plains', 'city'] // Hot -> Temperate
-    };
-
     constructor(rng: Random) {
         this.rng = rng;
-        const allBiomes: BiomeType[] = ['forest', 'desert', 'tundra', 'plains', 'city'];
-        this.currentBiome = allBiomes[this.rng.nextInt(0, allBiomes.length)];
-        this.durationRemaining = this.rng.nextInt(3000, 8000); // pixels
+        this.currentBiome = ALL_BIOMES[this.rng.nextInt(0, ALL_BIOMES.length)];
+        this.durationRemaining = this.rng.nextInt(3000, 8000);
     }
 
     public update(dx: number): BiomeType {
@@ -32,7 +23,7 @@ export class BiomeSystem {
     }
 
     private switchBiome() {
-        const options = this.transitions[this.currentBiome];
+        const options = REGIONS[this.currentBiome].transitionsTo;
         this.currentBiome = options[this.rng.nextInt(0, options.length)];
         this.durationRemaining = this.rng.nextInt(3000, 8000);
     }
