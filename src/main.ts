@@ -1,6 +1,7 @@
 import { deepClone } from './utils/deepClone';
 import { evalExpression } from './utils/Expression';
 import { installGlobalErrorHandlers } from './ui/error-toast';
+import { initSeedControls } from './ui/seed-controls';
 import './style.css'
 
 installGlobalErrorHandlers();
@@ -232,13 +233,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
 const game = new Game(canvas);
 
-const initialSeed = Math.floor(Math.random() * 100000).toString();
-game.setSeed(initialSeed);
+initSeedControls(game);
 game.start();
-
-const seedInput = document.getElementById('seed-input') as HTMLInputElement;
-const setSeedBtn = document.getElementById('set-seed-btn') as HTMLButtonElement;
-const randomSeedBtn = document.getElementById('random-seed-btn') as HTMLButtonElement;
 
 const uiSeedVal = document.getElementById('ui-seed-val');
 const uiTimeVal = document.getElementById('ui-time-val');
@@ -259,28 +255,6 @@ function copyToClipboard(element: HTMLElement | null, textFn: () => string) {
 
 copyToClipboard(uiSeedVal, () => uiSeedVal?.innerText || "");
 copyToClipboard(uiTimeVal, () => uiTimeVal?.innerText || "");
-
-const applySeed = () => {
-    if (seedInput.value) {
-        game.setSeed(seedInput.value);
-        setSeedBtn.blur();
-        seedInput.blur();
-    }
-};
-
-setSeedBtn.addEventListener('click', applySeed);
-
-seedInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        applySeed();
-    }
-});
-
-randomSeedBtn.addEventListener('click', () => {
-    const newSeed = Math.floor(Math.random() * 100000).toString();
-    game.setSeed(newSeed);
-    randomSeedBtn.blur();
-});
 
 const btnTerminal = document.getElementById('btn-terminal')!;
 const btnSound = document.getElementById('btn-sound')!;
