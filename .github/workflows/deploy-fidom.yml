@@ -5,9 +5,11 @@ name: Deploy fidom.link
 # from GitHub via outbound 443 and writes directly to the local filesystem.
 
 on:
-  push:
-    branches: [main]
-    paths-ignore: ['**.md', 'wiki/**', 'instructions/**']
+  # Manual-only until a self-hosted runner is registered on Deployarr.
+  # Once `gh runner list` shows the runner, re-enable the push trigger:
+  #   push:
+  #     branches: [main]
+  #     paths-ignore: ['**.md', 'wiki/**', 'instructions/**']
   workflow_dispatch:
 
 concurrency:
