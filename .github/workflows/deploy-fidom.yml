@@ -1,8 +1,9 @@
 name: Deploy fidom.link
 
 on:
-  push:
-    branches: [main]
+  # Manual-only until DEPLOYARR_HOST and DEPLOYARR_SSH_KEY secrets are
+  # configured in repo settings. Re-add `push: branches: [main]` once
+  # the homelab one-time setup from deploy/homelab/README.md is done.
   workflow_dispatch:
 
 concurrency:
