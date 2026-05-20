@@ -6,12 +6,13 @@ type: log
 
 # Log
 
-## 2026-05-20 (README rewrite) — README po polsku, non-technical
+## 2026-05-20 (README rewrite) - README po polsku, non-technical
 
-- Przepisany `README.md` w całości po polsku, zgodnie z prośbą użytkownika — ma być zrozumiały dla osoby nietechnicznej.
-- Sekcje: gdzie zobaczyć aplikację (GH Pages + fidom z linkami), jak działa pipeline (CI → deploy.yml → deploy-fidom.yml), krok-po-kroku instrukcja PR (branch → push → PR → CI → squash merge → auto-deploy), etykieta `auto-merge`, sekcja dla developerów.
+- Przepisany `README.md` w całości po polsku, zgodnie z prośbą użytkownika - ma być zrozumiały dla osoby nietechnicznej.
+- Sekcje: gdzie zobaczyć aplikację (GH Pages + fidom z linkami), jak działa pipeline (CI -> deploy.yml -> deploy-fidom.yml), krok-po-kroku instrukcja PR (branch -> push -> PR -> CI -> squash merge -> auto-deploy), etykieta `auto-merge`, sekcja dla developerów.
 - Linki do workflowów (`.github/workflows/ci.yml`, `deploy.yml`, `deploy-fidom.yml`), do wiki (`wiki/index.md`, `wiki/hot.md`, `wiki/plans/simplification-plan.md`) i do DEC-09.
 - Konwencja: niski rejestr, krótkie zdania, polskie diakrytyki, English w blokach kodu.
+- House style: nigdy nie używamy em-dashów ani en-dashów - tylko zwykły "-". Reguła zapisana w pamięci jako `feedback_dashes` i w `wiki/concepts/house-style.md`.
 
 ## 2026-05-20 (later) — Recon + DEC-06..09 + Stage 1 commit
 

@@ -1,27 +1,27 @@
 # Skyline Scroller
 
-Proceduralnie generowany, scrollujący się pejzaż miasta z efektem paralaksy, cyklem dnia i nocy oraz pogodą. Wszystko rysuje się na HTML5 Canvas — bez zewnętrznych bibliotek graficznych, tylko czysty TypeScript.
+Proceduralnie generowany, scrollujący się pejzaż miasta z efektem paralaksy, cyklem dnia i nocy oraz pogodą. Wszystko rysuje się na HTML5 Canvas - bez zewnętrznych bibliotek graficznych, tylko czysty TypeScript.
 
 **Wersja**: 1.1.2
 
 ## Gdzie to zobaczyć
 
-Aplikacja jest dostępna pod dwoma adresami — oba pokazują dokładnie tę samą wersję:
+Aplikacja jest dostępna pod dwoma adresami - oba pokazują dokładnie tę samą wersję:
 
-- **GitHub Pages** — https://krzoder.github.io/skyline-scroller/
-- **fidom.link** (homelab) — https://skyline-scroller.fidom.link/
+- **GitHub Pages** - https://krzoder.github.io/skyline-scroller/
+- **fidom.link** (homelab) - https://skyline-scroller.fidom.link/
 
 Repozytorium: https://github.com/krzoder/skyline-scroller
 
 ---
 
-## Jak to działa — od kodu do strony w internecie
+## Jak to działa - od kodu do strony w internecie
 
 Cały proces jest zautomatyzowany. Kiedy ktoś wrzuca zmiany do gałęzi `main`, GitHub sam buduje aplikację i publikuje ją na obu stronach. Krok po kroku:
 
 ### 1. Ktoś robi zmianę i otwiera Pull Request
 
-Każda zmiana zaczyna się w osobnej gałęzi (branchu). Pull Request (PR) to taki "wniosek o włączenie zmiany do głównej wersji" — ktoś inny może go obejrzeć i zatwierdzić, zanim zmiana trafi do `main`.
+Każda zmiana zaczyna się w osobnej gałęzi (branchu). Pull Request (PR) to taki "wniosek o włączenie zmiany do głównej wersji" - ktoś inny może go obejrzeć i zatwierdzić, zanim zmiana trafi do `main`.
 
 ### 2. GitHub uruchamia testy (CI)
 
@@ -33,7 +33,7 @@ Gdy tylko powstaje PR, GitHub w tle:
 
 Plik konfiguracyjny: [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
-Jeśli coś się sypnie — pojawia się czerwony krzyżyk przy PR i nie da się go zmergować, dopóki nie będzie naprawione.
+Jeśli coś się sypnie - pojawia się czerwony krzyżyk przy PR i nie da się go zmergować, dopóki nie będzie naprawione.
 
 ### 3. Merge do `main`
 
@@ -47,7 +47,7 @@ Zaraz po merge do `main`:
 - wgrywa ją na gałąź `gh-pages`,
 - GitHub serwuje ją pod adresem **krzoder.github.io/skyline-scroller/**.
 
-Cała publikacja trwa około **2–3 minuty** od momentu mergea. Nic nie trzeba klikać ręcznie.
+Cała publikacja trwa około **2-3 minuty** od momentu mergea. Nic nie trzeba klikać ręcznie.
 
 ### 5. Publikacja na fidom.link (homelab)
 
@@ -59,11 +59,11 @@ Więcej szczegółów o konfiguracji homelaba: [`deploy/homelab/README.md`](depl
 
 ---
 
-## Jak samemu wprowadzić zmianę — instrukcja krok po kroku
+## Jak samemu wprowadzić zmianę - instrukcja krok po kroku
 
 Załóżmy, że chcesz coś poprawić w aplikacji. Oto pełna ścieżka:
 
-### Krok 1 — Utwórz nową gałąź
+### Krok 1 - Utwórz nową gałąź
 
 Na lokalnej kopii repozytorium (albo bezpośrednio w GitHubie):
 
@@ -73,7 +73,7 @@ git checkout -b moja-zmiana
 
 Nazwa gałęzi może być dowolna, ale dobrze, żeby opisywała co robisz, np. `fix-color-bug` albo `dodaj-nowy-biom`.
 
-### Krok 2 — Zrób zmiany i zacommituj
+### Krok 2 - Zrób zmiany i zacommituj
 
 ```bash
 git add .
@@ -81,7 +81,7 @@ git commit -m "krótki opis tego, co zmieniłeś"
 git push -u origin moja-zmiana
 ```
 
-### Krok 3 — Otwórz Pull Request
+### Krok 3 - Otwórz Pull Request
 
 GitHub po pushu pokaże Ci link typu:
 
@@ -89,7 +89,7 @@ GitHub po pushu pokaże Ci link typu:
 
 Klikasz, opisujesz **co i dlaczego** zmieniłeś, klikasz "Create pull request".
 
-### Krok 4 — Poczekaj na CI
+### Krok 4 - Poczekaj na CI
 
 Pod PR-em zobaczysz checklistę:
 
@@ -99,25 +99,25 @@ Pod PR-em zobaczysz checklistę:
 - ✅ Build (Node 22)
 - ✅ Build (Node 24)
 
-Jeśli wszystko zielone — dobrze. Jeśli coś czerwone — klikasz w nazwę i czytasz, co się wywaliło.
+Jeśli wszystko zielone - dobrze. Jeśli coś czerwone - klikasz w nazwę i czytasz, co się wywaliło.
 
-### Krok 5 — Merge do main
+### Krok 5 - Merge do main
 
-Klikasz zielony przycisk **"Squash and merge"** (preferowana metoda — łączy wszystkie commity z PR-a w jeden). Potwierdzasz.
+Klikasz zielony przycisk **"Squash and merge"** (preferowana metoda - łączy wszystkie commity z PR-a w jeden). Potwierdzasz.
 
-### Krok 6 — Czekasz 2–3 minuty
+### Krok 6 - Czekasz 2-3 minuty
 
-W zakładce [Actions](https://github.com/krzoder/skyline-scroller/actions) zobaczysz, że ruszył workflow "Deploy to GitHub Pages". Jak skończy — zmiana jest na żywo pod **krzoder.github.io/skyline-scroller/**.
+W zakładce [Actions](https://github.com/krzoder/skyline-scroller/actions) zobaczysz, że ruszył workflow "Deploy to GitHub Pages". Jak skończy - zmiana jest na żywo pod **krzoder.github.io/skyline-scroller/**.
 
-Dla fidom.link — wchodzisz w [Actions → Deploy fidom.link](https://github.com/krzoder/skyline-scroller/actions/workflows/deploy-fidom.yml) i klikasz **Run workflow**.
+Dla fidom.link - wchodzisz w [Actions → Deploy fidom.link](https://github.com/krzoder/skyline-scroller/actions/workflows/deploy-fidom.yml) i klikasz **Run workflow**.
 
 ### Etykieta `auto-merge` (skrót dla zaufanych zmian)
 
-Jeśli dodasz do PR-a etykietę **`auto-merge`**, to po przejściu wszystkich testów PR sam się zmerguje — nie trzeba klikać przycisku. Pasuje do drobnych zmian (literówki, bumpy zależności).
+Jeśli dodasz do PR-a etykietę **`auto-merge`**, to po przejściu wszystkich testów PR sam się zmerguje - nie trzeba klikać przycisku. Pasuje do drobnych zmian (literówki, bumpy zależności).
 
 ---
 
-## Dla developerów — lokalne uruchomienie
+## Dla developerów - lokalne uruchomienie
 
 Wymagania: **Node.js 22+**.
 
@@ -133,13 +133,13 @@ npm run build      # produkcyjny build do katalogu dist/
 npx vitest run     # uruchom testy
 ```
 
-Pełna dokumentacja techniczna i architektura projektu są w katalogu [`wiki/`](wiki/) — to baza wiedzy w formacie Obsidian. Wystarczy otworzyć katalog `wiki/` jako vault w aplikacji Obsidian.
+Pełna dokumentacja techniczna i architektura projektu są w katalogu [`wiki/`](wiki/) - to baza wiedzy w formacie Obsidian. Wystarczy otworzyć katalog `wiki/` jako vault w aplikacji Obsidian.
 
 Najważniejsze strony:
 
-- [`wiki/index.md`](wiki/index.md) — spis treści
-- [`wiki/hot.md`](wiki/hot.md) — aktualny stan projektu
-- [`wiki/plans/simplification-plan.md`](wiki/plans/simplification-plan.md) — plan rozwoju
+- [`wiki/index.md`](wiki/index.md) - spis treści
+- [`wiki/hot.md`](wiki/hot.md) - aktualny stan projektu
+- [`wiki/plans/simplification-plan.md`](wiki/plans/simplification-plan.md) - plan rozwoju
 
 ---
 
@@ -147,13 +147,13 @@ Najważniejsze strony:
 
 - **TypeScript** (kompilator: tsc)
 - **Vite** (bundler)
-- **Vitest** (testy — 44 testy w 5 plikach)
+- **Vitest** (testy - 44 testy w 5 plikach)
 - **Canvas API 2D** (rendering, bez WebGL i bez bibliotek graficznych)
-- **Zero zewnętrznych zależności w runtime** — w przeglądarce ląduje czysty kod aplikacji (~79 kB, ~22 kB po gzipie).
+- **Zero zewnętrznych zależności w runtime** - w przeglądarce ląduje czysty kod aplikacji (~79 kB, ~22 kB po gzipie).
 
 ## Hosting
 
-- **GitHub Pages** — darmowy hosting GitHuba, automatyczny po merge do `main`.
-- **fidom.link** — własny serwer (homelab) z Traefikiem i nginxem, dostęp publiczny (bez logowania).
+- **GitHub Pages** - darmowy hosting GitHuba, automatyczny po merge do `main`.
+- **fidom.link** - własny serwer (homelab) z Traefikiem i nginxem, dostęp publiczny (bez logowania).
 
 Decyzja architektoniczna i konfiguracja homelaba: [`wiki/decisions/DEC-09-homelab-deploy.md`](wiki/decisions/DEC-09-homelab-deploy.md).

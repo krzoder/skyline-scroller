@@ -8,7 +8,11 @@ type: hot
 
 **Status**: 11 commits pushed to main. All 17 verified defects addressed (D1-D13 + D16-D17 directly; D14/D15/D11 closed; D5 deferred). 44/44 tests pass. Build 79 kB gzipped 22 kB.
 
-**Najnowsze (2026-05-20 wieczór)**: `README.md` przepisany po polsku dla osoby nietechnicznej — opis pipeline'u (CI → GH Pages + fidom), krok-po-kroku flow PR-ów (branch → push → PR → squash merge → auto-deploy ~2-3 min), etykieta `auto-merge`, linki do workflowów i wiki. Plik niezaocommitowany.
+**Najnowsze (2026-05-20 wieczór)**: `README.md` przepisany po polsku dla osoby nietechnicznej - opis pipeline'u (CI -> GH Pages + fidom), krok-po-kroku flow PR-ów (branch -> push -> PR -> squash merge -> auto-deploy ~2-3 min), etykieta `auto-merge`, linki do workflowów i wiki.
+
+**House style (2026-05-20)**: nigdy em-dashów (`—`) ani en-dashów (`–`) - tylko zwykły hyphen-minus `-`. Reguła w `wiki/concepts/house-style.md` i w globalnej pamięci agenta.
+
+**Stan fidom.link (2026-05-20)**: `https://skyline-scroller.fidom.link/` zwraca **HTTP 404** od Traefika. Diagnoza: route `app-skyline-scroller.yml` nigdy nie został wgrany do `homelab/platform/traefik/dynamic/` ani do `/mnt/homelab/apps/appdata/traefik3/rules/deployarr/` na Deployarrze. Kontener nginx też nie wstał. Workflow `deploy-fidom.yml` (skyline-scroller repo) syncuje tylko `dist/`, nie tworzy routera ani kontenera. Wzorzec do skopiowania: `deploy-cleanrent.yml` w homelab repo - bundluje sync Traefik rule + sync compose + start kontenera + post-deploy health check.
 
 ## What was delivered
 
