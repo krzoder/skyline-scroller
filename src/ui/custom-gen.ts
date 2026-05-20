@@ -37,8 +37,6 @@ export interface CustomGenHandle {
 }
 
 const ICON_REDRAW_MS = 1000;
-const RESET_CONFIRM_FADE_MS_OUTER = 3000; // (matches advanced-window pattern; not strictly used here today)
-void RESET_CONFIRM_FADE_MS_OUTER;
 
 function getTreeIconScale(type: TreeType): number {
     switch (type) {

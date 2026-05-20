@@ -18,7 +18,6 @@ export interface TerminalBindDeps {
 
 export interface TerminalBindHandle {
     toggleTerminal: () => void;
-    isOpen: () => boolean;
 }
 
 export function initTerminalBind(deps: TerminalBindDeps): TerminalBindHandle {
@@ -183,5 +182,5 @@ export function initTerminalBind(deps: TerminalBindDeps): TerminalBindHandle {
 
     btnTerminal.addEventListener('click', toggleTerminal);
 
-    return { toggleTerminal, isOpen };
+    return { toggleTerminal };
 }

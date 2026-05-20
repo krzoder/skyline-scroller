@@ -10,14 +10,6 @@ export function toggleWindow(el: HTMLElement): boolean {
     return !isVisible;
 }
 
-export function openWindow(el: HTMLElement): void {
-    el.classList.add('visible');
-}
-
-export function closeWindow(el: HTMLElement): void {
-    el.classList.remove('visible');
-}
-
 /**
  * Dismiss `target` when the user clicks anywhere except inside `target`
  * or its `trigger` button. Each call installs one listener; safe to use
@@ -28,7 +20,7 @@ export function dismissOnOutsideClick(target: HTMLElement, trigger: HTMLElement)
         if (!target.classList.contains('visible')) return;
         const node = e.target as Node;
         if (!target.contains(node) && !trigger.contains(node)) {
-            closeWindow(target);
+            target.classList.remove('visible');
         }
     });
 }

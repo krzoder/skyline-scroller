@@ -19,7 +19,6 @@ export interface AdvancedWindowDeps {
 export interface AdvancedWindowHandle {
     updateUI: (forceCenter?: boolean) => void;
     onSpeedChange: (cb: (speed: number) => void) => void;
-    cancelResetConfirm: () => void;
 }
 
 function updateResetButton(btn: HTMLElement, isDefault: boolean): void {
@@ -228,6 +227,5 @@ export function initAdvancedWindow(deps: AdvancedWindowDeps): AdvancedWindowHand
     return {
         updateUI: updateAdvSpeedUI,
         onSpeedChange: (cb) => { onSpeedChangeCb = cb; },
-        cancelResetConfirm,
     };
 }
