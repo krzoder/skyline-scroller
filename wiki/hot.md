@@ -13,7 +13,7 @@ type: hot
 - **GitHub Pages (`krzoder.github.io/skyline-scroller/`)** = production. Auto-deploys on push to `main` via `deploy.yml`. No change.
 - **fidom.link (`skyline-scroller.fidom.link`)** = PR preview. `pr-preview.yml` builds PR HEAD on ubuntu-hosted runner, atomic-swaps dist into nginx via self-hosted homelab runner. Sticky bot comment posts preview URL + link to approval gate.
 - **Approval gate (BLOCKING merge)**: GitHub Environment `fidom-verified` with required reviewer (self). Job `await-approval` pauses until user clicks "Review deployments -> Approve" in GitHub Actions UI. Branch protection on `main` requires this status check, so merge stays blocked until current HEAD SHA is approved. Pushing a new commit invalidates prior approval.
-- **One-time setup** (per repo): Settings -> Environments -> new `fidom-verified` -> add self as Required reviewer. Settings -> Branches -> require `Await manual fidom verification` status check on `main`.
+- **One-time setup TODO**: tracked in [[operations/dec-10-manual-setup]] (2 steps in GitHub UI: create `fidom-verified` env with required reviewer + add branch protection check on `main`). Approval gate will not block merges until both are applied.
 - On PR close (merge or abandon), rebuilds main and deploys to fidom so no stale content lingers.
 - Security: PR's npm scripts run on GitHub-hosted (untrusted); self-hosted only does artifact download + atomic mv (trusted). Codex flagged this as a blocking requirement.
 - Concurrency: global `fidom-preview` group with cancel-in-progress. Latest PR push wins. Documented in sticky comment.
