@@ -3,6 +3,7 @@ import { evalExpression } from './utils/Expression';
 import { installGlobalErrorHandlers } from './ui/error-toast';
 import { initSeedControls } from './ui/seed-controls';
 import { initFullscreenToggle, initSpeedGestures, toggleFullscreen } from './ui/gestures';
+import { initAudioControls } from './ui/audio-controls';
 import './style.css'
 
 installGlobalErrorHandlers();
@@ -520,44 +521,7 @@ btnAdvReset.addEventListener('click', (e) => {
     }
 });
 
-let currentVolume = 50;
-let lastVolume = 50;
-let isMuted = false;
-
-const setGlobalVolume = (val: number, fromMuteToggle = false) => {
-    if (!fromMuteToggle) {
-        if (val > 0) {
-            currentVolume = val;
-            lastVolume = val;
-            isMuted = false;
-        } else {
-            currentVolume = 0;
-            isMuted = true;
-        }
-    } else {
-        if (isMuted) {
-            isMuted = false;
-            currentVolume = lastVolume || 50;
-        } else {
-            isMuted = true;
-            if (currentVolume > 0) lastVolume = currentVolume;
-            currentVolume = 0;
-        }
-    }
-
-    volumeSlider.value = currentVolume.toString();
-    game.setVolume(currentVolume / 100);
-    game.setMuted(isMuted);
-
-    const icon = document.getElementById('icon-sound');
-    if (icon) {
-        if (isMuted) {
-            icon.innerHTML = `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>`;
-        } else {
-            icon.innerHTML = `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>`;
-        }
-    }
-};
+const audio = initAudioControls({ game, btnSound, soundContainer, volumePopup, volumeSlider });
 
 advancedWindow.addEventListener('click', (e) => {
     if (e.target !== btnAdvReset) cancelAdvResetConfirm();
@@ -1283,20 +1247,6 @@ speedSlider.addEventListener('dblclick', () => {
     updateSpeed(1.0);
 });
 
-btnSound.addEventListener('click', () => {
-    setGlobalVolume(0, true);
-});
-
-soundContainer.addEventListener('mouseenter', () => {
-    volumePopup.style.display = 'block';
-});
-soundContainer.addEventListener('mouseleave', () => {
-    volumePopup.style.display = 'none';
-});
-
-volumeSlider.addEventListener('input', (e) => {
-    setGlobalVolume(parseFloat((e.target as HTMLInputElement).value), false);
-});
 
 import { Terminal, type AutocompleteSuggestion } from './engine/Terminal';
 
@@ -1363,15 +1313,7 @@ const syncUIFromTerminal = () => {
     if (globalSpeedUpdateCallback) globalSpeedUpdateCallback(game.timeScale);
     updateAdvSpeedUI();
 
-    const gVol = Math.round(game.getVolume() * 100);
-    if (currentVolume !== gVol) {
-        setGlobalVolume(gVol, false);
-    }
-
-    const gMuted = game.getMuted();
-    if (isMuted !== gMuted) {
-        setGlobalVolume(0, true);
-    }
+    audio.syncFromGame();
 
     if (previewGame && previewGame.generator) {
         previewGame.generator.config = deepClone(game.treeConfig);
@@ -1492,8 +1434,6 @@ const toggleTerminal = () => {
 };
 btnTerminal.addEventListener('click', toggleTerminal);
 
-setGlobalVolume(currentVolume, false);
-
 window.addEventListener('keydown', (e) => {
     // While focused inside any input, only Escape is hijacked (to blur / close
     // the terminal). Enter is left to the native input behaviour.
@@ -1588,47 +1528,3 @@ initSpeedGestures({
     updateSpeed,
 });
 
-// Scroll-to-adjust-volume works anywhere on the page, except over UI windows
-// and terminal output (which have their own scroll behaviour).
-window.addEventListener('wheel', (e) => {
-    const target = e.target as HTMLElement;
-    if (target.closest('.ui-window')) return;
-    if (target.closest('#terminal-output-container')) return;
-
-    let baseVol = isMuted ? (lastVolume || 50) : currentVolume;
-    let newVol = baseVol;
-    if (e.deltaY < 0) {
-        newVol = Math.min(100, baseVol + 5);
-    } else {
-        newVol = Math.max(0, baseVol - 5);
-    }
-    setGlobalVolume(newVol, false);
-
-    const volContainer = document.getElementById('volume-visual-container');
-    const volBar = document.getElementById('volume-visual-bar');
-
-    if (!volContainer && document.body) {
-        // Lazy-inject the visual volume bar on first scroll.
-        const c = document.createElement('div');
-        c.id = 'volume-visual-container';
-        const b = document.createElement('div');
-        b.id = 'volume-visual-bar';
-        c.appendChild(b);
-        document.body.appendChild(c);
-
-        c.classList.add('visible');
-        b.style.height = currentVolume + '%';
-
-        (window as any).volFadeTimer = setTimeout(() => {
-            c.classList.remove('visible');
-        }, 1500);
-    } else if (volContainer && volBar) {
-        volContainer.classList.add('visible');
-        volBar.style.height = currentVolume + '%';
-
-        clearTimeout((window as any).volFadeTimer);
-        (window as any).volFadeTimer = setTimeout(() => {
-            volContainer.classList.remove('visible');
-        }, 1500);
-    }
-});
