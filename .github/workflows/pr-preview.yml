@@ -40,7 +40,7 @@ jobs:
       # DEC-06 Worker serves preview under /pr/<n>/, not /pr-preview/pr-<n>/.
       PUBLIC_BASE_PATH: /pr/${{ github.event.pull_request.number }}/
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - uses: ./.github/actions/setup
@@ -62,7 +62,7 @@ jobs:
     if: needs.guard.outputs.allowed == 'true' && github.event.action == 'closed'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: rossjrw/pr-preview-action@ffa7509e91a3ec8dfc2e5536c4d5c1acdf7a6de9 # v1.8.1
         with:
           source-dir: ./dist

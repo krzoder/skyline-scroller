@@ -1,0 +1,68 @@
+/**
+ * Determinism integration test.
+ *
+ * Acceptance criterion for DEC-01: same seed -> same RNG stream
+ * across all procgen sub-systems. Two BiomeSystems forked the same way
+ * must produce identical biome sequences.
+ */
+
+import { describe, it, expect } from 'vitest';
+import { Random } from '../src/utils/Random';
+import { BiomeSystem } from '../src/procgen/BiomeSystem';
+
+describe('Determinism contract', () => {
+    it('two BiomeSystems with the same forked stream produce identical biome sequences', () => {
+        const rootA = new Random('test-seed-42');
+        const rootB = new Random('test-seed-42');
+
+        const a = new BiomeSystem(rootA.fork('biome'));
+        const b = new BiomeSystem(rootB.fork('biome'));
+
+        const seqA: string[] = [a.getCurrentBiome()];
+        const seqB: string[] = [b.getCurrentBiome()];
+
+        // Drive through 50 large dx steps. With duration in [3000,8000) px,
+        // 50 * 1000 = 50000 px is enough to trigger several transitions.
+        for (let i = 0; i < 50; i++) {
+            seqA.push(a.update(1000));
+            seqB.push(b.update(1000));
+        }
+
+        expect(seqA).toEqual(seqB);
+    });
+
+    it('Random.fork with different labels yields independent biome sequences', () => {
+        const root = new Random('shared-seed');
+        const a = new BiomeSystem(root.fork('biome'));
+        const b = new BiomeSystem(root.fork('different-label'));
+
+        const seqA: string[] = [];
+        const seqB: string[] = [];
+        for (let i = 0; i < 30; i++) {
+            seqA.push(a.update(500));
+            seqB.push(b.update(500));
+        }
+
+        // Streams must diverge somewhere — guard against the previously
+        // confirmed bug where city RNG and biome RNG had identical sequences.
+        expect(seqA).not.toEqual(seqB);
+    });
+
+    it('forceBiome respects determinism — switchBiome still uses the seeded RNG', () => {
+        const root = new Random('forced');
+        const a = new BiomeSystem(root.fork('biome'));
+        const b = new BiomeSystem(root.fork('biome'));
+
+        a.forceBiome('forest');
+        b.forceBiome('forest');
+
+        // Drive both past duration and confirm same next biome.
+        let nextA = '';
+        let nextB = '';
+        for (let i = 0; i < 20; i++) {
+            nextA = a.update(1000);
+            nextB = b.update(1000);
+        }
+        expect(nextA).toBe(nextB);
+    });
+});
