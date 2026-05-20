@@ -93,11 +93,23 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         
          <div class="setting-group" style="margin-top:20px;">
           <div class="row" style="align-items: center; justify-content: space-between;">
-             <label style="margin-right: 10px;">Time Format</label>
+             <label style="margin-right: 10px;">Display</label>
+             <div id="time-mode-selector" style="display: flex; gap: 5px; flex: 1;">
+                 <button class="btn-small" data-val="clock">Clock</button>
+                 <button class="btn-small" data-val="score">Ingame Time</button>
+             </div>
+             <button id="btn-reset-time-mode" class="btn-smart-reset default" title="Reset to Default" style="margin-left: 10px;">
+               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                 <line x1="18" y1="6" x2="6" y2="18"></line>
+                 <line x1="6" y1="6" x2="18" y2="18"></line>
+               </svg>
+             </button>
+          </div>
+          <div class="row" style="align-items: center; justify-content: space-between; margin-top:8px;">
+             <label style="margin-right: 10px;">Clock Format</label>
              <div id="time-fmt-selector" style="display: flex; gap: 5px; flex: 1;">
                  <button class="btn-small" data-val="24h">HH:MM</button>
                  <button class="btn-small" data-val="12h">AM/PM</button>
-                 <button class="btn-small" data-val="score">Ingame Time</button>
              </div>
              <button id="btn-reset-time-fmt" class="btn-smart-reset default" title="Reset to Default" style="margin-left: 10px;">
                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -273,6 +285,14 @@ const btnResetTimeFmt = document.getElementById('btn-reset-time-fmt')!;
 const timeFmtSelector = document.getElementById('time-fmt-selector')!;
 const timeFmtButtons = timeFmtSelector.querySelectorAll('button');
 
+const btnResetTimeMode = document.getElementById('btn-reset-time-mode')!;
+const timeModeSelector = document.getElementById('time-mode-selector')!;
+const timeModeButtons = timeModeSelector.querySelectorAll('button');
+
+// Remembered clock-face preference (24h/12h) - kept across Ingame-Time
+// detours so toggling Display back to Clock restores the last choice.
+let lastClockFormat: '24h' | '12h' = '24h';
+
 const updateResetButton = (btn: HTMLElement, isDefault: boolean) => {
     if (isDefault) {
         btn.classList.add('default');
@@ -287,16 +307,18 @@ const updateResetButton = (btn: HTMLElement, isDefault: boolean) => {
 
 const updateTimeFormatUI = () => {
     const current = game.timeFormat || '24h';
+    const mode: 'clock' | 'score' = current === 'score' ? 'score' : 'clock';
+    const clockFmt: '24h' | '12h' = current === '12h' ? '12h' : (current === '24h' ? '24h' : lastClockFormat);
+
+    timeModeButtons.forEach(btn => {
+        btn.classList.toggle('btn-selected', btn.dataset.val === mode);
+    });
     timeFmtButtons.forEach(btn => {
-        if (btn.dataset.val === current) {
-            btn.classList.add('btn-selected');
-        } else {
-            btn.classList.remove('btn-selected');
-        }
+        btn.classList.toggle('btn-selected', btn.dataset.val === clockFmt);
     });
 
-    const isDefault = current === '24h';
-    updateResetButton(btnResetTimeFmt, isDefault);
+    updateResetButton(btnResetTimeMode, mode === 'clock');
+    updateResetButton(btnResetTimeFmt, clockFmt === '24h');
 }
 
 updateTimeFormatUI();
@@ -314,17 +336,35 @@ btnAdvanced.addEventListener('click', () => {
     }
 });
 
-timeFmtButtons.forEach(btn => {
+timeModeButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-        const val = btn.dataset.val as '24h' | '12h' | 'score';
-        game.timeFormat = val;
+        const mode = btn.dataset.val as 'clock' | 'score';
+        game.timeFormat = mode === 'score' ? 'score' : lastClockFormat;
         updateTimeFormatUI();
     });
 });
 
+timeFmtButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const fmt = btn.dataset.val as '24h' | '12h';
+        lastClockFormat = fmt;
+        // Picking a clock face implies Display = Clock; switch mode if needed.
+        game.timeFormat = fmt;
+        updateTimeFormatUI();
+    });
+});
+
+btnResetTimeMode.addEventListener('click', () => {
+    if (btnResetTimeMode.classList.contains('modified')) {
+        game.timeFormat = lastClockFormat;
+        updateTimeFormatUI();
+    }
+});
+
 btnResetTimeFmt.addEventListener('click', () => {
     if (btnResetTimeFmt.classList.contains('modified')) {
-        game.timeFormat = '24h';
+        lastClockFormat = '24h';
+        if (game.timeFormat !== 'score') game.timeFormat = '24h';
         updateTimeFormatUI();
     }
 });
