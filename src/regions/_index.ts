@@ -8,6 +8,7 @@ import type { BiomeType } from '../procgen/BiomeSystem';
 import type { TreeType } from '../procgen/entities/Tree';
 import type { BuildingMaterial, RoofType } from '../procgen/entities/Building';
 import type { GroundType } from '../procgen/entities/Ground';
+import { BIOME_DURATION_MIN, BIOME_DURATION_MAX } from '../config';
 
 export interface BiomeDefinition {
     id: BiomeType;
@@ -23,7 +24,7 @@ export interface BiomeDefinition {
     duration: { min: number; max: number };
 }
 
-const DEFAULT_DURATION = { min: 3000, max: 8000 };
+const DEFAULT_DURATION = { min: BIOME_DURATION_MIN, max: BIOME_DURATION_MAX };
 
 export const REGIONS: Record<BiomeType, BiomeDefinition> = {
     forest: {

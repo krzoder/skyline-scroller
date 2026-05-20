@@ -8,6 +8,7 @@ import { Ground, type GroundType } from './entities/Ground';
 import { Landscape } from './entities/Landscape';
 import { DEFAULT_TREE_CONFIG, type TreeConfig } from './TreeConfig';
 import { REGIONS } from '../regions/_index';
+import { FEATURE_HEIGHT_MIN, FEATURE_HEIGHT_MAX, FILLER_WIDTH_MIN, FILLER_WIDTH_MAX } from '../config';
 
 interface CityDNA {
     density: number;    // 0.1 (sparse) to 1.0 (packed)
@@ -100,14 +101,14 @@ export class CityGenerator {
 
         if (feature === 'landscape') {
             featureWidth = this.rng.nextInt(200, 500);
-            const h = this.rng.nextInt(100, 300);
+            const h = this.rng.nextInt(FEATURE_HEIGHT_MIN, FEATURE_HEIGHT_MAX);
             obj = new Landscape(x, featureWidth, h, biome, this.rng);
 
         } else if (feature === 'building') {
             const minW = 60;
             const maxW = 120 + (layerIndex * 20);
             featureWidth = this.rng.nextInt(minW, maxW);
-            const h = this.rng.nextInt(100, 300) * this.dna.buildingHeight;
+            const h = this.rng.nextInt(FEATURE_HEIGHT_MIN, FEATURE_HEIGHT_MAX) * this.dna.buildingHeight;
 
             const mat = this.pickMaterial(biome);
             const roof = this.pickRoof(biome);
@@ -126,10 +127,10 @@ export class CityGenerator {
                 featureWidth = obj.width + this.rng.nextInt(10, 30);
             } else {
                 obj = null;
-                featureWidth = this.rng.nextInt(20, 100);
+                featureWidth = this.rng.nextInt(FILLER_WIDTH_MIN, FILLER_WIDTH_MAX);
             }
         } else {
-            featureWidth = this.rng.nextInt(20, 100);
+            featureWidth = this.rng.nextInt(FILLER_WIDTH_MIN, FILLER_WIDTH_MAX);
         }
 
         if (groundType === 'water') {

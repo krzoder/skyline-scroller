@@ -1,4 +1,5 @@
 import type { Renderable } from './Renderable';
+import { LAYER_PRUNE_BUFFER } from '../config';
 
 export class Layer {
     public objects: Renderable[] = [];
@@ -19,7 +20,7 @@ export class Layer {
     }
 
     // Remove objects that are far behind the camera to save memory
-    public prune(cameraX: number, buffer: number = 2000) {
+    public prune(cameraX: number, buffer: number = LAYER_PRUNE_BUFFER) {
         const layerViewX = cameraX * this.speedModifier;
 
         this.objects = this.objects.filter(obj => {
