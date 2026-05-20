@@ -17,39 +17,48 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup
 
-      - name: Audit production deps (high+)
-        id: audit-prod
-        run: npm audit --omit=dev --audit-level=high
-
-      - name: Audit dev deps (high+)
-        id: audit-dev
-        if: success() || failure()
-        run: npm audit --include=dev --audit-level=high
-
-      - name: Compose issue body on failure
-        if: failure()
+      - name: Run npm audit and count high+ vulnerabilities
+        id: audit
         run: |
+          npm audit --omit=dev --json > prod-audit.json || true
+          npm audit --include=dev --json > dev-audit.json || true
+          prod_high=$(node -p "JSON.parse(require('fs').readFileSync('prod-audit.json')).metadata.vulnerabilities.high + JSON.parse(require('fs').readFileSync('prod-audit.json')).metadata.vulnerabilities.critical")
+          dev_high=$(node -p "JSON.parse(require('fs').readFileSync('dev-audit.json')).metadata.vulnerabilities.high + JSON.parse(require('fs').readFileSync('dev-audit.json')).metadata.vulnerabilities.critical")
+          echo "prod_high=$prod_high" >> "$GITHUB_OUTPUT"
+          echo "dev_high=$dev_high" >> "$GITHUB_OUTPUT"
+          total=$((prod_high + dev_high))
+          echo "total=$total" >> "$GITHUB_OUTPUT"
+          echo "Found $prod_high high+ prod, $dev_high high+ dev (total: $total)"
+
+      - name: Compose issue body (only when high+ vulns exist)
+        if: steps.audit.outputs.total != '0'
+        run: |
+          today=$(date -u +%Y-%m-%d)
           {
-            echo "## npm audit failure — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "## npm audit failure - $today"
             echo ""
             echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             echo ""
+            echo "**Production high+:** ${{ steps.audit.outputs.prod_high }}"
+            echo "**Dev high+:** ${{ steps.audit.outputs.dev_high }}"
+            echo ""
             echo "### Production audit"
-            echo '```'
-            npm audit --omit=dev --json || true
+            echo '```json'
+            cat prod-audit.json
             echo '```'
             echo ""
             echo "### Dev audit"
-            echo '```'
-            npm audit --include=dev --json || true
+            echo '```json'
+            cat dev-audit.json
             echo '```'
           } > audit-report.md
+          echo "ISSUE_TITLE=npm audit: $(( ${{ steps.audit.outputs.total }} )) high+ advisor(y/ies) ($today)" >> "$GITHUB_ENV"
 
-      - name: Open issue on failure
-        if: failure()
+      - name: Open issue
+        if: steps.audit.outputs.total != '0'
         uses: peter-evans/create-issue-from-file@fca9117c27cdc29c6c4db3b86c48e4115a786710 # v5.0.0
         with:
-          title: "npm audit: high-severity advisory detected ($(date -u +%Y-%m-%d))"
+          title: ${{ env.ISSUE_TITLE }}
           content-filepath: audit-report.md
           labels: |
             security
