@@ -2,6 +2,7 @@ import { deepClone } from './utils/deepClone';
 import { evalExpression } from './utils/Expression';
 import { installGlobalErrorHandlers } from './ui/error-toast';
 import { initSeedControls } from './ui/seed-controls';
+import { initFullscreenToggle, initSpeedGestures, toggleFullscreen } from './ui/gestures';
 import './style.css'
 
 installGlobalErrorHandlers();
@@ -603,30 +604,7 @@ window.addEventListener('click', (e) => {
     }
 });
 
-const toggleFullscreen = () => {
-    if (!document.fullscreenElement && !(document as any).webkitFullscreenElement && !(document as any).mozFullScreenElement && !(document as any).msFullscreenElement) {
-        if (document.documentElement.requestFullscreen) {
-            document.documentElement.requestFullscreen();
-        } else if ((document.documentElement as any).webkitRequestFullscreen) {
-            (document.documentElement as any).webkitRequestFullscreen(); // Chrome/Safari Base
-        } else if ((document.documentElement as any).mozRequestFullScreen) {
-            (document.documentElement as any).mozRequestFullScreen(); // Firefox
-        } else if ((document.documentElement as any).msRequestFullscreen) {
-            (document.documentElement as any).msRequestFullscreen(); // IE/Edge
-        }
-    } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if ((document as any).webkitExitFullscreen) {
-            (document as any).webkitExitFullscreen();
-        } else if ((document as any).mozCancelFullScreen) {
-            (document as any).mozCancelFullScreen();
-        } else if ((document as any).msExitFullscreen) {
-            (document as any).msExitFullscreen();
-        }
-    }
-};
-btnFullscreen.addEventListener('click', toggleFullscreen);
+initFullscreenToggle(btnFullscreen);
 
 let previewGame: Game | null = null;
 const previewCanvas = document.getElementById('gen-preview-canvas') as HTMLCanvasElement;
@@ -1600,68 +1578,14 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// Mouse-hold-drag speed gesture via pointer lock.
-let isDragging = false;
-let currentSpeedLog = 0;
-const MAX_LOG = 1;  // 10^1 = 10x
-const MIN_LOG = -1; // 10^-1 = 0.1x
-
-window.addEventListener('mousedown', (e) => {
-    if ((e.target as HTMLElement).id === 'game-canvas') {
-        // 200ms hold threshold so plain clicks aren't hijacked.
-        const holdTimer = setTimeout(() => {
-            isDragging = true;
-            canvas.requestPointerLock();
-
-            currentSpeedLog = parseFloat(speedSlider.value);
-
-            gestureContainer.style.display = 'block';
-            gestureContainer.style.left = e.clientX + 'px';
-            gestureContainer.style.top = (e.clientY - 50) + 'px';
-        }, 200);
-
-        const cancelHold = () => {
-            clearTimeout(holdTimer);
-            window.removeEventListener('mouseup', cancelHold);
-        };
-        window.addEventListener('mouseup', cancelHold);
-    }
-});
-
-document.addEventListener('mousemove', (e) => {
-    if (isDragging && document.pointerLockElement === canvas) {
-        const dx = e.movementX;
-
-        // Low sensitivity gives the gesture a "heavy" feel.
-        const sensitivity = 0.005;
-        currentSpeedLog += dx * sensitivity;
-        currentSpeedLog = Math.max(MIN_LOG, Math.min(MAX_LOG, currentSpeedLog));
-
-        const newSpeed = getSpeedFromSlider(currentSpeedLog);
-
-        updateSpeed(newSpeed);
-
-        gestureSpeedVal.innerText = newSpeed.toFixed(2) + 'x';
-
-        const percent = ((currentSpeedLog - MIN_LOG) / (MAX_LOG - MIN_LOG)) * 100;
-        gestureBar.style.width = percent + '%';
-        gestureBar.style.backgroundColor = `hsl(${percent}, 70%, 50%)`;
-    }
-});
-
-document.addEventListener('mouseup', () => {
-    if (isDragging) {
-        isDragging = false;
-        document.exitPointerLock();
-        gestureContainer.style.display = 'none';
-    }
-});
-
-window.addEventListener('dblclick', (e) => {
-    if ((e.target as HTMLElement).tagName === 'CANVAS') {
-        updateSpeed(1.0);
-        speedSlider.value = "0";
-    }
+initSpeedGestures({
+    canvas,
+    speedSlider,
+    gestureContainer,
+    gestureSpeedVal,
+    gestureBar,
+    getSpeedFromSlider,
+    updateSpeed,
 });
 
 // Scroll-to-adjust-volume works anywhere on the page, except over UI windows
