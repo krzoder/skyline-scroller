@@ -20,7 +20,7 @@ File-by-file static metrics for every `src/` + `tests/` TypeScript file. **17 so
 | 4 | `src/engine/SkySystem.ts` | 402 | 43 | 10.7 | Time-of-day branching + weather + clouds |
 | 5 | `src/engine/Tree.ts` | 187 | 26 | 13.9 | Per-type rendering branches |
 
-By **mass**: `main.ts` dominates. By **density**: `CityGenerator` is the hotspot. See [[concepts/Cyclomatic Complexity Proxy]].
+By **mass**: `main.ts` dominates. By **density**: `CityGenerator` is the hotspot. See Cyclomatic Complexity Proxy.
 
 ## File-by-file metrics
 
@@ -45,7 +45,7 @@ By **mass**: `main.ts` dominates. By **density**: `CityGenerator` is the hotspot
 | `src/counter.ts` | 9 | 2 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | `tests/Random.test.ts` | 89 | 32 | 20 | 0 | 0 | 5 | 0 | 0 | 0 | 0 | 5 |
 
-> `Fn-ish` counts any `<modifier>* name(` pattern — over-counts by design, treat as upper bound. See [[concepts/Cyclomatic Complexity Proxy]] for definitions.
+> `Fn-ish` counts any `<modifier>* name(` pattern — over-counts by design, treat as upper bound. See Cyclomatic Complexity Proxy for definitions.
 
 ## Public surface (exports)
 
@@ -60,7 +60,7 @@ By **mass**: `main.ts` dominates. By **density**: `CityGenerator` is the hotspot
 | `engine/Ground.ts` | 2 | `Ground` + `GroundType` |
 | others | 1 each | One concept per file |
 
-`main.ts` having **0 exports** is the structural signal: it's pure side-effect, not a library. See [[entities/main-entrypoint]].
+`main.ts` having **0 exports** is the structural signal: it's pure side-effect, not a library. See main entrypoint.
 
 ## Refactor heat-map — top-5 candidates
 
@@ -79,7 +79,7 @@ Seven clearly delineated regions (banner comments + structural inspection):
 | `1 474 – 1 775` | **~300** | Terminal mount, autocomplete render, hint rendering, history, syncUI | `src/ui/terminal-shell.ts` |
 | `1 776 – 1 894` | ~120 | Log-scale slider constants, final wiring | leave or fold into preview/advanced |
 
-The line-735 second `import { Tree }` (already pulled transitively) is the canary — file grew past manual import discipline. Target: `main.ts` shrinks to ~150 LOC pure bootstrap, seven UI modules each <300 LOC, CC drops from 215 → <40 per file. See [[decisions/Split main.ts]].
+The line-735 second `import { Tree }` (already pulled transitively) is the canary — file grew past manual import discipline. Target: `main.ts` shrinks to ~150 LOC pure bootstrap, seven UI modules each <300 LOC, CC drops from 215 → <40 per file. See Split main.ts.
 
 ### 2. `src/engine/Terminal.ts` — 596 LOC, CC 97
 
@@ -126,7 +126,7 @@ See [[entities/Tree]].
 2. **Hot path vs cold path.** Per-frame loops: `Game.update` (CC 19) + `SkySystem.tick` (CC 43). Procgen hot mass (`CityGenerator` CC 44) runs once per regen — high static complexity, cold at runtime. Don't optimise CC out of `Game.ts`/`SkySystem.ts` at the cost of legibility in `CityGenerator`.
 3. **Declarations vs side-effects.** `main.ts` has 0 exports, 44 `addEventListener` calls, 62 `getElementById` calls — pure side-effect module. Every other file has ≥1 export, few-to-zero side effects. Binary split.
 
-See [[maps/dualisms]] (full catalogue) and [[concepts/Refactor Heat-Map]].
+See [[maps/dualisms]] (full catalogue) and Refactor Heat Map.
 
 ## Surprises / risks
 
@@ -140,10 +140,10 @@ See [[maps/dualisms]] (full catalogue) and [[concepts/Refactor Heat-Map]].
 
 - [[maps/dependencies]] — sibling map: edge graph + inbound/outbound rankings
 - [[maps/dualisms]] — duality patterns including density vs mass
-- [[decisions/Split main.ts]] — the 7-way breakup proposal
-- [[concepts/Cyclomatic Complexity Proxy]] — definition of CC-proxy
-- [[concepts/Refactor Heat-Map]] — methodology
+- Split main.ts — the 7-way breakup proposal
+- Cyclomatic Complexity Proxy — definition of CC-proxy
+- Refactor Heat Map — methodology
 - [[entities/CityGenerator]] — flagged as highest-density hotspot
 - [[entities/Terminal]] — flagged for command/autocomplete extraction
 - [[entities/Game]] — orchestrator; do not absorb work from main.ts
-- [[entities/main-entrypoint]] — current pure-side-effect bootstrap
+- main entrypoint — current pure-side-effect bootstrap

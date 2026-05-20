@@ -101,7 +101,7 @@ Order is implicit in source-order; adding a modal means editing this branch.
 - **`alert()` on uncaught error** spams users in production. See [[decisions/DEC-03-safe-eval-and-error]].
 - **`Function("use strict"; const {Math.*} = Math; return (expr))()` at line 470** — arithmetic expression eval for advanced speed input. Silently catches everything. Mirror of [[systems/terminal]]'s `speed` eval.
 - **Out-of-range speed snaps basic slider to "0"** (looks like 1× speed) — misleading UX. `globalSpeedUpdateCallback` lines 1432-1436.
-- **Time-format `'score'` displays elapsed sim time** as if it were a clock — implicit dualism game-time ↔ wall-time. See [[concepts/score-as-time]].
+- **Time-format `'score'` displays elapsed sim time** as if it were a clock — implicit dualism game-time ↔ wall-time. See score as time.
 - **`isTreeModified` cactus-specific** for `flowerChance` (`Math.abs(...) > 0.001`). Adding another flower-bearing species silently fails the modified check.
 - **`commandHistory` unbounded** — minor leak on long sessions.
 - **Lazy DOM injection inside event handlers** (`#volume-visual-container` on first wheel) — unusual when the rest of the DOM is built in one `innerHTML` blast.
@@ -120,7 +120,7 @@ Order is implicit in source-order; adding a modal means editing this branch.
 
 ## Cross-references
 
-- Entities: [[entities/Game]], [[entities/Terminal]], [[entities/Tree]], [[entities/PreviewGame]]
-- Concepts: [[concepts/default-vs-modified]], [[concepts/slider-vs-input]], [[concepts/preview-game-mirror]], [[concepts/speed-mapping]], [[concepts/confirm-then-act]], [[concepts/escape-priority-stack]], [[concepts/idempotent-render]], [[concepts/safe-eval]], [[concepts/score-as-time]], [[concepts/time-format]], [[concepts/dualism]]
-- Decisions: [[decisions/DEC-03-safe-eval-and-error]], [[decisions/DEC-04-main-decomposition]], [[decisions/DEC-05-low-code-config]], [[decisions/inline-html-template]]
+- Entities: [[entities/Game]], [[entities/Terminal]], [[entities/Tree]], PreviewGame
+- Concepts: default vs modified, slider vs input, preview game mirror, speed mapping, confirm then act, escape priority stack, idempotent render, safe eval, score as time, time format
+- Decisions: [[decisions/DEC-03-safe-eval-and-error]], [[decisions/DEC-04-main-decomposition]], [[decisions/DEC-05-low-code-config]], inline html template
 - Systems: [[systems/terminal]], [[systems/css-architecture]], [[systems/game-loop]], [[systems/procgen]] (custom-gen writes config)

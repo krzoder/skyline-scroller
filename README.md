@@ -2,7 +2,7 @@
 
 Proceduralnie generowany, scrollujący się pejzaż miasta z efektem paralaksy, cyklem dnia i nocy oraz pogodą. Wszystko rysuje się na HTML5 Canvas - bez zewnętrznych bibliotek graficznych, tylko czysty TypeScript.
 
-**Wersja**: 1.1.2
+**Wersja**: 1.2.0
 
 ## Gdzie to zobaczyć
 
@@ -28,7 +28,7 @@ Każda zmiana zaczyna się w osobnej gałęzi (branchu). Pull Request (PR) to ta
 Gdy tylko powstaje PR, GitHub w tle:
 
 - sprawdza, czy kod nie ma błędów składniowych (TypeScript),
-- uruchamia 44 testy automatyczne,
+- uruchamia **67 testów automatycznych**,
 - buduje aplikację, żeby się upewnić, że da się ją zbudować.
 
 Plik konfiguracyjny: [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
@@ -55,7 +55,7 @@ Druga lokalizacja (`skyline-scroller.fidom.link`) jest na prywatnym serwerze (ho
 
 Workflow [`deploy-fidom.yml`](.github/workflows/deploy-fidom.yml) uruchamia się **ręcznie** (przyciskiem "Run workflow" w zakładce Actions na GitHubie). Buduje aplikację i wgrywa pliki bezpośrednio na serwer przez self-hosted runner. Docelowo będzie odpalał się automatycznie po każdym pushu do `main`, ale na razie wymaga jednego kliknięcia.
 
-Więcej szczegółów o konfiguracji homelaba: [`deploy/homelab/README.md`](deploy/homelab/README.md).
+Pełne stawianie kontenera + Traefik route + nginx config jest opisane w osobnym workflow w repo `fszalaj/homelab` - `deploy-skyline-scroller.yml`.
 
 ---
 
@@ -93,11 +93,11 @@ Klikasz, opisujesz **co i dlaczego** zmieniłeś, klikasz "Create pull request".
 
 Pod PR-em zobaczysz checklistę:
 
-- ✅ Lint
-- ✅ Typecheck
+- ✅ Lint & Typecheck
 - ✅ Test
-- ✅ Build (Node 22)
 - ✅ Build (Node 24)
+- ✅ CodeQL
+- ✅ Build and deploy preview
 
 Jeśli wszystko zielone - dobrze. Jeśli coś czerwone - klikasz w nazwę i czytasz, co się wywaliło.
 
@@ -119,7 +119,7 @@ Jeśli dodasz do PR-a etykietę **`auto-merge`**, to po przejściu wszystkich te
 
 ## Dla developerów - lokalne uruchomienie
 
-Wymagania: **Node.js 22+**.
+Wymagania: **Node.js 24+** (Active LTS). `package.json` ma `engines.node: ">=24.0.0 <27.0.0"` i `scripts/dev-setup.sh` sprawdza wersję przed instalacją.
 
 ```bash
 # pierwszy raz po sklonowaniu repo:
@@ -130,8 +130,30 @@ bash scripts/dev-setup.sh
 # dalej:
 npm run dev        # serwer deweloperski (http://localhost:5173)
 npm run build      # produkcyjny build do katalogu dist/
-npx vitest run     # uruchom testy
+npx vitest run     # uruchom testy (67 case'ów)
 ```
+
+### Konsola deweloperska w aplikacji
+
+Wbudowany terminal: klawisz `t` lub `Enter` z głównego ekranu. Dostępne komendy:
+
+- `seed [wartość|random]` - pokaż lub ustaw seed
+- `speed <wartość>` - tempo czasu (akceptuje wyrażenia typu `2*pi`)
+- `biome [nazwa]` - wymuś biom (lub pokaż aktualny)
+- `debug-state` - dumpuje stan gry (seed, cameraX, biome, sky time, etc.) jako JSON do clipboardu - bardzo przydatne do zgłoszeń bugów
+- `format [24h|12h|score]` - format wyświetlania czasu
+- `help` - lista wszystkich komend
+
+### Struktura kodu
+
+- `src/main.ts` (427 LOC) - orchestrator: tworzy `Game`, wpina moduły UI, składa keyboard shortcuts.
+- `src/ui/` - 10 modułów odpowiedzialnych za poszczególne kawałki interfejsu (settings, advanced, custom-gen, terminal-bind, gestures, audio-controls, error-toast, seed-controls, keyboard-shortcuts, window-manager).
+- `src/engine/` - silnik renderowania (`Game`, `Layer`, `SkySystem`, `Terminal`, `Renderable`).
+- `src/procgen/` - generacja proceduralna (`CityGenerator`, `BiomeSystem`, `TreeConfig`).
+- `src/procgen/entities/` - rysowane obiekty (`Building`, `Tree`, `Landscape`, `Ground`, `CityEntity`, `TextureGenerator`).
+- `src/regions/` - rejestr biomów (declarative table z trees, materials, roofs, palette).
+- `src/utils/` - kontrakty: `Random` (deterministyczny RNG z `.fork(label)`), `Expression` (sandboxowany parser zamiast `eval()`), `deepClone` (`structuredClone`).
+- `src/config.ts` - centralne stałe (czasy trwania biomów, prędkość kamery, zakresy wysokości feature'ów).
 
 Pełna dokumentacja techniczna i architektura projektu są w katalogu [`wiki/`](wiki/) - to baza wiedzy w formacie Obsidian. Wystarczy otworzyć katalog `wiki/` jako vault w aplikacji Obsidian.
 
@@ -139,7 +161,7 @@ Najważniejsze strony:
 
 - [`wiki/index.md`](wiki/index.md) - spis treści
 - [`wiki/hot.md`](wiki/hot.md) - aktualny stan projektu
-- [`wiki/plans/simplification-plan.md`](wiki/plans/simplification-plan.md) - plan rozwoju
+- [`wiki/decisions/`](wiki/decisions/) - decyzje architektoniczne (DEC-NN)
 
 ---
 
@@ -147,7 +169,7 @@ Najważniejsze strony:
 
 - **TypeScript** (kompilator: tsc)
 - **Vite** (bundler)
-- **Vitest** (testy - 44 testy w 5 plikach)
+- **Vitest** (testy - 67 case'ów w 5 plikach)
 - **Canvas API 2D** (rendering, bez WebGL i bez bibliotek graficznych)
 - **Zero zewnętrznych zależności w runtime** - w przeglądarce ląduje czysty kod aplikacji (~79 kB, ~22 kB po gzipie).
 

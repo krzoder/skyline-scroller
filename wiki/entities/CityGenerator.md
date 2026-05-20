@@ -16,7 +16,7 @@ Owns the procedural generation pipeline. Per frame, `Game.update` calls `generat
 
 - `class CityGenerator`
   - `constructor(seed: number | string, layerCount: number, config?: TreeConfig)`
-  - `public config: TreeConfig` — live, mutable; the custom-gen UI in [[main.ts]] reaches in and rewrites this field (see [[decisions/DEC-05-low-code-config]]).
+  - `public config: TreeConfig` — live, mutable; the custom-gen UI in main.ts reaches in and rewrites this field (see [[decisions/DEC-05-low-code-config]]).
   - `public generate(layers: Layer[], cameraX: number, viewportWidth: number): void`
   - `public forceBiome(b: BiomeType): void`
   - `public getCurrentBiome(): BiomeType`

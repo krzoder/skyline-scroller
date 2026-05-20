@@ -21,11 +21,11 @@ Legacy paths relative to `skyline-scroller/skyline-scroller/` unless noted. `doc
 
 | Legacy page | Status | Replacement |
 |---|---|---|
-| `agents.md` | **DELETE** (optional distil) | optional [[decisions/legacy-swarm-history]] |
+| `agents.md` | **DELETE** (optional distil) | optional legacy-swarm-history (not written) |
 | `Witaj.md` | **DELETE** | none — Obsidian default Polish stub |
 | `Engine_Architecture.md` | SUPERSEDED | [[entities/Game]] + [[systems/game-loop]] |
 | `Game_Loop_and_Time.md` | SUPERSEDED | [[entities/Game]] + [[systems/game-loop]] |
-| `State_Management.md` | SUPERSEDED | [[entities/Game]] + [[entities/main-entrypoint]] |
+| `State_Management.md` | SUPERSEDED | [[entities/Game]] + main entrypoint |
 | `Layering_System.md` | SUPERSEDED | [[entities/Layer]] + [[entities/Renderable]] + [[systems/parallax-layers]] |
 | `UI_and_Configuration.md` | **UPDATE** then SUPERSEDED | [[systems/ui-shell]] (verify speed-slider range `−10x..+20x` against `main.ts`) |
 | `Graphics Pipeline Overview.md` | SUPERSEDED | [[systems/entity-rendering]] |
@@ -36,7 +36,7 @@ Legacy paths relative to `skyline-scroller/skyline-scroller/` unless noted. `doc
 | `Procedural Generation of Flora.md` | SUPERSEDED | [[entities/Tree]] |
 | `Landscape Generation.md` | SUPERSEDED | [[entities/Landscape]] |
 | `Procedural Generation Overview.md` | SUPERSEDED | [[systems/procgen]] |
-| `Deterministic Randomness.md` | SUPERSEDED | [[concepts/Determinism]] + [[entities/Random]] |
+| `Deterministic Randomness.md` | SUPERSEDED | Determinism + [[entities/Random]] |
 | `City Generation.md` | SUPERSEDED | [[entities/CityGenerator]] |
 | `Chunk System.md` | SUPERSEDED | [[concepts/chunking]] + [[entities/CityGenerator]] |
 | `Biome System.md` | SUPERSEDED | [[entities/BiomeSystem]] |
@@ -49,7 +49,7 @@ Legacy paths relative to `skyline-scroller/skyline-scroller/` unless noted. `doc
 | `Terminal Autocomplete Engine.md` | SUPERSEDED | [[systems/terminal]] |
 | `CSS Architecture.md` | SUPERSEDED | [[systems/css-architecture]] |
 | `UI Architecture Overview.md` | SUPERSEDED | [[systems/ui-shell]] |
-| `Build and Deploy Pipeline.md` | **UPDATE** then SUPERSEDED | [[operations/build-and-deploy]] (add `pr-preview.yml`, vitest suite) |
+| `Build and Deploy Pipeline.md` | **UPDATE** then SUPERSEDED | operations/build-and-deploy (not written) (add `pr-preview.yml`, vitest suite) |
 | `md_contents.json` | **DELETE** | none — indexing scrap (~52 KB) |
 | `ts_contents.json` | **DELETE** | none — indexing scrap (~173 KB) |
 | `.obsidian/` (both folders) | **DELETE** | none — per-vault config; audit for embedded REST API keys first |
@@ -101,15 +101,15 @@ Cross-link these into [[entities/BiomeSystem]], [[entities/Tree]], [[entities/Ra
 
 These are the *real* gaps the new wiki must close:
 
-1. **`Game.timeFormat`** triplet `'score' | '24h' | '12h'` and DOM update of `#ui-time-val`. Score = raw `cameraX` as integer. [[entities/Game]], [[concepts/Time Formats]].
-2. **`Game.isPreview` multi-instance pattern**: preview instance skips `SkySystem` entirely (`Game.ts:121`). [[entities/Game]], [[concepts/Config Mirroring]].
-3. **`Terminal.pendingResetTarget` flow** + actual `reset` subcommand list (`all, speed, volume, format, seed, generate`). [[entities/Terminal]], [[concepts/Reset Confirmation Pattern]].
+1. **`Game.timeFormat`** triplet `'score' | '24h' | '12h'` and DOM update of `#ui-time-val`. Score = raw `cameraX` as integer. [[entities/Game]], Time Formats.
+2. **`Game.isPreview` multi-instance pattern**: preview instance skips `SkySystem` entirely (`Game.ts:121`). [[entities/Game]], Config Mirroring.
+3. **`Terminal.pendingResetTarget` flow** + actual `reset` subcommand list (`all, speed, volume, format, seed, generate`). [[entities/Terminal]], Reset Confirmation Pattern.
 4. **`generate` command grammar** with `key:value` pairs, biome-aware `flowerChance` (cactus only), `biome` read-only. Per commit `9a7c5df`. [[systems/terminal]].
 5. **`TreeConfigItem.enabled` + `biomes` filter** in `CityGenerator.pickTreeType()` (returns `null` → chunk treated as gap). [[entities/CityGenerator]], [[entities/TreeConfig]].
 6. **`Ground` types** (`pavement | grass | water | dirt`) — `Ground.ts` never documented as own entity. [[entities/Ground]].
 7. **`TextureGenerator`** (46 LOC) — mentioned in passing in `Building Configuration.md`, no page of its own. [[entities/TextureGenerator]].
-8. **PR-preview workflow** (commit `f156f7c`) — third workflow file added; legacy doc only knows two. [[operations/build-and-deploy]].
-9. **Vitest test suite** (also `f156f7c`) — not described in `Build and Deploy Pipeline.md`. [[operations/build-and-deploy]].
+8. **PR-preview workflow** (commit `f156f7c`) — third workflow file added; legacy doc only knows two. operations/build-and-deploy (not written).
+9. **Vitest test suite** (also `f156f7c`) — not described in `Build and Deploy Pipeline.md`. operations/build-and-deploy (not written).
 
 ## Drift specifics — 4 UPDATE candidates
 
@@ -135,7 +135,7 @@ Drift is in **coverage** (gaps above), **specifics** (4 UPDATE candidates), and 
 - [[maps/complexity]] — current LOC + CC (post-supersession reference)
 - [[entities/Game]], [[entities/CityGenerator]], [[entities/Terminal]], [[entities/SkySystem]], [[entities/BiomeSystem]], [[entities/Tree]], [[entities/TreeConfig]], [[entities/Random]], [[entities/Building]], [[entities/Landscape]], [[entities/Layer]], [[entities/Renderable]], [[entities/CityEntity]], [[entities/Ground]], [[entities/TextureGenerator]] — absorption targets
 - [[systems/game-loop]], [[systems/sky]], [[systems/procgen]], [[systems/parallax-layers]], [[systems/entity-rendering]], [[systems/terminal]], [[systems/ui-shell]], [[systems/css-architecture]] — system-level absorption targets
-- [[concepts/Determinism]], [[concepts/chunking]], [[concepts/Time Formats]], [[concepts/Reset Confirmation Pattern]], [[concepts/Config Mirroring]] — concept-level absorption targets
-- [[operations/build-and-deploy]] — needs UPDATE for PR-preview + vitest
-- [[decisions/legacy-swarm-history]] (optional) — one-paragraph distil of `agents.md` if anyone cares
+- Determinism, [[concepts/chunking]], Time Formats, Reset Confirmation Pattern, Config Mirroring — concept-level absorption targets
+- operations/build-and-deploy (not written) — needs UPDATE for PR-preview + vitest
+- legacy-swarm-history (not written) (optional) — one-paragraph distil of `agents.md` if anyone cares
 - [[log]] — append supersession line on cleanup

@@ -29,7 +29,7 @@ The contract is **enforced** by the `tests/Random.test.ts` suite: same seed → 
 - **Shareable worlds.** A seed slug is the entire description of a city. Users can swap a string and "see that one cool skyline" again. The whole `seed`-command UX in [[entities/Terminal]] depends on this.
 - **Reproducible bugs.** Visual glitches in procgen can be re-investigated by re-running the same seed. Without this, every bug report would be "saw a weird building, can't reproduce".
 - **Cheap state.** One `u32` per generator instance; no save format, no replay buffer. The PRNG is the entire world description.
-- **The customisation loop closes.** [[concepts/customisation-flow]] depends on this: every user action either changes a parameter and reseeds, or is view-only. Without determinism, the "Apply" button has no fixed point — clicking it would produce different results each time even with no input change.
+- **The customisation loop closes.** customisation flow depends on this: every user action either changes a parameter and reseeds, or is view-only. Without determinism, the "Apply" button has no fixed point — clicking it would produce different results each time even with no input change.
 - **`btn-gen-apply` exploits "same seed → full reset".** Passing the *same* seed to `setSeed` still triggers a full `reset()`, so applying tweaked `treeConfig` works by reseeding with the unchanged seed. The deterministic-by-seed property makes this exploit safe.
 
 ## Counter-examples
@@ -69,7 +69,7 @@ The leaks are not random — they cluster at the "decorative noise" boundary ins
 
 - [[entities/Random]] — the primitive
 - [[entities/Game]] — `setSeed → reset` re-entry point
-- [[concepts/customisation-flow]] — the loop that depends on this contract
+- customisation flow — the loop that depends on this contract
 - [[concepts/side-effect-surface]] — where the leaks live architecturally
 - [[concepts/dualisms]] #13, #14, #15 — seeded/unseeded, deterministic/stochastic, string/numeric seed
 - [[decisions/DEC-01-unified-rng]] — proposed `Random.fork()` to fix sibling correlation + decorative-noise leaks

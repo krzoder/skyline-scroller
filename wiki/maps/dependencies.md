@@ -72,7 +72,7 @@ graph LR
   TreeConfig -.type.-> BiomeSystem
 ```
 
-Dotted edges = `import type` (erased at runtime). See [[decisions/Type-only imports as cycle breakers]].
+Dotted edges = `import type` (erased at runtime). See Type only imports as cycle breakers.
 
 ## Headline metrics
 
@@ -106,7 +106,7 @@ Dotted edges = `import type` (erased at runtime). See [[decisions/Type-only impo
 | Rank | Module | Outbound | Comment |
 |---:|---|---:|---|
 | 1 | [[entities/CityGenerator]] | **8** | Orchestrator — pulls Building, Layer, Random, Tree, BiomeSystem, Ground, Landscape, TreeConfig |
-| 2 | `main.ts` (see [[entities/main-entrypoint]]) | **7** | Bootstrapper — Game, Terminal, TreeConfig, Tree (twice — line 735 re-imports), type pulls |
+| 2 | `main.ts` (see main entrypoint) | **7** | Bootstrapper — Game, Terminal, TreeConfig, Tree (twice — line 735 re-imports), type pulls |
 | 3 | [[entities/Game]] | 5 | Layer, CityGenerator, TreeConfig (type+value as 2 lines), SkySystem |
 | 4 | [[entities/Terminal]] | 3 | All type-only: Game, Tree, BiomeSystem |
 | 5 | [[entities/TreeConfig]] | 2 | Tree, BiomeSystem (both type) |
@@ -130,19 +130,19 @@ Dotted edges = `import type` (erased at runtime). See [[decisions/Type-only impo
 | `engine/Landscape.ts` | 2 | 1 | BiomeType erased |
 | others | — | 0 | runtime-only or leaves |
 
-**4 of 9 type-only edges target `Renderable`** — the abstract contract is the highest-leverage erased dependency. See [[concepts/Type-only imports as cycle breakers]].
+**4 of 9 type-only edges target `Renderable`** — the abstract contract is the highest-leverage erased dependency. See Type only imports as cycle breakers.
 
 ## Cycle audit
 
 Walked every edge. **0 cycles.**
 
-The closest near-cycle is `Terminal -.type.-> Game` while `main.ts` constructs both and wires them via `terminal.bind(game)`. The `Terminal → Game` edge is **type-only** (erased at runtime), so the would-be cycle disappears at compile time. This is the load-bearing reason the engine compiles. See [[decisions/Type-only imports as cycle breakers]].
+The closest near-cycle is `Terminal -.type.-> Game` while `main.ts` constructs both and wires them via `terminal.bind(game)`. The `Terminal → Game` edge is **type-only** (erased at runtime), so the would-be cycle disappears at compile time. This is the load-bearing reason the engine compiles. See Type only imports as cycle breakers.
 
 ## Invariants
 
 - **Acyclic DAG, depth 4.** Longest value-path: `Random → BiomeSystem → CityGenerator → Game → main`.
 - **`Renderable` has no implementation imports** — purely a contract. Implementations: `Building`, `CityEntity` (and via inheritance `Tree`, `Landscape`), `Ground`, `Layer`. See [[entities/Renderable]].
-- **`Random` is the only PRNG ingress** for procgen. Three runtime consumers (`SkySystem`, `BiomeSystem`, `CityGenerator`) + tests. `Math.random` only appears in `main.ts:235` (initial seed) — though see [[concepts/Determinism]] for the `Building`/`Landscape`/`SkySystem` stochastic-decoration leak.
+- **`Random` is the only PRNG ingress** for procgen. Three runtime consumers (`SkySystem`, `BiomeSystem`, `CityGenerator`) + tests. `Math.random` only appears in `main.ts:235` (initial seed) — though see Determinism for the `Building`/`Landscape`/`SkySystem` stochastic-decoration leak.
 
 ## Cross-links
 
@@ -151,6 +151,6 @@ The closest near-cycle is `Terminal -.type.-> Game` while `main.ts` constructs b
 - [[entities/Renderable]] — 4 type-only edges; pure contract
 - [[entities/Random]] — single PRNG ingress
 - [[systems/procgen]] — runtime consumer chain
-- [[decisions/Type-only imports as cycle breakers]] — why `Terminal -.type.-> Game` is fine
+- Type only imports as cycle breakers — why `Terminal -.type.-> Game` is fine
 - [[maps/complexity]] — sibling map: file-by-file LOC + CC ranking
-- [[concepts/Dependency Graph]] — definition of the graph used here
+- Dependency Graph — definition of the graph used here

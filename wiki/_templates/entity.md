@@ -35,4 +35,4 @@ Things that must remain true.
 
 ## See also
 
-- Related [[systems/...]] and [[concepts/...]].
+- Related ... and ....

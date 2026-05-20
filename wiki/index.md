@@ -26,7 +26,7 @@ type: index
 - [[entities/BiomeSystem]] — Biome selection and parameters (`src/procgen/BiomeSystem.ts`)
 - [[entities/TreeConfig]] — Tree configuration defaults and types (`src/procgen/TreeConfig.ts`)
 - [[entities/Random]] — Seeded RNG and hashing (`src/utils/Random.ts`)
-- [[entities/index-html]] — Shell HTML + DOM topology (`index.html`, `public/`)
+- index html — Shell HTML + DOM topology (`index.html`, `public/`)
 
 ## Systems (cross-file behaviour)
 
@@ -50,7 +50,7 @@ type: index
 
 ## Operations
 
-- [[operations/build-deploy]] — Vite build, GitHub Actions, Pages
+- build deploy — Vite build, GitHub Actions, Pages
 - [[operations/codex-integration]] — How Claude reads from and writes to Codex (canonical reference)
 
 ## Decisions (ADRs)

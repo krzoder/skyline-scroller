@@ -86,7 +86,7 @@ No CSS custom properties / no `:root` tokens beyond `font` and `color-scheme`. E
 - **`#volume-popup` invisible bridge** — wrapper is transparent, `::before` paints the real background; the transparent bottom padding stops the hover gap from closing the popup.
 - **Dual-slider widget** — two stacked `<input type="range">` plus `track-bg` + `track-fill`. Thumb-width compensation `calc(${p}% + 8px - ${p*0.16}px)` is empirically tuned (16 px thumb).
 - **Vertical volume slider** uses deprecated `writing-mode: bt-lr` and `-webkit-appearance: slider-vertical` — likely broken on modern Chromium.
-- **Smart-reset button** encodes a two-state machine in CSS: `.default` (yellow, `cursor: default`, cosmetic) vs `.modified` (red, `cursor: pointer`, actionable). See [[concepts/default-vs-modified]].
+- **Smart-reset button** encodes a two-state machine in CSS: `.default` (yellow, `cursor: default`, cosmetic) vs `.modified` (red, `cursor: pointer`, actionable). See default vs modified.
 - **`!important` usage** on `.tree-setting-wrapper:hover`, `.terminal-copied`, `.btn-selected` — indicates inline-style fights with JS-set backgrounds.
 
 ## Failure modes / edge cases
@@ -115,7 +115,7 @@ No CSS custom properties / no `:root` tokens beyond `font` and `color-scheme`. E
 
 ## Cross-references
 
-- Entities: [[entities/Settings-Window]], [[entities/Advanced-Window]], [[entities/Custom-Gen-Window]], [[entities/Terminal-Bar]], [[entities/Volume-Popup]], [[entities/Dual-Slider]], [[entities/Smart-Reset-Button]]
-- Concepts: [[concepts/default-vs-modified]], [[concepts/modified-indicator]], [[concepts/pointer-events-layering]], [[concepts/z-index-ladder]], [[concepts/visibility-toggle-class]], [[concepts/css-magic-numbers]], [[concepts/accessibility-gaps]], [[concepts/design-tokens]]
-- Decisions: [[decisions/no-design-tokens]], [[decisions/inline-html-template]], [[decisions/DEC-04-main-decomposition]]
+- Entities: Settings Window, Advanced Window, Custom Gen Window, Terminal Bar, Volume Popup, Dual Slider, Smart Reset Button
+- Concepts: default vs modified, modified indicator, pointer events layering, z index ladder, visibility toggle class, css magic numbers, accessibility gaps, design tokens
+- Decisions: no design tokens, inline html template, [[decisions/DEC-04-main-decomposition]]
 - Systems: [[systems/ui-shell]] (constructs the DOM and toggles classes)

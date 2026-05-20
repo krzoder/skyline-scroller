@@ -101,7 +101,7 @@ There's also a triplicate for tree config: `game.treeConfig` ↔ `previewGame.tr
 
 - [[concepts/determinism]] — the leaks all live inside engine modules that should be pure
 - [[concepts/control-flow]] — `syncUIFromTerminal` and the DOM-state vs game-state mirror
-- [[concepts/customisation-flow]] — how user actions cross the boundary
+- customisation flow — how user actions cross the boundary
 - [[concepts/single-canvas]] — the engine's output side
 - [[decisions/DEC-04-main-decomposition]] — proposed split of the 1894-LOC main.ts
 - [[entities/Game]] — the boundary-straddling class

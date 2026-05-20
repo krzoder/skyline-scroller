@@ -4,92 +4,76 @@ description: Rolling current-state snapshot of the project. Overwrite each subst
 type: hot
 ---
 
-# Hot — 2026-05-20 (autonomous loop complete + README PL)
+# Hot - 2026-05-20 (end of day)
 
-**Status**: 11 commits pushed to main. All 17 verified defects addressed (D1-D13 + D16-D17 directly; D14/D15/D11 closed; D5 deferred). 44/44 tests pass. Build 79 kB gzipped 22 kB.
+**Status**: 25 PR-ów zmergowanych na main, 0 open, 0 zombie branche, 0 issues. Tests 67/67. Build clean (no warnings). Bundle 79.4 kB / gzip 22.7 kB. Wersja **1.2.0**. fidom.link 200. Pages 200.
 
-**Najnowsze (2026-05-20 wieczór)**: `README.md` przepisany po polsku dla osoby nietechnicznej - opis pipeline'u (CI -> GH Pages + fidom), krok-po-kroku flow PR-ów (branch -> push -> PR -> squash merge -> auto-deploy ~2-3 min), etykieta `auto-merge`, linki do workflowów i wiki.
+## Wielka dekompozycja main.ts (DEC-04 implemented)
 
-**House style (2026-05-20)**: nigdy em-dashów (`—`) ani en-dashów (`–`) - tylko zwykły hyphen-minus `-`. Reguła w `wiki/concepts/house-style.md` i w globalnej pamięci agenta.
+```
+main.ts: 1722 -> 427 LOC  (-1295 LOC, -75.2%)
+```
 
-**Stan fidom.link (2026-05-20)**: `https://skyline-scroller.fidom.link/` zwraca **HTTP 404** od Traefika. Diagnoza: route `app-skyline-scroller.yml` nigdy nie został wgrany do `homelab/platform/traefik/dynamic/` ani do `/mnt/homelab/apps/appdata/traefik3/rules/deployarr/` na Deployarrze. Kontener nginx też nie wstał. Workflow `deploy-fidom.yml` (skyline-scroller repo) syncuje tylko `dist/`, nie tworzy routera ani kontenera. Wzorzec do skopiowania: `deploy-cleanrent.yml` w homelab repo - bundluje sync Traefik rule + sync compose + start kontenera + post-deploy health check.
+10 modułów wycięte do `src/ui/`:
 
-## What was delivered
+| Moduł | LOC | Odpowiedzialność |
+|---|---:|---|
+| custom-gen.ts | 593 | Custom Generation panel (preview Game + tree config) |
+| advanced-window.ts | 230 | Advanced Options (clock format + advanced speed eval) |
+| terminal-bind.ts | 185 | Terminal mount + history + autocomplete |
+| audio-controls.ts | 117 | Volume slider + mute + wheel-volume + lazy bubble |
+| gestures.ts | 97 | Fullscreen + pointer-lock drag + dblclick reset |
+| keyboard-shortcuts.ts | 72 | f/g/r/s/a/m/t/Enter/Escape priority chain |
+| seed-controls.ts | 37 | Seed input + Set/Randomize buttons |
+| error-toast.ts | 37 | HUD toast + global error handlers |
+| window-manager.ts | 24 | toggleWindow + dismissOnOutsideClick |
+| settings-window.ts | 23 | btnSettings toggle + outside-click dismiss |
 
-| Stage | Commit | LOC delta | What |
-|---|---|---:|---|
-| 1 | 8f4f60b | -9000+ | Wiki bootstrap, legacy delete, Codex integration guide |
-| 2 | 0e95239 | +153 | `deepClone` helper + 20 sites |
-| 3 | 39fde47 | +164/-68 | Unified RNG (`fork`), nextInt guard, engine threading |
-| 4 | c701631 | +25/-26 | Dispose hygiene + handler purge |
-| 5 | cee16f3 | +319/-13 | Safe expression parser + error toast |
-| 6 | b497c5f | +900+ | vite.config, version bump, workflows, .claude bootstrap, slop batch 1 |
-| 7 | 3f0c9d7 | +180 | Declarative biome registry |
-| 8 | 61f8963 | +250 | Homelab deploy artefacts + deploy-fidom workflow |
-| 9 | 2496236 | -16 | Terminal slop |
-| 10 | 4948c9f | +20/-57 | Wiki hot/log refresh |
-| 11 | d7eabaa | +110/-18 | D11/D14/D15 closed + Determinism integration test |
+main.ts to teraz tylko HTML template + DOM refs + orchestration init + `syncUIFromTerminal`.
 
-Net delta: roughly **+1300 LOC of new structure** (wiki + tests + regions + workflows + scripts), **-2000+ LOC of legacy/slop**, total **-700 LOC**. The shipping bundle stayed nearly flat at ~79 kB.
+## Hard rules wszystkie czyste
 
-## Defect closure
+- D18 (`Function()` eval) - PR #9
+- D19 (`Math.random()` w preview) - PR #9
+- deepClone fake fix (`JSON.parse(JSON.stringify())` -> `structuredClone()`) - PR #13
+- ALL_BIOMES mutability trap (`Object.freeze` + readonly) - PR #31
+- SkySystem `Date.now()` fallback (rng required) - PR #31
+- `[INEFFECTIVE_DYNAMIC_IMPORT]` Vite warning - PR #31
 
-| # | Defect | Status |
-|---|---|---|
-| D1 | `Game.dispose()` leaks | ✅ Stage 4 |
-| D2 | `initNoise()` uses `Math.random()` | ✅ Stage 3 |
-| D3 | `Landscape` `Math.random()` | ✅ Stage 3 |
-| D4 | `SkySystem` `Date.now()` seed | ✅ Stage 3 |
-| D5 | `Building` no extends + no culling | ⏸ deferred (not user-visible) |
-| D6 | `Building` window light via `Math.random()` | ✅ Stage 3 |
-| D7 | `CityGenerator`/`BiomeSystem` cloned RNG | ✅ Stage 3 |
-| D8 | `BiomeSystem.update(1)` hard-coded | ✅ Stage 3 |
-| D9 | `nextInt(5,5)` invariant | ✅ Stage 3 |
-| D10 | `Function()` eval in Terminal | ✅ Stage 5 |
-| D11 | `biome` lying usage string | ✅ Stage 11 (now actually wires through to forceBiome) |
-| D12 | Apply listener double-bound | ✅ Stage 4 |
-| D13 | `alert()` error handler | ✅ Stage 5 |
-| D14 | CSS broken `writing-mode: bt-lr` | ✅ Stage 11 (vertical-lr + @supports fallback) |
-| D15 | CSS z-index collisions | ✅ Stage 11 (volume-popup → 250) |
-| D16 | No `vite.config.ts` | ✅ Stage 6 |
-| D17 | Version drift | ✅ Stage 6 (1.0.0-beta → 1.1.2) |
+## Inne istotne refaktoringi
+
+- REGIONS jako single source of truth dla danych biomu (PR #14)
+- Tree TREE_SPECS registry (PR #16)
+- Entity files moved engine/ -> procgen/entities/ (PR #15)
+- src/config.ts dla tunable constants (PR #19)
+- `/debug-state` terminal command + dev-setup Node 24 preflight (PR #18)
 
 ## Tests
 
-44 tests across 5 files:
-- `Random.test.ts` — 14 tests (was 8). Adds fork() + nextInt edge cases.
-- `deepClone.test.ts` — 4 tests.
-- `Expression.test.ts` — 16 tests (basic arithmetic, precedence, constants, safety/rejection).
-- `regions.test.ts` — 6 tests (registry completeness, transition graph, identity).
-- `Determinism.test.ts` — 3 tests (proves the DEC-01 contract end-to-end).
+5 plików, 67 case'ów:
+- `Random.test.ts` - 14 cases (fork + nextInt edge + distribution)
+- `deepClone.test.ts` - 8 cases (Date, Map+Set, NaN, circular)
+- `Expression.test.ts` - 36 cases (parametrized: arithmetic + safety reject)
+- `regions.test.ts` - 7 cases (registry + frozen contract)
+- `Determinism.test.ts` - 3 cases (DEC-01 BiomeSystem stream identity)
 
-## Deployment story
+Wciąż brakuje: integration test dla CityGenerator stream identity + REGIONS->backgroundGround contract (deferred, Codex flagged).
 
-- **GitHub Pages** — `fszalaj.github.io/skyline-scroller/` — automatic on push to main.
-- **fidom.link** — `skyline-scroller.fidom.link` via homelab Traefik + nginx container on Deployarr (PUBLIC — `chain-no-auth`). One-time homelab setup per `deploy/homelab/README.md`, then `deploy-fidom.yml` keeps it synced. Needs `DEPLOYARR_HOST` + `DEPLOYARR_SSH_KEY` GH secrets.
-- **CI** — `.github/workflows/ci.yml` runs lint/typecheck/test/build in parallel.
-- **Auto-merge** — PR with `auto-merge` label + green CI + owner author → GitHub auto-merge enables via `gh pr merge --auto --squash`.
-- **CodeQL** — weekly + PR scan for TypeScript.
-- **Dep audit** — daily; opens an issue on high+ severity.
-- **Release notes** — release-drafter v6, auto-generated, no AI attribution.
+## Wiki vault cleanup (2026-05-20 koniec dnia)
 
-## Project Claude config (shipped in repo)
+- **7 pustych stub plików usunięte** (0 bajtów każdy): `concepts/autocomplete-engine`, `concepts/clouds`, `concepts/dualism`, `concepts/visibility-toggle-class`, `entities/Terminal-Bar`, `decisions/legacy-swarm-history`, `operations/build-and-deploy`.
+- **171 dead wikilinków stripped z 33 plików** - to były "phantom nodes" widoczne w Obsidian graph view jako puste tytuły bez treści. Skonwertowane do plain text gdzie miały sens, usunięte gdzie nie.
+- Vault: **60 plików .md** (było 65), 0 dead wikilinków (poza `.scan/` które są immutable raw scan output).
 
-- `CLAUDE.md` at root — auto-loaded.
-- `.claude/settings.json` — permissions + SessionStart hook registers Obsidian vault.
-- `.claude/agents/` — `wiki-curator`, `slop-hunter`, `codex-review`.
-- `scripts/setup-vault.sh` — idempotent Obsidian vault registration (mac+linux).
-- `scripts/dev-setup.sh` — one-shot fresh-clone bootstrap.
+## Deployment
 
-A new contributor's first three commands:
-```bash
-git clone https://github.com/krzoder/skyline-scroller
-cd skyline-scroller
-bash scripts/dev-setup.sh
-```
+- **GitHub Pages** (`krzoder.github.io/skyline-scroller/`) - automat po merge do main, ~2-3 min.
+- **fidom.link** (`skyline-scroller.fidom.link`) - self-hosted runner workflow w `fszalaj/homelab` (Traefik route + nginx compose + dist sync). Manual trigger; auto-trigger TODO.
+- Bundle 79.4 kB / gzip 22.7 kB.
+- Node 24 (Active LTS) wymagany - `package.json` ma `engines.node: ">=24.0.0 <27.0.0"` od PR #docs/end-of-day-update.
 
-## Open threads
+## Otwarte sprawy (świadomie deferred)
 
-- **Codex review** (job `a24b0fd5...`) — still running in background; verdicts will be folded into a follow-up commit if anything actionable surfaces.
-- **DEC-04 main.ts decomposition** — deferred. main.ts is down to 1724 LOC after slop; the 7-way breakup is a separate substantial refactor for a later session.
-- **D5 Building extends CityEntity** — deferred. Not user-visible; cosmetic class-hierarchy fix.
+- 3x `Math.random()` w `src/ui/seed-controls.ts` + `src/ui/custom-gen.ts` (linia 521, 560) - policy nit: hard rule mówi "tylko main.ts + Terminal.ts". To są legitimowane entropy entry pointy z dekompozycji - albo update rule, albo refactor.
+- CityGenerator `pickMaterial`/`pickRoof`/`pickColor` - dane są już w REGIONS, ale logika ich nie używa. Wymaga determinism test rozszerzenia przed refactorem.
+- Palette extraction (~30 inline kolorów w `src/ui/`) - kosmetyczne, niski priorytet.

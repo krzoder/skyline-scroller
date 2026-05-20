@@ -10,7 +10,7 @@ loc: 68
 
 ## Role
 
-Declares the data shape that `CityGenerator` consults when picking tree species (`pickTreeType`) and dimensioning a tree (`minHeight`, `maxHeight`, `flowerChance`). The low-code custom-gen UI in [[main.ts]] mutates the per-instance copy on `generator.config` directly. See [[decisions/DEC-05-low-code-config]].
+Declares the data shape that `CityGenerator` consults when picking tree species (`pickTreeType`) and dimensioning a tree (`minHeight`, `maxHeight`, `flowerChance`). The low-code custom-gen UI in main.ts mutates the per-instance copy on `generator.config` directly. See [[decisions/DEC-05-low-code-config]].
 
 ## Public surface
 
@@ -38,7 +38,7 @@ Declares the data shape that `CityGenerator` consults when picking tree species 
 ## Dependencies
 
 - Imports: `TreeType` (type from [[entities/Tree]]), `BiomeType` (type from [[entities/BiomeSystem]]).
-- Imported by: [[entities/CityGenerator]] (deep-clones into `config`), [[entities/Game]] (default holder), [[main.ts]] (custom-gen UI mutates `previewGame.generator.config` then serializes back to `game.treeConfig` via `JSON.parse(JSON.stringify(...))`).
+- Imported by: [[entities/CityGenerator]] (deep-clones into `config`), [[entities/Game]] (default holder), main.ts (custom-gen UI mutates `previewGame.generator.config` then serializes back to `game.treeConfig` via `JSON.parse(JSON.stringify(...))`).
 
 ## Invariants
 

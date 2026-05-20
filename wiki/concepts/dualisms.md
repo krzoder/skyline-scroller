@@ -215,7 +215,7 @@ Every render path matches `ctx.save()` with `ctx.restore()` — *except* `CityEn
 
 ### 3. The 15+-site `JSON.parse(JSON.stringify(...))` clone idiom (#121)
 
-`Game.ts:41`, `CityGenerator.ts:30,32`, `Terminal.ts:435,438,583,586`, `main.ts:704,747,951,1093,1344,1346,1375,1552,1553` — all do the same deep-clone dance. The dualism between *aliased reference* (bug) and *deep-cloned snapshot* (correct) is encoded as a manual convention everywhere instead of being abstracted. The presence of this idiom at *every* config-handoff site is the strongest signal in the codebase that aliasing was a real, recurring bug. See [[concepts/customisation-flow]] (D8).
+`Game.ts:41`, `CityGenerator.ts:30,32`, `Terminal.ts:435,438,583,586`, `main.ts:704,747,951,1093,1344,1346,1375,1552,1553` — all do the same deep-clone dance. The dualism between *aliased reference* (bug) and *deep-cloned snapshot* (correct) is encoded as a manual convention everywhere instead of being abstracted. The presence of this idiom at *every* config-handoff site is the strongest signal in the codebase that aliasing was a real, recurring bug. See customisation flow (D8).
 
 ## Invariants
 
@@ -229,6 +229,6 @@ Every render path matches `ctx.save()` with `ctx.restore()` — *except* `CityEn
 - [[concepts/control-flow]] — state machines that compose dualisms into FSMs (D-table)
 - [[concepts/determinism]] — D7 expanded
 - [[concepts/single-canvas]] — D3, D5 expanded
-- [[concepts/customisation-flow]] — D8 (clone-vs-alias) expanded
+- customisation flow — D8 (clone-vs-alias) expanded
 - [[concepts/time]] — D4 expanded
 - [[entities/SkySystem]] — the densest single dualism site

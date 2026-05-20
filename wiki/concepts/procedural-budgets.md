@@ -70,7 +70,7 @@ Note the skew: `density` is biased toward dense (range midpoint 0.65, not 0.5). 
 A weaker design would expose `density`, `greenery`, `buildingHeight` to the user directly with no bounds. The current design picks each from a bounded range *seeded by the seed*. Three knock-on effects:
 
 1. **The user never sees an unviable city.** Every seed produces something inside the aesthetic window. There is no "I tried 500 seeds and they all look the same" complaint — but also no "I rolled a degenerate seed".
-2. **The procgen surface is small.** With DNA inside `CityGenerator`, the only user-facing knob in the customisation window is `treeConfig` (per-species enable/height). The wider knobs are intentionally hidden — see [[concepts/customisation-flow]].
+2. **The procgen surface is small.** With DNA inside `CityGenerator`, the only user-facing knob in the customisation window is `treeConfig` (per-species enable/height). The wider knobs are intentionally hidden — see customisation flow.
 3. **Performance is provably bounded.** Because chunk widths have a hard minimum, the active-set size has a hard maximum. No tuning knob can blow up the engine.
 
 ## Sky and procgen budgets are separate
@@ -88,7 +88,7 @@ A desert at midnight has the same sky as a tundra at midnight. The biome system 
 
 - [[concepts/chunking]] — consumes these budgets to size each chunk
 - [[concepts/determinism]] — DNA values are seed-derived
-- [[concepts/customisation-flow]] — `treeConfig` exposes per-species height bounds to the user
+- customisation flow — `treeConfig` exposes per-species height bounds to the user
 - [[entities/CityGenerator]] — owns the DNA
 - [[entities/BiomeSystem]] — modulates picks within these budgets
 - [[concepts/dualisms]] #42, #43, #44 — sparse/dense, low/high greenery, short/tall

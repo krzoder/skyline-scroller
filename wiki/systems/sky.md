@@ -83,6 +83,6 @@ stateDiagram-v2
 ## Cross-references
 
 - Entities: [[entities/SkySystem]], [[entities/Game]], [[entities/Random]], [[entities/BiomeSystem]] (`BiomeType` imported here for biome→sky tint, but the wiring is in SkySystem not CityGenerator)
-- Concepts: [[concepts/time-of-day]], [[concepts/ambient-lighting]], [[concepts/color-interpolation]], [[concepts/celestial-body]], [[concepts/sun-moon-flip]], [[concepts/clouds]], [[concepts/determinism]]
+- Concepts: time of day, ambient lighting, color interpolation, celestial body, sun moon flip, [[concepts/determinism]]
 - Decisions: [[decisions/DEC-01-unified-rng]] (Date.now seed), [[decisions/DEC-03-safe-eval-and-error]]
 - Systems: [[systems/game-loop]] (drives `update`, consumes `getAmbientColor`), [[systems/ui-shell]] (HUD clock formats `getTime()`)

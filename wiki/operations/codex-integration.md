@@ -18,9 +18,9 @@ The main Claude agent **never** invokes `codex exec` directly. It always goes th
 
 ```
 Agent({
-  description: "<5 word desc>",
-  subagent_type: "codex:codex-rescue",
-  prompt: "<the natural-language task or review request>",
+  description: "<5 word desc>"
+  subagent_type: "codex:codex-rescue"
+  prompt: "<the natural-language task or review request>"
   run_in_background: true   // default for anything non-trivial
 })
 ```
@@ -186,8 +186,8 @@ flowchart TD
 
 ```
 Agent({
-  description: "Codex verify swarm findings",
-  subagent_type: "codex:codex-rescue",
+  description: "Codex verify swarm findings"
+  subagent_type: "codex:codex-rescue"
   prompt: """
     Independent verification pass. A 15-agent swarm reported the following defects.
     Read each relevant file and tell me CONFIRMED | REFUTED | PARTIAL with file:line evidence.
@@ -200,7 +200,7 @@ Agent({
     For each: one line `N. CLAIM — VERDICT (file:line: quote)`.
     Then 3-5 sentences on overall posture.
     Don't fix anything. Don't write to wiki.
-  """,
+  """
   run_in_background: true
 })
 ```
@@ -213,9 +213,9 @@ After review + user confirmation:
 
 ```
 Agent({
-  description: "Apply Codex-verified fix",
-  subagent_type: "codex:codex-rescue",
-  prompt: "Apply the fix for finding #3 (Game.dispose leaks resize handler). Narrow scope only — do not touch anything else. Keep behaviour identical for current callers.",
+  description: "Apply Codex-verified fix"
+  subagent_type: "codex:codex-rescue"
+  prompt: "Apply the fix for finding #3 (Game.dispose leaks resize handler). Narrow scope only — do not touch anything else. Keep behaviour identical for current callers."
   // --write is the default for codex:codex-rescue
 })
 ```
@@ -232,8 +232,8 @@ Used before pushing direct-to-main:
 
 ```
 Agent({
-  description: "Adversarial review of branch",
-  subagent_type: "codex:codex-rescue",
+  description: "Adversarial review of branch"
+  subagent_type: "codex:codex-rescue"
   prompt: "adversarial-review of working tree vs main, focus on regression risk in the Building→CityEntity refactor"
 })
 ```
@@ -266,7 +266,7 @@ These are enforced by the `codex-cli-runtime` and `codex-result-handling` skills
 
 ## Cross-references
 
-- [[operations/build-deploy]] — where the verified fixes ultimately land.
+- build deploy — where the verified fixes ultimately land.
 - [[maps/wiki-drift]] — Codex is one of the tools used to confirm legacy-doc claims.
 - [[concepts/determinism]] — first big batch of Codex verifications in this repo targeted determinism leaks.
 

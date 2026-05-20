@@ -8,10 +8,10 @@ supersedes: []
 superseded-by: []
 tags: [cloudflare, workers, wrangler, deploy, dns, edge, ci, pr-preview, hosting, fidom-link]
 related:
-  - "[[operations/build-deploy]]"
+  - "build deploy"
   - "[[decisions/DEC-05-low-code-config]]"
-  - "[[entities/Deploy Workflow]]"
-  - "[[entities/PR Preview Workflow]]"
+  - "Deploy Workflow"
+  - "PR Preview Workflow"
 ---
 
 # DEC-06 — Cloudflare Worker outpost for `skyline-scroller.fidom.link`
@@ -29,7 +29,7 @@ Three concrete shortcomings of the Pages-only setup:
 2. **No edge versioning control.** GitHub Pages serves with its own `Cache-Control: max-age=600` for HTML and longer for assets, with no way to tune. We want **immutable** caching for content-hashed assets (`assets/index-abc123.js`) and **short** caching for `index.html` so the SPA shell updates promptly on each deploy.
 3. **PR-preview path ergonomics.** Today: `…/skyline-scroller/pr-preview/pr-42/`. Wanted: `…/pr/42/` on the same canonical host — shorter, no leakage of the action's naming convention, and routable through one Worker.
 
-Existing constraints from [[operations/build-deploy]] are unchanged: zero runtime dependencies in the SPA bundle (see `package.json` — no `dependencies` block), Node 22 across all CI jobs, trunk-based on `main`. [[decisions/DEC-05-low-code-config]] introduces `vite.config.ts` with `base: process.env.PUBLIC_BASE_PATH ?? '/'`; this decision **assumes DEC-05 has landed**, so the build command is plain `npm run build` with `PUBLIC_BASE_PATH=/` (or unset) — no `--base=/skyline-scroller/` flag is passed for the Cloudflare deploy.
+Existing constraints from build deploy are unchanged: zero runtime dependencies in the SPA bundle (see `package.json` — no `dependencies` block), Node 22 across all CI jobs, trunk-based on `main`. [[decisions/DEC-05-low-code-config]] introduces `vite.config.ts` with `base: process.env.PUBLIC_BASE_PATH ?? '/'`; this decision **assumes DEC-05 has landed**, so the build command is plain `npm run build` with `PUBLIC_BASE_PATH=/` (or unset) — no `--base=/skyline-scroller/` flag is passed for the Cloudflare deploy.
 
 ## Constraints
 
@@ -87,7 +87,7 @@ account_id = "${CF_ACCOUNT_ID}"           # injected by wrangler-action from sec
 
 # Production route — proxied subdomain of fidom.link.
 # The route pattern includes the wildcard; the Worker handles all paths.
-[[routes]]
+routes
 pattern = "skyline-scroller.fidom.link/*"
 zone_name = "fidom.link"
 custom_domain = true   # Wrangler will create the proxied DNS record on first deploy
@@ -104,7 +104,7 @@ html_handling = "auto-trailing-slash"
 
 # PR-preview assets — separate binding pointing at a sibling directory the
 # workflow assembles by downloading the build artifact from PR runs.
-[[env.preview.routes]]
+env.preview.routes
 pattern = "skyline-scroller.fidom.link/pr/*"
 zone_name = "fidom.link"
 custom_domain = false
@@ -135,7 +135,7 @@ Notes:
 //   1. Serve / from the ASSETS binding (Vite dist/).
 //   2. Serve /pr/:n/* from the PR_ASSETS binding (PR previews), stripping the prefix.
 //   3. Rewrite Cache-Control headers:
-//        - immutable for content-hashed assets (vite emits assets/[name]-[hash].[ext]),
+//        - immutable for content-hashed assets (vite emits assets/[name]-[hash].[ext])
 //        - short, must-revalidate for index.html so the shell updates promptly.
 //   4. Strip trailing slashes on non-root paths (canonicalise URLs).
 
@@ -179,7 +179,7 @@ export default {
         // Production SPA path.
         const res = await env.ASSETS.fetch(req);
         return withCacheHeaders(res, url.pathname);
-    },
+    }
 } satisfies ExportedHandler<Env>;
 ```
 
@@ -189,18 +189,18 @@ export default {
 
 ```json
 {
-    "name": "skyline-scroller-outpost",
-    "private": true,
-    "version": "0.1.0",
-    "type": "module",
+    "name": "skyline-scroller-outpost"
+    "private": true
+    "version": "0.1.0"
+    "type": "module"
     "scripts": {
-        "deploy": "wrangler deploy",
-        "dev": "wrangler dev",
+        "deploy": "wrangler deploy"
+        "dev": "wrangler dev"
         "typecheck": "tsc --noEmit"
-    },
+    }
     "devDependencies": {
-        "@cloudflare/workers-types": "^4.20260520.0",
-        "typescript": "~5.9.3",
+        "@cloudflare/workers-types": "^4.20260520.0"
+        "typescript": "~5.9.3"
         "wrangler": "^3.95.0"
     }
 }
@@ -213,16 +213,16 @@ Wrangler is pinned `^3.95.0` — the 3.x line is where assets binding is GA. **D
 ```json
 {
     "compilerOptions": {
-        "target": "ES2022",
-        "module": "ESNext",
-        "moduleResolution": "bundler",
-        "strict": true,
-        "noEmit": true,
-        "esModuleInterop": true,
-        "skipLibCheck": true,
-        "types": ["@cloudflare/workers-types"],
+        "target": "ES2022"
+        "module": "ESNext"
+        "moduleResolution": "bundler"
+        "strict": true
+        "noEmit": true
+        "esModuleInterop": true
+        "skipLibCheck": true
+        "types": ["@cloudflare/workers-types"]
         "lib": ["ES2022"]
-    },
+    }
     "include": ["src/**/*.ts"]
 }
 ```
@@ -367,7 +367,7 @@ After two weeks of green Worker deploys with no rollback events, deprecate Pages
 - Remove `.github/workflows/deploy.yml` and `.github/workflows/pr-preview.yml`.
 - Update `README.md` canonical URL.
 - Disable Pages in repo Settings → Pages.
-- Update [[operations/build-deploy]] to drop the Pages section.
+- Update build deploy to drop the Pages section.
 
 ## Acceptance criteria
 
@@ -436,4 +436,4 @@ If GitHub Pages and the Cloudflare Worker both somehow claim `skyline-scroller.f
 - Cloudflare docs — [Wrangler configuration reference](https://developers.cloudflare.com/workers/wrangler/configuration/)
 - Cloudflare docs — [API tokens — create custom token](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/)
 - GitHub Action — [`cloudflare/wrangler-action`](https://github.com/cloudflare/wrangler-action)
-- Related: [[operations/build-deploy]], [[decisions/DEC-05-low-code-config]], [[entities/Deploy Workflow]], [[entities/PR Preview Workflow]]
+- Related: build deploy, [[decisions/DEC-05-low-code-config]], Deploy Workflow, PR Preview Workflow

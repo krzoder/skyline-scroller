@@ -221,8 +221,8 @@ describe('Random.nextInt() edge cases', () => {
 
 Additionally, add an **end-to-end determinism test** (new file `tests/Determinism.test.ts`) that:
 
-1. Constructs two `CityGenerator` instances with the same forked `Random`,
-2. Calls `generate()` with identical layer/camera/viewport args,
+1. Constructs two `CityGenerator` instances with the same forked `Random`
+2. Calls `generate()` with identical layer/camera/viewport args
 3. Asserts that the resulting `layer.entities` arrays have equal `x`, `width`, type, and (for buildings) `material`, `roofType`, `baseColor`.
 
 This protects the contract end-to-end and will catch any future regression that adds a stray `Math.random()`.
