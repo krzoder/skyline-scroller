@@ -7,6 +7,7 @@ import { BiomeSystem, type BiomeType } from './BiomeSystem';
 import { Ground, type GroundType } from '../engine/Ground';
 import { Landscape } from '../engine/Landscape';
 import { DEFAULT_TREE_CONFIG, type TreeConfig } from './TreeConfig';
+import { REGIONS } from '../regions/_index';
 
 interface CityDNA {
     density: number;    // 0.1 (sparse) to 1.0 (packed)
@@ -67,17 +68,16 @@ export class CityGenerator {
         const x = this.lastX[layerIndex];
         let chunkWidth = 0;
 
-        let groundType: GroundType = 'grass';
+        // Foreground layer keeps stochastic ground mix (pavement/grass/water).
+        // Background layers read biome's declared backgroundGround from REGIONS.
+        let groundType: GroundType;
         if (layerIndex === 3) {
             const r = this.rng.nextFloat();
             if (r < 0.6) groundType = 'pavement';
             else if (r < 0.8) groundType = 'grass';
             else groundType = 'water';
         } else {
-            if (biome === 'desert') groundType = 'dirt';
-            else if (biome === 'forest') groundType = 'grass';
-            else if (biome === 'city') groundType = 'pavement';
-            else groundType = 'dirt';
+            groundType = REGIONS[biome].backgroundGround;
         }
 
         let feature: 'building' | 'tree' | 'landscape' | 'none' = 'none';
