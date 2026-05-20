@@ -3,6 +3,7 @@ import { evalExpression } from '../utils/Expression';
 import type { Game } from './Game';
 import type { TreeType } from './Tree';
 import type { BiomeType } from '../procgen/BiomeSystem';
+import { ALL_BIOMES } from '../regions/_index';
 
 export interface CommandContext {
     game: Game;
@@ -447,20 +448,19 @@ export class Terminal {
             name: 'biome',
             aliases: [],
             description: 'Shows or forces the current generation biome.',
-            usage: 'biome [forest|desert|tundra|plains|city]',
+            usage: `biome [${ALL_BIOMES.join('|')}]`,
             execute: (args, ctx) => {
                 if (args.length === 0) {
                     ctx.output(`Current biome: ${ctx.game.generator?.getCurrentBiome() || 'unknown'}`);
                     return;
                 }
                 if (args.length > 1) {
-                    ctx.output(`Too many arguments. Usage: biome [forest|desert|tundra|plains|city]`, true);
+                    ctx.output(`Too many arguments. Usage: biome [${ALL_BIOMES.join('|')}]`, true);
                     return;
                 }
-                const valid: BiomeType[] = ['forest', 'desert', 'tundra', 'plains', 'city'];
                 const target = args[0].toLowerCase();
-                if (!valid.includes(target as BiomeType)) {
-                    ctx.output(`Unknown biome '${target}'. Valid: ${valid.join(', ')}`, true);
+                if (!ALL_BIOMES.includes(target as BiomeType)) {
+                    ctx.output(`Unknown biome '${target}'. Valid: ${ALL_BIOMES.join(', ')}`, true);
                     return;
                 }
                 if (!ctx.game.generator) {

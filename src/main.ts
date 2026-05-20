@@ -692,6 +692,7 @@ btnGenApply.addEventListener('click', () => {
 import { DEFAULT_TREE_CONFIG } from './procgen/TreeConfig';
 import type { TreeType } from './engine/Tree';
 import type { BiomeType } from './procgen/BiomeSystem';
+import { ALL_BIOMES } from './regions/_index';
 
 const treeSettingsContainer = document.getElementById('tree-settings-dropdown-container');
 
@@ -1052,9 +1053,8 @@ const renderTreeSettings = () => {
         updateTreeResetButton(type);
 
         const biomesContainer = wrapper!.querySelector(`#biomes-${type}`) as HTMLElement;
-        const allBiomes: BiomeType[] = ['forest', 'desert', 'tundra', 'plains', 'city'];
         if (biomesContainer.children.length === 0) {
-            allBiomes.forEach(biome => {
+            ALL_BIOMES.forEach(biome => {
                 const bBtn = document.createElement('button');
                 bBtn.innerText = biome.charAt(0).toUpperCase() + biome.slice(1);
                 bBtn.style.fontSize = '11px';
