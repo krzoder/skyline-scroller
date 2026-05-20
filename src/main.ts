@@ -4,6 +4,8 @@ import { installGlobalErrorHandlers } from './ui/error-toast';
 import { initSeedControls } from './ui/seed-controls';
 import { initFullscreenToggle, initSpeedGestures, toggleFullscreen } from './ui/gestures';
 import { initAudioControls } from './ui/audio-controls';
+import { toggleWindow } from './ui/window-manager';
+import { initSettingsWindow } from './ui/settings-window';
 import './style.css'
 
 installGlobalErrorHandlers();
@@ -547,26 +549,7 @@ const gestureContainer = document.getElementById('gesture-slider-container')!;
 const gestureSpeedVal = document.getElementById('gesture-speed-val')!;
 const gestureBar = document.getElementById('gesture-slider-bar')!;
 
-const toggleWindow = (el: HTMLElement) => {
-    const isVisible = el.classList.contains('visible');
-    if (isVisible) el.classList.remove('visible');
-    else el.classList.add('visible');
-    return !isVisible;
-};
-
-btnSettings.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toggleWindow(settingsWindow);
-});
-
-// Close settings when clicking outside its container.
-window.addEventListener('click', (e) => {
-    if (settingsWindow.classList.contains('visible')) {
-        if (!settingsWindow.contains(e.target as Node) && !btnSettings.contains(e.target as Node)) {
-            settingsWindow.classList.remove('visible');
-        }
-    }
-});
+initSettingsWindow({ btnSettings, settingsWindow });
 
 initFullscreenToggle(btnFullscreen);
 
