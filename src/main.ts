@@ -6,6 +6,7 @@ import { initFullscreenToggle, initSpeedGestures, toggleFullscreen } from './ui/
 import { initAudioControls } from './ui/audio-controls';
 import { toggleWindow } from './ui/window-manager';
 import { initSettingsWindow } from './ui/settings-window';
+import { installKeyboardShortcuts } from './ui/keyboard-shortcuts';
 import './style.css'
 
 installGlobalErrorHandlers();
@@ -1417,88 +1418,40 @@ const toggleTerminal = () => {
 };
 btnTerminal.addEventListener('click', toggleTerminal);
 
-window.addEventListener('keydown', (e) => {
-    // While focused inside any input, only Escape is hijacked (to blur / close
-    // the terminal). Enter is left to the native input behaviour.
-    if (document.activeElement?.tagName === 'INPUT') {
-        if (e.key === 'Escape') {
-            if (terminalBar.style.display === 'flex') {
-                toggleTerminal();
-            } else {
-                (document.activeElement as HTMLElement).blur();
-            }
-            e.preventDefault();
-        }
-        return;
-    }
+installKeyboardShortcuts({
+    isTerminalOpen: () => terminalBar.style.display === 'flex',
+    isCustomGenOpen: () => customGenWindow.classList.contains('visible'),
+    isAdvancedOpen: () => advancedWindow.classList.contains('visible'),
+    isSettingsOpen: () => settingsWindow.classList.contains('visible'),
 
-    if (e.key === 'f') {
-        toggleFullscreen();
-    } else if (e.key === 'g') {
+    toggleFullscreen,
+    toggleCustomGen: () => {
         if (customGenWindow.classList.contains('visible')) {
             cancelResetConfirm();
             customGenWindow.classList.remove('visible');
         } else {
             openCustomGen();
         }
-    } else if (e.key === 'r') {
+    },
+    randomizeSeed: () => {
         const newSeed = Math.floor(Math.random() * 100000).toString();
         game.setSeed(newSeed);
-    } else if (e.key === 's') {
-        toggleWindow(settingsWindow);
-    } else if (e.key === 'a') {
+    },
+    toggleSettings: () => { toggleWindow(settingsWindow); },
+    toggleAdvanced: () => {
         if (advancedWindow.classList.contains('visible')) {
             advancedWindow.classList.remove('visible');
         } else {
             settingsWindow.classList.remove('visible');
             advancedWindow.classList.add('visible');
         }
-    } else if (e.key === 'm') {
-        btnSound.click();
-    } else if (e.key === 't' || e.key === 'Enter') {
-        // Don't steal Enter when a window with its own buttons is open.
-        if (e.key === 'Enter' && (
-            settingsWindow.classList.contains('visible') ||
-            customGenWindow.classList.contains('visible') ||
-            advancedWindow.classList.contains('visible')
-        )) {
-            return;
-        }
-        e.preventDefault();
-        toggleTerminal();
-    } else if (e.key === 'Escape') {
-        // Close priority: terminal > windows > pointer lock. Fullscreen exit
-        // is left to the browser (we don't preventDefault below).
-        if (terminalBar.style.display === 'flex') {
-            toggleTerminal();
-            e.preventDefault();
-            return;
-        }
+    },
+    clickMute: () => btnSound.click(),
+    toggleTerminal,
 
-        if (customGenWindow.classList.contains('visible')) {
-            btnGenClose.click();
-            e.preventDefault();
-            return;
-        }
-
-        if (advancedWindow.classList.contains('visible')) {
-            btnAdvClose.click();
-            e.preventDefault();
-            return;
-        }
-
-        if (settingsWindow.classList.contains('visible')) {
-            settingsWindow.classList.remove('visible');
-            e.preventDefault();
-            return;
-        }
-
-        if (document.pointerLockElement) {
-            document.exitPointerLock();
-            e.preventDefault();
-            return;
-        }
-    }
+    closeCustomGen: () => btnGenClose.click(),
+    closeAdvanced: () => btnAdvClose.click(),
+    closeSettings: () => settingsWindow.classList.remove('visible'),
 });
 
 initSpeedGestures({
