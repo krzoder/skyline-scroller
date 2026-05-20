@@ -7,6 +7,7 @@ import { toggleWindow } from './ui/window-manager';
 import { initSettingsWindow } from './ui/settings-window';
 import { installKeyboardShortcuts } from './ui/keyboard-shortcuts';
 import { initAdvancedWindow } from './ui/advanced-window';
+import { initTerminalBind } from './ui/terminal-bind';
 import './style.css'
 
 installGlobalErrorHandlers();
@@ -981,67 +982,9 @@ speedSlider.addEventListener('dblclick', () => {
 });
 
 
-import { Terminal, type AutocompleteSuggestion } from './engine/Terminal';
-
-const terminalOutputContainer = document.getElementById('terminal-output-container')!;
-const terminalHintsContainer = document.getElementById('terminal-hints-container')!;
-
-let terminalHintsList: AutocompleteSuggestion[] = [];
-let terminalActiveHintIndex: number = -1;
-
-const renderTerminalHints = () => {
-    if (terminalHintsList.length === 0) {
-        terminalHintsContainer.style.display = 'none';
-        terminalHintsContainer.innerHTML = '';
-        return;
-    }
-    terminalHintsContainer.style.display = 'flex';
-    terminalHintsContainer.innerHTML = '';
-
-    terminalHintsContainer.style.alignItems = 'center';
-
-    terminalHintsList.forEach((hint, idx) => {
-        const el = document.createElement('div');
-        el.style.borderRadius = '4px';
-        el.style.transition = 'all 0.1s ease-in-out';
-        if (idx === terminalActiveHintIndex) {
-            el.innerHTML = `
-                <span style="font-weight:bold; font-size:1.05em; color:#fff;">${hint.value}</span>
-                <span style="color:rgba(255,255,255,0.4); margin:0 6px;">|</span>
-                <span style="font-size:0.9em; color:#00E676;">${hint.description}</span>
-            `;
-            el.style.background = 'rgba(0, 200, 80, 0.15)';
-            el.style.color = '#fff';
-            el.style.boxShadow = '0 2px 6px rgba(0, 200, 80, 0.2)';
-            el.style.border = '1px solid rgba(0, 200, 80, 0.4)';
-            el.style.padding = '4px 10px';
-            el.style.display = 'flex';
-            el.style.alignItems = 'center';
-            el.style.zIndex = '10';
-            el.style.whiteSpace = 'nowrap';
-        } else {
-            el.innerText = hint.value;
-            el.style.background = 'rgba(255, 255, 255, 0.1)';
-            el.style.color = '#eee';
-            el.style.padding = '4px 8px';
-            el.style.border = '1px solid transparent';
-            el.style.display = 'flex';
-            el.style.alignItems = 'center';
-        }
-        terminalHintsContainer.appendChild(el);
-    });
-};
-
-const updateTerminalHints = () => {
-    terminalHintsList = terminal.getSuggestions(terminalInput.value);
-    terminalActiveHintIndex = -1;
-    renderTerminalHints();
-};
-
-terminalInput.addEventListener('input', updateTerminalHints);
-
-// Called by the Terminal after a command runs so the UI reflects any
-// game-state changes that bypassed the normal UI handlers.
+// syncUIFromTerminal is called by the Terminal after a command runs so the
+// rest of the UI can mirror any game-state changes that bypassed the
+// normal handlers.
 const syncUIFromTerminal = () => {
     advanced.updateUI();
     audio.syncFromGame();
@@ -1057,112 +1000,13 @@ const syncUIFromTerminal = () => {
     }
 };
 
-const commandHistory: string[] = [];
-let historyIndex: number = -1;
-let currentInputBuffer: string = "";
-
-const terminal = new Terminal(
+const { toggleTerminal } = initTerminalBind({
     game,
-    (msg, isErr) => {
-        const line = document.createElement('div');
-        line.className = 'terminal-line';
-        line.style.color = isErr ? '#ff5555' : '#00ff00';
-        line.innerText = msg;
-
-        line.addEventListener('click', () => {
-            const copyText = msg.startsWith('> ') ? msg.substring(2) : msg;
-            navigator.clipboard.writeText(copyText).then(() => {
-                line.classList.add('terminal-copied');
-                setTimeout(() => {
-                    line.classList.remove('terminal-copied');
-                }, 300);
-            }).catch(() => {});
-        });
-
-        terminalOutputContainer.appendChild(line);
-        terminalOutputContainer.scrollTop = terminalOutputContainer.scrollHeight;
-    },
-    () => {
-        terminalOutputContainer.innerHTML = '';
-    },
-    syncUIFromTerminal
-);
-
-terminalInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Tab') {
-        e.preventDefault();
-        if (terminalHintsList.length > 0) {
-            terminalActiveHintIndex = (terminalActiveHintIndex + 1) % terminalHintsList.length;
-            renderTerminalHints();
-        }
-    } else if (e.key === ' ' && terminalActiveHintIndex >= 0) {
-        e.preventDefault();
-        const selection = terminalHintsList[terminalActiveHintIndex].value;
-        const val = terminalInput.value;
-        if (val.endsWith(' ')) {
-            terminalInput.value = val + selection + " ";
-        } else {
-            const lastSpace = val.lastIndexOf(' ');
-            if (lastSpace === -1) {
-                terminalInput.value = selection + " ";
-            } else {
-                terminalInput.value = val.substring(0, lastSpace + 1) + selection + " ";
-            }
-        }
-        updateTerminalHints();
-    } else if (e.key === 'Enter') {
-        e.stopPropagation();
-        const val = terminalInput.value;
-        if (val.trim()) {
-            const existingIdx = commandHistory.indexOf(val.trim());
-            if (existingIdx !== -1) commandHistory.splice(existingIdx, 1);
-            commandHistory.unshift(val.trim());
-
-            terminal.execute(val);
-            terminalInput.value = '';
-
-            historyIndex = -1;
-            currentInputBuffer = "";
-            updateTerminalHints();
-        }
-    } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        e.stopPropagation();
-        if (historyIndex === -1) {
-            currentInputBuffer = terminalInput.value;
-        }
-        if (commandHistory.length > 0 && historyIndex < commandHistory.length - 1) {
-            historyIndex++;
-            terminalInput.value = commandHistory[historyIndex];
-        }
-    } else if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        e.stopPropagation();
-        if (historyIndex > 0) {
-            historyIndex--;
-            terminalInput.value = commandHistory[historyIndex];
-        } else if (historyIndex === 0) {
-            historyIndex = -1;
-            terminalInput.value = currentInputBuffer;
-        }
-    }
+    btnTerminal,
+    terminalBar,
+    terminalInput,
+    onSync: syncUIFromTerminal,
 });
-
-const toggleTerminal = () => {
-    const isVis = terminalBar.style.display === 'flex';
-    terminalBar.style.display = isVis ? 'none' : 'flex';
-    if (!isVis) {
-        terminalOutputContainer.style.display = 'block';
-        terminalInput.focus();
-        updateTerminalHints();
-    } else {
-        terminal.cancelPendingReset();
-        terminalOutputContainer.style.display = 'none';
-        terminalHintsContainer.style.display = 'none';
-        terminalInput.blur();
-    }
-};
-btnTerminal.addEventListener('click', toggleTerminal);
 
 installKeyboardShortcuts({
     isTerminalOpen: () => terminalBar.style.display === 'flex',
