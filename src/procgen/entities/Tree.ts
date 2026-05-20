@@ -3,176 +3,160 @@ import { Random } from '../../utils/Random';
 
 export type TreeType = 'sequoia' | 'pine' | 'oak' | 'bush' | 'hedge' | 'cactus';
 
+interface TreeSpec {
+    width: number;
+    padding: number;
+    drawTo: (ctx: CanvasRenderingContext2D, tree: Tree) => void;
+    setup?: (tree: Tree, rng: Random, flowerChance: number) => void;
+}
+
 export class Tree extends CityEntity {
     type: TreeType;
     hasFlower: boolean = false;
     flowerPos: 'left' | 'right' = 'left';
 
     constructor(x: number, type: TreeType, height: number, flowerChance: number = 0, rng?: Random) {
-        let w = 0;
-        let h = height;
-        let padding = 0;
-
-        if (type === 'sequoia') {
-            w = 70;
-        } else if (type === 'pine') {
-            w = 60;
-        } else if (type === 'oak') {
-            w = 90;
-            padding = 30; // Extra space for foliage
-        } else if (type === 'bush') {
-            w = 40;
-        } else if (type === 'cactus') {
-            w = 40;
-        } else { // hedge
-            w = 60;
-        }
-
-        super(x, w, h);
+        const spec = TREE_SPECS[type];
+        super(x, spec.width, height);
         this.type = type;
 
         const r = rng ?? new Random(`tree:${x}:${type}`);
-        if (this.type === 'cactus' && r.nextFloat() < flowerChance) {
-            this.hasFlower = true;
-            this.flowerPos = r.nextFloat() < 0.5 ? 'left' : 'right';
-        }
+        spec.setup?.(this, r, flowerChance);
 
-        this.initCache(padding);
+        this.initCache(spec.padding);
     }
 
     protected drawToCache(ctx: CanvasRenderingContext2D): void {
-        if (this.type === 'sequoia') {
-            this.drawSequoia(ctx);
-        } else if (this.type === 'pine') {
-            this.drawPine(ctx);
-        } else if (this.type === 'oak') {
-            this.drawOak(ctx);
-        } else if (this.type === 'bush') {
-            this.drawBush(ctx);
-        } else if (this.type === 'cactus') {
-            this.drawCactus(ctx);
-        } else {
-            this.drawHedge(ctx);
-        }
-    }
-
-    private drawSequoia(ctx: CanvasRenderingContext2D) {
-        ctx.fillStyle = '#6D4C41';
-        const trunkW = this.width * 0.4;
-        const trunkStart = this.height * 0.2;
-        ctx.fillRect((this.width - trunkW) / 2, trunkStart, trunkW, this.height - trunkStart);
-
-        ctx.fillStyle = '#2E7D32';
-        const layers = 8;
-        for (let i = 0; i < layers; i++) {
-            const progress = i / (layers - 1); // 0 (top) to 1 (bottom)
-            const y = (this.height * 0.1) + (progress * (this.height * 0.7));
-            const layerWidth = this.width * (0.3 + (progress * 0.9)); // 30% to 120% width
-            ctx.beginPath();
-            const h = this.height * 0.15;
-            ctx.ellipse(this.width / 2, y, layerWidth / 2, h / 2, 0, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-
-    private drawPine(ctx: CanvasRenderingContext2D) {
-        ctx.fillStyle = '#4E342E';
-        ctx.fillRect(this.width * 0.4, this.height * 0.3, this.width * 0.2, this.height * 0.7);
-
-        ctx.fillStyle = '#1B5E20';
-        const tiers = 4;
-        const tierHeight = (this.height * 0.85) / tiers;
-
-        for (let i = 0; i < tiers; i++) {
-            const y = i * (tierHeight * 0.8); // tiers overlap
-            const w = this.width * (0.4 + (i * 0.2));
-
-            ctx.beginPath();
-            ctx.moveTo(this.width / 2, y);
-            ctx.lineTo(this.width / 2 - w / 2, y + tierHeight);
-            ctx.lineTo(this.width / 2 - w / 4, y + tierHeight - 5);
-            ctx.lineTo(this.width / 2, y + tierHeight + 5);
-            ctx.lineTo(this.width / 2 + w / 4, y + tierHeight - 5);
-            ctx.lineTo(this.width / 2 + w / 2, y + tierHeight);
-            ctx.fill();
-        }
-    }
-
-    private drawOak(ctx: CanvasRenderingContext2D) {
-        ctx.fillStyle = '#5D4037';
-        ctx.fillRect(this.width * 0.4, this.height * 0.6, this.width * 0.2, this.height * 0.4);
-
-        ctx.fillStyle = '#43A047';
-        const crownCenterY = this.height * 0.35;
-        const puffs = [
-            { x: 0, y: -10, r: 0.5 },
-            { x: -0.3, y: 0.1, r: 0.4 },
-            { x: 0.3, y: 0.1, r: 0.4 },
-            { x: -0.15, y: -0.2, r: 0.45 },
-            { x: 0.15, y: -0.2, r: 0.45 },
-        ];
-
-        puffs.forEach(p => {
-            ctx.beginPath();
-            ctx.arc(
-                this.width / 2 + (p.x * this.width),
-                crownCenterY + (p.y * this.height),
-                this.width * p.r,
-                0, Math.PI * 2
-            );
-            ctx.fill();
-        });
-    }
-
-    private drawBush(ctx: CanvasRenderingContext2D) {
-        ctx.fillStyle = '#7CB342';
-        ctx.beginPath();
-        ctx.arc(this.width / 2, this.height, this.width / 2, Math.PI, 0);
-        ctx.arc(this.width * 0.3, this.height * 0.8, this.width * 0.3, Math.PI, 0);
-        ctx.arc(this.width * 0.7, this.height * 0.8, this.width * 0.3, Math.PI, 0);
-        ctx.fill();
-    }
-
-    private drawCactus(ctx: CanvasRenderingContext2D) {
-        ctx.fillStyle = '#2E7D32';
-        // Main stem
-        ctx.fillRect(this.width * 0.4, this.height * 0.2, this.width * 0.2, this.height * 0.8);
-        // Left arm
-        ctx.fillRect(this.width * 0.1, this.height * 0.4, this.width * 0.3, this.height * 0.12);
-        ctx.fillRect(this.width * 0.1, this.height * 0.25, this.width * 0.12, this.height * 0.25);
-        // Right arm
-        ctx.fillRect(this.width * 0.6, this.height * 0.5, this.width * 0.25, this.height * 0.12);
-        ctx.fillRect(this.width * 0.75, this.height * 0.35, this.width * 0.1, this.height * 0.25);
-
-        if (this.hasFlower) {
-            let fx: number;
-            let fy: number;
-
-            if (this.flowerPos === 'left') {
-                fx = this.width * 0.1 + (this.width * 0.12 * 0.5);
-                fy = this.height * 0.25;
-            } else {
-                fx = this.width * 0.75 + (this.width * 0.1 * 0.5);
-                fy = this.height * 0.35;
-            }
-
-            const radius = 4;
-
-            ctx.fillStyle = '#E91E63';
-            ctx.beginPath();
-            ctx.arc(fx, fy, radius, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-
-    private drawHedge(ctx: CanvasRenderingContext2D) {
-        ctx.fillStyle = '#558B2F';
-        ctx.beginPath();
-        ctx.roundRect(0, 0, this.width, this.height, 10);
-        ctx.fill();
-
-        ctx.strokeStyle = '#33691E';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        TREE_SPECS[this.type].drawTo(ctx, this);
     }
 }
+
+function drawSequoia(ctx: CanvasRenderingContext2D, t: Tree) {
+    ctx.fillStyle = '#6D4C41';
+    const trunkW = t.width * 0.4;
+    const trunkStart = t.height * 0.2;
+    ctx.fillRect((t.width - trunkW) / 2, trunkStart, trunkW, t.height - trunkStart);
+
+    ctx.fillStyle = '#2E7D32';
+    const layers = 8;
+    for (let i = 0; i < layers; i++) {
+        const progress = i / (layers - 1);
+        const y = (t.height * 0.1) + (progress * (t.height * 0.7));
+        const layerWidth = t.width * (0.3 + (progress * 0.9));
+        ctx.beginPath();
+        const h = t.height * 0.15;
+        ctx.ellipse(t.width / 2, y, layerWidth / 2, h / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function drawPine(ctx: CanvasRenderingContext2D, t: Tree) {
+    ctx.fillStyle = '#4E342E';
+    ctx.fillRect(t.width * 0.4, t.height * 0.3, t.width * 0.2, t.height * 0.7);
+
+    ctx.fillStyle = '#1B5E20';
+    const tiers = 4;
+    const tierHeight = (t.height * 0.85) / tiers;
+
+    for (let i = 0; i < tiers; i++) {
+        const y = i * (tierHeight * 0.8);
+        const w = t.width * (0.4 + (i * 0.2));
+
+        ctx.beginPath();
+        ctx.moveTo(t.width / 2, y);
+        ctx.lineTo(t.width / 2 - w / 2, y + tierHeight);
+        ctx.lineTo(t.width / 2 - w / 4, y + tierHeight - 5);
+        ctx.lineTo(t.width / 2, y + tierHeight + 5);
+        ctx.lineTo(t.width / 2 + w / 4, y + tierHeight - 5);
+        ctx.lineTo(t.width / 2 + w / 2, y + tierHeight);
+        ctx.fill();
+    }
+}
+
+function drawOak(ctx: CanvasRenderingContext2D, t: Tree) {
+    ctx.fillStyle = '#5D4037';
+    ctx.fillRect(t.width * 0.4, t.height * 0.6, t.width * 0.2, t.height * 0.4);
+
+    ctx.fillStyle = '#43A047';
+    const crownCenterY = t.height * 0.35;
+    const puffs = [
+        { x: 0, y: -10, r: 0.5 },
+        { x: -0.3, y: 0.1, r: 0.4 },
+        { x: 0.3, y: 0.1, r: 0.4 },
+        { x: -0.15, y: -0.2, r: 0.45 },
+        { x: 0.15, y: -0.2, r: 0.45 },
+    ];
+
+    puffs.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(
+            t.width / 2 + (p.x * t.width),
+            crownCenterY + (p.y * t.height),
+            t.width * p.r,
+            0, Math.PI * 2
+        );
+        ctx.fill();
+    });
+}
+
+function drawBush(ctx: CanvasRenderingContext2D, t: Tree) {
+    ctx.fillStyle = '#7CB342';
+    ctx.beginPath();
+    ctx.arc(t.width / 2, t.height, t.width / 2, Math.PI, 0);
+    ctx.arc(t.width * 0.3, t.height * 0.8, t.width * 0.3, Math.PI, 0);
+    ctx.arc(t.width * 0.7, t.height * 0.8, t.width * 0.3, Math.PI, 0);
+    ctx.fill();
+}
+
+function drawCactus(ctx: CanvasRenderingContext2D, t: Tree) {
+    ctx.fillStyle = '#2E7D32';
+    ctx.fillRect(t.width * 0.4, t.height * 0.2, t.width * 0.2, t.height * 0.8);
+    ctx.fillRect(t.width * 0.1, t.height * 0.4, t.width * 0.3, t.height * 0.12);
+    ctx.fillRect(t.width * 0.1, t.height * 0.25, t.width * 0.12, t.height * 0.25);
+    ctx.fillRect(t.width * 0.6, t.height * 0.5, t.width * 0.25, t.height * 0.12);
+    ctx.fillRect(t.width * 0.75, t.height * 0.35, t.width * 0.1, t.height * 0.25);
+
+    if (t.hasFlower) {
+        const fx = t.flowerPos === 'left'
+            ? t.width * 0.1 + (t.width * 0.12 * 0.5)
+            : t.width * 0.75 + (t.width * 0.1 * 0.5);
+        const fy = t.flowerPos === 'left' ? t.height * 0.25 : t.height * 0.35;
+
+        ctx.fillStyle = '#E91E63';
+        ctx.beginPath();
+        ctx.arc(fx, fy, 4, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function drawHedge(ctx: CanvasRenderingContext2D, t: Tree) {
+    ctx.fillStyle = '#558B2F';
+    ctx.beginPath();
+    ctx.roundRect(0, 0, t.width, t.height, 10);
+    ctx.fill();
+
+    ctx.strokeStyle = '#33691E';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+}
+
+const TREE_SPECS: Record<TreeType, TreeSpec> = {
+    sequoia: { width: 70, padding: 0, drawTo: drawSequoia },
+    pine: { width: 60, padding: 0, drawTo: drawPine },
+    oak: { width: 90, padding: 30, drawTo: drawOak },
+    bush: { width: 40, padding: 0, drawTo: drawBush },
+    hedge: { width: 60, padding: 0, drawTo: drawHedge },
+    cactus: {
+        width: 40,
+        padding: 0,
+        drawTo: drawCactus,
+        setup: (tree, rng, flowerChance) => {
+            if (rng.nextFloat() < flowerChance) {
+                tree.hasFlower = true;
+                tree.flowerPos = rng.nextFloat() < 0.5 ? 'left' : 'right';
+            }
+        },
+    },
+};
+
+export const ALL_TREE_TYPES: TreeType[] = Object.keys(TREE_SPECS) as TreeType[];
