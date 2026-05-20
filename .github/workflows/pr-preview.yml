@@ -1,16 +1,29 @@
-name: PR Preview
+name: PR Preview on fidom.link
+
+# After every PR commit:
+#   1. Build PR on GitHub-hosted runner (untrusted PR code stays off homelab).
+#   2. Self-hosted homelab runner atomic-swaps the prebuilt dist into nginx.
+#   3. Sticky PR comment posts the preview URL + link to the approval gate.
+#   4. await-approval job blocks on the `fidom-verified` environment, which
+#      has Required reviewers configured in the repo Settings -> Environments.
+#      The user clicks "Review deployments -> Approve" after testing fidom.
+#   5. Branch protection on `main` requires the await-approval status check,
+#      so a PR cannot merge until the environment is approved for its HEAD SHA.
+# On PR close (merge or abandon), rebuilds main and redeploys to fidom so no
+# stale PR content lingers.
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, closed, labeled]
+    types: [opened, synchronize, reopened, closed]
 
 concurrency:
-  group: pr-preview-${{ github.event.pull_request.number }}
+  group: fidom-preview
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
+  deployments: write
 
 jobs:
   guard:
@@ -28,44 +41,184 @@ jobs:
             echo "allowed=true" >> "$GITHUB_OUTPUT"
           else
             echo "allowed=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Fork PR without 'safe-preview' label — skipping preview deploy."
+            echo "::warning::Fork PR without 'safe-preview' label - skipping preview deploy."
           fi
 
-  preview:
-    name: Build and deploy preview
+  # Stage 1: build PR HEAD on untrusted ubuntu runner.
+  build-pr:
+    name: Build PR dist
     needs: guard
     if: needs.guard.outputs.allowed == 'true' && github.event.action != 'closed'
     runs-on: ubuntu-latest
     env:
-      # DEC-06 Worker serves preview under /pr/<n>/, not /pr-preview/pr-<n>/.
-      PUBLIC_BASE_PATH: /pr/${{ github.event.pull_request.number }}/
+      PUBLIC_BASE_PATH: /
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - uses: ./.github/actions/setup
-      - name: Run tests
-        run: npm test
-      - name: Build preview
-        run: npm run build
-      - name: Deploy PR Preview
-        uses: rossjrw/pr-preview-action@ffa7509e91a3ec8dfc2e5536c4d5c1acdf7a6de9 # v1.8.1
+      - run: npm run build
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          source-dir: ./dist
-          preview-branch: gh-pages
-          umbrella-dir: pr
-          action: deploy
+          name: dist-pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+          path: dist
+          retention-days: 7
+          if-no-files-found: error
 
-  cleanup:
-    name: Tear down preview
-    needs: guard
-    if: needs.guard.outputs.allowed == 'true' && github.event.action == 'closed'
+  # Stage 2: self-hosted runner downloads artifact and atomic-swaps into nginx.
+  # Only does artifact download + mv. No PR code executes here.
+  deploy-pr:
+    name: Deploy preview to fidom
+    needs: build-pr
+    if: needs.build-pr.result == 'success'
+    runs-on: self-hosted
+    timeout-minutes: 5
+    env:
+      DATA_DIR: /mnt/homelab/apps/data/skyline-scroller
+      HEALTH_URL: https://skyline-scroller.fidom.link/health
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dist-pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+          path: dist-pr
+
+      - name: Atomic swap into live nginx dir
+        run: |
+          set -e
+          STAGE="${{ env.DATA_DIR }}/.dist.next"
+          LIVE="${{ env.DATA_DIR }}/dist"
+          OLD="${{ env.DATA_DIR }}/.dist.prev"
+          sudo mkdir -p "$STAGE"
+          sudo rsync -a --delete dist-pr/ "$STAGE/"
+          if [ -e "$LIVE" ]; then
+            sudo mv -T "$LIVE" "$OLD"
+          fi
+          sudo mv -T "$STAGE" "$LIVE"
+          sudo rm -rf "$OLD" || true
+
+      - name: External smoke test via Traefik
+        run: |
+          for i in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" -L "${{ env.HEALTH_URL }}" || true)
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 2
+          done
+          echo "::error::Preview not reachable at ${{ env.HEALTH_URL }} after 12s"
+          exit 1
+
+  # Stage 3: post / update sticky PR comment with preview URL + approval link.
+  comment-pr:
+    name: Post preview comment
+    needs: deploy-pr
+    if: github.event.action != 'closed' && needs.deploy-pr.result == 'success'
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: marocchino/sticky-pull-request-comment@52423e01640425a022ef5fd42c6fb5f633a02728 # v2.9.1
+        with:
+          header: fidom-preview
+          message: |
+            🚀 **Preview live**: https://skyline-scroller.fidom.link/
+
+            Built from `${{ github.event.pull_request.head.sha }}` ([#${{ github.event.pull_request.number }}](${{ github.event.pull_request.html_url }})).
+
+            **Next step**:
+            1. Open https://skyline-scroller.fidom.link/ and verify everything works.
+            2. Go to the **[deployment approval page](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})** and click **Review deployments → fidom-verified → Approve and deploy**.
+            3. After approval, the `await-approval` status check turns green and you can **Squash and merge**.
+
+            > Pushing a new commit replaces the preview within ~1 min and **invalidates** any prior approval - you must approve again.
+            > On PR merge or close, fidom rebuilds from `main`.
+
+  # Stage 4: BLOCKING approval gate. The `fidom-verified` environment has
+  # "Required reviewers" configured in the repo Settings -> Environments,
+  # so this job pauses until the user clicks Approve. Branch protection on
+  # `main` requires THIS job's status check, so merge is blocked until the
+  # current PR HEAD SHA is approved here.
+  await-approval:
+    name: Await manual fidom verification
+    needs: deploy-pr
+    if: github.event.action != 'closed' && needs.deploy-pr.result == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: fidom-verified
+      url: https://skyline-scroller.fidom.link/
+    steps:
+      - name: Approved
+        run: |
+          echo "✓ fidom-verified approved for SHA ${{ github.event.pull_request.head.sha }}"
+          echo "PR #${{ github.event.pull_request.number }} can now be merged."
+
+  # On PR close (merge or abandon): rebuild main on ubuntu, redeploy to fidom.
+  build-main:
+    name: Rebuild main for fidom cleanup
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    env:
+      PUBLIC_BASE_PATH: /
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: rossjrw/pr-preview-action@ffa7509e91a3ec8dfc2e5536c4d5c1acdf7a6de9 # v1.8.1
         with:
-          source-dir: ./dist
-          preview-branch: gh-pages
-          umbrella-dir: pr
-          action: remove
+          ref: main
+      - uses: ./.github/actions/setup
+      - run: npm run build
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist-main-${{ github.sha }}
+          path: dist
+          retention-days: 7
+          if-no-files-found: error
+
+  deploy-main:
+    name: Deploy main to fidom (PR closed)
+    needs: build-main
+    if: github.event.action == 'closed' && needs.build-main.result == 'success'
+    runs-on: self-hosted
+    timeout-minutes: 5
+    env:
+      DATA_DIR: /mnt/homelab/apps/data/skyline-scroller
+      HEALTH_URL: https://skyline-scroller.fidom.link/health
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dist-main-${{ github.sha }}
+          path: dist-main
+
+      - name: Atomic swap (restore main)
+        run: |
+          set -e
+          STAGE="${{ env.DATA_DIR }}/.dist.next"
+          LIVE="${{ env.DATA_DIR }}/dist"
+          OLD="${{ env.DATA_DIR }}/.dist.prev"
+          sudo mkdir -p "$STAGE"
+          sudo rsync -a --delete dist-main/ "$STAGE/"
+          if [ -e "$LIVE" ]; then
+            sudo mv -T "$LIVE" "$OLD"
+          fi
+          sudo mv -T "$STAGE" "$LIVE"
+          sudo rm -rf "$OLD" || true
+
+      - name: Smoke test
+        run: |
+          for i in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" -L "${{ env.HEALTH_URL }}" || true)
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 2
+          done
+          echo "::error::fidom not reachable after restore"
+          exit 1
+
+  comment-cleanup:
+    name: Post cleanup comment
+    needs: deploy-main
+    if: github.event.action == 'closed' && needs.deploy-main.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: marocchino/sticky-pull-request-comment@52423e01640425a022ef5fd42c6fb5f633a02728 # v2.9.1
+        with:
+          header: fidom-preview
+          message: |
+            ✅ PR closed - fidom rebuilt from `main` (https://skyline-scroller.fidom.link/).

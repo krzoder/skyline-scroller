@@ -6,6 +6,16 @@ type: log
 
 # Log
 
+## 2026-05-20 (post-DEC-10) - PR preview on fidom, main on Pages, formal approval gate
+
+- **DEC-10 implemented**: fidom is now PR-preview, Pages is production.
+- `pr-preview.yml` rewritten: two-stage build (ubuntu) + deploy (self-hosted, artifact only). Atomic swap via `mv -T` so nginx never sees a half-written tree. Sticky bot comment posts preview URL + link to approval gate. On PR close, rebuild main and redeploy to fidom.
+- **Formal approval gate**: GitHub Environment `fidom-verified` with required reviewer. `await-approval` job pauses until user clicks "Review deployments -> Approve" in Actions UI. Branch protection requires this check, blocking merge until current HEAD SHA is approved. Pushing a new commit resets the gate.
+- One-time setup documented in README + DEC-10: create `fidom-verified` environment with self as required reviewer, add branch-protection rule requiring `Await manual fidom verification` check on `main`.
+- `homelab/.github/workflows/deploy-skyline-scroller.yml` daily cron + path-push triggers DISABLED. Manual + first-time-setup only (would race against PR previews otherwise).
+- Verified by 3 Explore agents + Codex. Codex blocked direct-build-on-self-hosted on security grounds; the two-stage split addresses it. Codex also flagged the solo-dev approval problem; GitHub Environment approval (allows self-approve) solves it cleanly.
+- README rewritten back to English (was Polish from earlier today). README now documents the full end-to-end flow + one-time setup.
+
 ## 2026-05-20 (end of day) - main.ts decomposition + wiki cleanup + v1.2.0
 
 - **DEC-04 implemented**: main.ts 1722 -> 427 LOC (-75.2%) across 10 extracts to `src/ui/`. Status frontmatter updated to `implemented`.

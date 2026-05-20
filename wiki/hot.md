@@ -4,9 +4,21 @@ description: Rolling current-state snapshot of the project. Overwrite each subst
 type: hot
 ---
 
-# Hot - 2026-05-20 (end of day)
+# Hot - 2026-05-20 (end of day, post-DEC-10)
 
-**Status**: 25 PR-ów zmergowanych na main, 0 open, 0 zombie branche, 0 issues. Tests 67/67. Build clean (no warnings). Bundle 79.4 kB / gzip 22.7 kB. Wersja **1.2.0**. fidom.link 200. Pages 200.
+**Status**: 25 PR-ów zmergowanych na main, 0 open, 0 zombie branche, 0 issues. Tests 67/67. Build clean. Bundle 79.4 kB / gzip 22.7 kB. Wersja **1.2.0**. README po angielsku.
+
+## Deploy story (DEC-10, 2026-05-20)
+
+- **GitHub Pages (`krzoder.github.io/skyline-scroller/`)** = production. Auto-deploys on push to `main` via `deploy.yml`. No change.
+- **fidom.link (`skyline-scroller.fidom.link`)** = PR preview. `pr-preview.yml` builds PR HEAD on ubuntu-hosted runner, atomic-swaps dist into nginx via self-hosted homelab runner. Sticky bot comment posts preview URL + link to approval gate.
+- **Approval gate (BLOCKING merge)**: GitHub Environment `fidom-verified` with required reviewer (self). Job `await-approval` pauses until user clicks "Review deployments -> Approve" in GitHub Actions UI. Branch protection on `main` requires this status check, so merge stays blocked until current HEAD SHA is approved. Pushing a new commit invalidates prior approval.
+- **One-time setup** (per repo): Settings -> Environments -> new `fidom-verified` -> add self as Required reviewer. Settings -> Branches -> require `Await manual fidom verification` status check on `main`.
+- On PR close (merge or abandon), rebuilds main and deploys to fidom so no stale content lingers.
+- Security: PR's npm scripts run on GitHub-hosted (untrusted); self-hosted only does artifact download + atomic mv (trusted). Codex flagged this as a blocking requirement.
+- Concurrency: global `fidom-preview` group with cancel-in-progress. Latest PR push wins. Documented in sticky comment.
+- Homelab repo's `deploy-skyline-scroller.yml` daily cron + path-push triggers DISABLED (manual + first-time-setup only) to avoid racing with PR previews.
+- `deploy-fidom.yml` in skyline-scroller stays as emergency "rebuild main → fidom" lever (workflow_dispatch only).
 
 ## Wielka dekompozycja main.ts (DEC-04 implemented)
 
