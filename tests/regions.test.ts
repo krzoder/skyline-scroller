@@ -4,7 +4,14 @@ import type { BiomeType } from '../src/procgen/BiomeSystem';
 
 describe('regions registry', () => {
     it('contains all 5 biomes', () => {
-        expect(ALL_BIOMES.sort()).toEqual(['city', 'desert', 'forest', 'plains', 'tundra']);
+        // Copy before sorting; ALL_BIOMES is frozen and mutating it would
+        // throw under strict mode, plus its insertion order is the
+        // DEC-01 seed -> initial-biome mapping (BiomeSystem indexes it).
+        expect([...ALL_BIOMES].sort()).toEqual(['city', 'desert', 'forest', 'plains', 'tundra']);
+    });
+
+    it('is frozen so consumers cannot reorder it', () => {
+        expect(Object.isFrozen(ALL_BIOMES)).toBe(true);
     });
 
     it('every region.id matches its key', () => {
