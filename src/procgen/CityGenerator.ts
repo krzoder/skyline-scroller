@@ -1,11 +1,11 @@
 import { deepClone } from '../utils/deepClone';
-import { Building, type BuildingMaterial, type RoofType } from '../engine/Building';
+import { Building, type BuildingMaterial, type RoofType } from './entities/Building';
 import { Layer } from '../engine/Layer';
 import { Random } from '../utils/Random';
-import { Tree, type TreeType } from '../engine/Tree';
+import { Tree, type TreeType } from './entities/Tree';
 import { BiomeSystem, type BiomeType } from './BiomeSystem';
-import { Ground, type GroundType } from '../engine/Ground';
-import { Landscape } from '../engine/Landscape';
+import { Ground, type GroundType } from './entities/Ground';
+import { Landscape } from './entities/Landscape';
 import { DEFAULT_TREE_CONFIG, type TreeConfig } from './TreeConfig';
 import { REGIONS } from '../regions/_index';
 

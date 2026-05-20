@@ -5,9 +5,9 @@
  */
 
 import type { BiomeType } from '../procgen/BiomeSystem';
-import type { TreeType } from '../engine/Tree';
-import type { BuildingMaterial, RoofType } from '../engine/Building';
-import type { GroundType } from '../engine/Ground';
+import type { TreeType } from '../procgen/entities/Tree';
+import type { BuildingMaterial, RoofType } from '../procgen/entities/Building';
+import type { GroundType } from '../procgen/entities/Ground';
 
 export interface BiomeDefinition {
     id: BiomeType;

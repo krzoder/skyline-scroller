@@ -1,6 +1,6 @@
 import { CityEntity } from './CityEntity';
-import type { BiomeType } from '../procgen/BiomeSystem';
-import { Random } from '../utils/Random';
+import type { BiomeType } from '../BiomeSystem';
+import { Random } from '../../utils/Random';
 
 export class Landscape extends CityEntity {
     biome: BiomeType;

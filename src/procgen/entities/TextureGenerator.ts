@@ -1,4 +1,4 @@
-import { Random } from '../utils/Random';
+import { Random } from '../../utils/Random';
 
 export function createBrickPattern(width: number, height: number, color: string): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
