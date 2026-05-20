@@ -31,5 +31,5 @@ What can go wrong, and how the code handles it.
 
 ## Cross-references
 
-- Entities: [[entities/...]]
-- Concepts: [[concepts/...]]
+- Entities: ...
+- Concepts: ...

@@ -69,11 +69,11 @@ flowchart TD
 
 ## Failure modes / edge cases
 
-- **No texture memoisation** — N buildings with identical params allocate N canvases. Allocation pressure under dense scenes. Each brick/wood build also creates an intermediate canvas inside [[entities/TextureGenerator]], immediately discarded. See [[concepts/baked-canvas-caching]].
+- **No texture memoisation** — N buildings with identical params allocate N canvases. Allocation pressure under dense scenes. Each brick/wood build also creates an intermediate canvas inside [[entities/TextureGenerator]], immediately discarded. See baked canvas caching.
 - **`Math.random()` everywhere** — windows lit/unlit, stone noise, wood grain jitter, cactus flower position. None seeded. Breaks [[concepts/determinism]] regardless of `Game.seed`. See [[decisions/DEC-01-unified-rng]].
 - **Single coin flip determines all window colours per building** (`#FDF5E6` warm vs `#87CEEB` sky-blue reflection). All windows in one building share state — never mixed.
 - **`Building.isVisible()` always returns `true`** — culling silently disabled. Every building draws every frame regardless of viewport. Layer's inline bounds check still skips it, but any caller relying on `isVisible` gets false positives.
-- **`Building` does NOT extend `CityEntity`** — half-realised hierarchy. Refactor candidate. See [[concepts/dualism-urban-vs-natural]].
+- **`Building` does NOT extend `CityEntity`** — half-realised hierarchy. Refactor candidate. See dualism urban vs natural.
 - **`Tree.drawCactus` `flowerPos === 'top'` branch is unreachable** — constructor only ever sets `left`/`right` when `hasFlower`; `top` is the dead default.
 - **Padding recovery in `CityEntity.draw`** assumes symmetric padding — any future asymmetric subclass breaks the offset.
 - **Narrow buildings (width ≤ 20) render zero windows** — `for (wx=10; wx < width - 10; wx+=gapX)` has empty range.
@@ -92,6 +92,6 @@ flowchart TD
 ## Cross-references
 
 - Entities: [[entities/CityEntity]], [[entities/Building]], [[entities/Tree]], [[entities/TextureGenerator]], [[entities/Ground]], [[entities/Landscape]]
-- Concepts: [[concepts/renderable-contract]], [[concepts/baked-canvas-caching]], [[concepts/template-method-drawToCache]], [[concepts/dualism-urban-vs-natural]], [[concepts/deterministic-vs-stochastic-decoration]], [[concepts/determinism]]
-- Decisions: [[decisions/DEC-01-unified-rng]] (all Math.random sites), [[decisions/inheritance-asymmetry-building-vs-tree]]
+- Concepts: renderable contract, baked canvas caching, template method drawToCache, dualism urban vs natural, deterministic vs stochastic decoration, [[concepts/determinism]]
+- Decisions: [[decisions/DEC-01-unified-rng]] (all Math.random sites), inheritance asymmetry building vs tree
 - Systems: [[systems/parallax-layers]] (Layer drives draw), [[systems/procgen]] (CityGenerator constructs them)

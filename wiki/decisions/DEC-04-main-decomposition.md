@@ -1,8 +1,9 @@
 ---
 id: DEC-04
 title: Decompose src/main.ts into src/ui/ modules
-status: proposed
+status: implemented
 date: 2026-05-20
+implemented: 2026-05-20
 deciders: fszalaj
 type: decision
 supersedes: []
@@ -11,9 +12,9 @@ tags: [refactor, ui-shell, main-ts]
 related:
   - "[[entities/main]]"
   - "[[systems/ui-shell]]"
-  - "[[concepts/escape-priority-stack]]"
-  - "[[concepts/idempotent-render]]"
-  - "[[concepts/dualism]]"
+  - "escape priority stack"
+  - "idempotent render"
+
 sources:
   - "wiki/.scan/agent-01-main-ts.md"
   - "wiki/.scan/agent-13-complexity-deps.md"
@@ -26,13 +27,13 @@ sources:
 
 `src/main.ts` has grown into a **1894 LOC**, **CC-proxy 215**, single side-effect script with **0 exports**, **44 `addEventListener`** calls and **62 `getElementById`** calls. It is the entry point Vite loads, and it currently owns:
 
-- the 220-line `innerHTML` shell template (lines 9–229),
-- bootstrap and primary `Game` instantiation (231–238),
-- three bespoke window controllers (settings / advanced / custom-gen) with copy-pasted open/close/Escape logic,
-- a 420-line idempotent `renderTreeSettings()` (lines 887–1310) that builds + updates per-tree controls in one nested `forEach`,
-- two different speed mappings (log + piecewise-with-0–1-slice) plus a `Function(...)`-based arithmetic eval,
-- terminal mount + autocomplete + history + `syncUIFromTerminal`,
-- a pointer-lock drag-to-speed gesture and a wheel-anywhere volume controller,
+- the 220-line `innerHTML` shell template (lines 9–229)
+- bootstrap and primary `Game` instantiation (231–238)
+- three bespoke window controllers (settings / advanced / custom-gen) with copy-pasted open/close/Escape logic
+- a 420-line idempotent `renderTreeSettings()` (lines 887–1310) that builds + updates per-tree controls in one nested `forEach`
+- two different speed mappings (log + piecewise-with-0–1-slice) plus a `Function(...)`-based arithmetic eval
+- terminal mount + autocomplete + history + `syncUIFromTerminal`
+- a pointer-lock drag-to-speed gesture and a wheel-anywhere volume controller
 - a global keyboard shortcut handler with an implicit Escape priority stack (lines 1731–1770).
 
 It also houses **D12 — double-bound Apply handler**. Codex confirmed: `main.ts:698` and `main.ts:1369` both bind a click listener to `btnGenApply` with identical bodies. Result: `cancelResetConfirm()` runs twice, `game.setSeed()` runs twice on every Apply click. Currently masked because both calls are idempotent in their effect, but it is a latent bug and a clear signal of an ungovernable file.
@@ -220,7 +221,7 @@ Each step is reviewable independently. Steps 1–2 are pure cuts (no behaviour c
 
 - The 220-line `innerHTML` template — move to `index.html` or a templating layer. Touching it is its own decision because it changes how the initial paint happens.
 - `alert()`-based runtime error UX (line 3) — replace with non-modal toast.
-- The `Function(...)`-based arithmetic eval in advanced speed input (line 470) — document as `[[concepts/safe-eval]]`, keep behaviour, evaluate replacement later.
+- The `Function(...)`-based arithmetic eval in advanced speed input (line 470) — document as `safe eval`, keep behaviour, evaluate replacement later.
 - Volume tri-state collapse to a finite-state object — partly done via `VolumeController` in this refactor, full FSM later.
 - Inline SVG strings (play/pause, mute/unmute) → constants module.
 
@@ -228,9 +229,8 @@ Each step is reviewable independently. Steps 1–2 are pure cuts (no behaviour c
 
 - [[entities/main]] — the file being decomposed
 - [[systems/ui-shell]] — the system that `main.ts` *is* today
-- [[concepts/escape-priority-stack]] — formalised by `window-manager.ts`
-- [[concepts/idempotent-render]] — preserved in `tree-settings-renderer.ts`
-- [[concepts/preview-game-mirror]] — preserved in `custom-gen.ts`
-- [[concepts/dualism]] — 28 dualisms are not eliminated, just relocated
+- escape priority stack — formalised by `window-manager.ts`
+- idempotent render — preserved in `tree-settings-renderer.ts`
+- preview game mirror — preserved in `custom-gen.ts`
 - `wiki/.scan/agent-01-main-ts.md` — source-of-truth section line ranges
 - `wiki/.scan/agent-13-complexity-deps.md` — CC and dependency metrics

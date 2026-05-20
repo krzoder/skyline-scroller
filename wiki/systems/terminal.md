@@ -79,9 +79,9 @@ flowchart TD
 
 - **`Function(...)` eval in `speed`** — destructures all `Math.*` into scope. Local-only attack surface; mitigated by `"use strict"` and no DOM access in scope, but a paste of `(()=>{while(1);})()` would lock the page. See [[decisions/DEC-03-safe-eval-and-error]].
 - **Lying `biome` usage string** — usage and autocomplete advertise a writable API; `execute` only reads `getCurrentBiome()`. Either implement `setBiome` or downgrade the hint.
-- **Confirm asymmetry** — only `reset` (no arg) requires y/yes; `reset speed|volume|format|seed|generate` blow away their subsystem immediately. See [[decisions/reset-confirmation-asymmetry]].
+- **Confirm asymmetry** — only `reset` (no arg) requires y/yes; `reset speed|volume|format|seed|generate` blow away their subsystem immediately. See reset confirmation asymmetry.
 - **Non-yes after pending-reset proceeds** — typing `reset` then `pine` prints "Reset aborted" *and* runs `pine` as a command → two output lines for one user action.
-- **`flowerChance` cactus-only by design, not enforced** — autocomplete offers it for every tree type; setting on pine silently stores but never renders. See [[concepts/tree-config]].
+- **`flowerChance` cactus-only by design, not enforced** — autocomplete offers it for every tree type; setting on pine silently stores but never renders. See tree config.
 - **`onCommandExecuted` fires twice** on `'all'` reset path (sync execute + async dynamic-import then). Hosts re-rendering on this hook may double-render.
 - **`game.timeFormat = '...'` direct field assignment** — bypasses the getter/setter pattern used elsewhere.
 - **Map double-indexing leak** — iterating `commands` yields aliases too. The `name === cmd.name.toLowerCase()` filter is undocumented invariant; easy to forget.
@@ -98,7 +98,7 @@ flowchart TD
 
 ## Cross-references
 
-- Entities: [[entities/Terminal]], [[entities/Game]], [[entities/CityGenerator]], [[entities/TreeConfig]], [[entities/BiomeSystem]], [[entities/Tree]], [[entities/CommandContext]]
-- Concepts: [[concepts/terminal-dsl]], [[concepts/autocomplete-engine]], [[concepts/command-pattern]], [[concepts/confirm-then-act]], [[concepts/tree-config]]
-- Decisions: [[decisions/DEC-03-safe-eval-and-error]] (Function eval), [[decisions/reset-confirmation-asymmetry]], [[decisions/DEC-05-low-code-config]]
+- Entities: [[entities/Terminal]], [[entities/Game]], [[entities/CityGenerator]], [[entities/TreeConfig]], [[entities/BiomeSystem]], [[entities/Tree]], CommandContext
+- Concepts: terminal dsl, command pattern, confirm then act, tree config
+- Decisions: [[decisions/DEC-03-safe-eval-and-error]] (Function eval), reset confirmation asymmetry, [[decisions/DEC-05-low-code-config]]
 - Systems: [[systems/ui-shell]] (renders output, captures input, fires `syncUIFromTerminal` post-execute), [[systems/procgen]] (`generate` rewrites `config`), [[systems/game-loop]] (state mutated here)

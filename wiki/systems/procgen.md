@@ -87,10 +87,10 @@ No direct `tundra ↔ desert/city` edge — must transit via forest/plains. `pla
 
 ## Failure modes / edge cases
 
-- **`BiomeSystem.update(1)` hard-coded `dx=1`** — duration `[3000, 8000)` is in *frames*, not pixels. ~50-130 s per biome at 60 fps. Naming says "pixels", behaviour says "frames". See [[decisions/frame-counted-biome-duration]].
+- **`BiomeSystem.update(1)` hard-coded `dx=1`** — duration `[3000, 8000)` is in *frames*, not pixels. ~50-130 s per biome at 60 fps. Naming says "pixels", behaviour says "frames". See frame counted biome duration.
 - **`CityGenerator` and `BiomeSystem` share the same seed but not the same stream** — Mulberry32 cloned, not forked. Cheap and works; deterministic, but no sub-stream isolation. See [[decisions/DEC-01-unified-rng]].
 - **`Landscape.generateShape` uses `Math.random()`** — leaks determinism for hill silhouettes despite seeded generator.
-- **`flowerChance` is generic in schema but cactus-only in defaults** — terminal autocomplete advertises it for every species; setting it on pine silently stores but never renders. See [[concepts/tree-config]].
+- **`flowerChance` is generic in schema but cactus-only in defaults** — terminal autocomplete advertises it for every species; setting it on pine silently stores but never renders. See tree config.
 - **`currentTreeConfig` module singleton is dead state** — never read; `CityGenerator.config` is the live copy. Three copies in flight: `DEFAULT_TREE_CONFIG` (const), `currentTreeConfig` (orphan), `generator.config` (used).
 - **RNG draws are positional and entangled** — water override (`obj = null`) happens *after* material/roof/color/height rolls were consumed. A "skip rolls if water" optimization would silently change all seeds.
 - **`pickTreeType` enumerates via `Object.keys(config)`** — relies on JS key insertion order (spec-safe for string keys). Reordering `DEFAULT_TREE_CONFIG` re-aligns the uniform pick → seeds diverge.
@@ -111,6 +111,6 @@ No direct `tundra ↔ desert/city` edge — must transit via forest/plains. `pla
 ## Cross-references
 
 - Entities: [[entities/CityGenerator]], [[entities/BiomeSystem]], [[entities/TreeConfig]], [[entities/Random]], [[entities/Building]], [[entities/Tree]], [[entities/Ground]], [[entities/Landscape]], [[entities/Layer]], [[entities/Game]]
-- Concepts: [[concepts/chunk-generation]], [[concepts/city-dna]], [[concepts/biome-system]], [[concepts/biome-transition-graph]], [[concepts/determinism]], [[concepts/tree-config]], [[concepts/procgen-pipeline]]
-- Decisions: [[decisions/DEC-01-unified-rng]], [[decisions/frame-counted-biome-duration]], [[decisions/dirt-as-shore-placeholder]], [[decisions/DEC-05-low-code-config]]
+- Concepts: chunk generation, city dna, biome system, biome transition graph, [[concepts/determinism]], tree config, procgen pipeline
+- Decisions: [[decisions/DEC-01-unified-rng]], frame counted biome duration, dirt as shore placeholder, [[decisions/DEC-05-low-code-config]]
 - Systems: [[systems/parallax-layers]], [[systems/entity-rendering]], [[systems/sky]] (biome tint consumer), [[systems/terminal]] (`generate` writes `config`)

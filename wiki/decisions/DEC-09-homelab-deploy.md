@@ -8,7 +8,7 @@ date: 2026-05-20
 supersedes: DEC-06-cloudflare-outpost
 deciders: assistant + codex + 7-agent recon swarm
 related:
-  - "[[operations/build-deploy]]"
+  - "build deploy"
   - "[[operations/codex-integration]]"
   - "[[decisions/DEC-05-low-code-config]]"
   - "[[decisions/DEC-07-enterprise-workflows]]"
@@ -336,7 +336,7 @@ Neither is a Cloudflare Worker. The naming overlap with CF was the source of DEC
 
 ## See also
 
-- [[operations/build-deploy]] — current GH Pages pipeline (to be deprecated after 2 weeks).
+- build deploy — current GH Pages pipeline (to be deprecated after 2 weeks).
 - [[operations/codex-integration]] — reviewer for the Traefik YAML and the deploy workflow before pushing.
 - [[decisions/DEC-05-low-code-config]] — `vite.config.ts` with `base: PUBLIC_BASE_PATH ?? '/'`.
 - [[decisions/DEC-07-enterprise-workflows]] — composite setup action this workflow should consume after DEC-07 lands.

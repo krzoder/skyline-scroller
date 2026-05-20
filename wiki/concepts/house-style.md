@@ -20,10 +20,10 @@ Krótka karta stylu dla każdego tekstu generowanego w repo (README, wiki, commi
 | Strzałka procesu | `branch → push → PR` | `branch -> push -> PR` lub `branch, push, PR` |
 
 Dotyczy:
-- prozy w PL i EN,
-- markdownu (uwaga na auto-corecty w edytorach),
-- commit messages i PR descriptions,
-- nagłówków i list,
+- prozy w PL i EN
+- markdownu (uwaga na auto-corecty w edytorach)
+- commit messages i PR descriptions
+- nagłówków i list
 - komentarzy w kodzie.
 
 **Powód:** użytkownik traktuje długie myślniki jako AI-tell i wizualny dystraktor.
@@ -50,8 +50,8 @@ Dotyczy:
 ## Linki
 
 Bezwzględne URL-e tylko dla zewnętrznych zasobów. W repo i wiki preferujemy:
-- ścieżki relatywne (`[link](../foo/bar.md)`) w README i prozie technicznej,
-- [[wikilinki]] w obrębie vault'a Obsidiana.
+- ścieżki relatywne (`[link](../foo/bar.md)`) w README i prozie technicznej
+- wikilinki w obrębie vault'a Obsidiana.
 
 ## Egzekwowanie
 
@@ -61,5 +61,5 @@ Bezwzględne URL-e tylko dla zewnętrznych zasobów. W repo i wiki preferujemy:
 
 ## Powiązane
 
-- [[../decisions/DEC-08-master-simplification-plan]] - master plan
+- DEC 08 master simplification plan - master plan
 - [[../operations/codex-integration]] - jak Codex powinien stosować ten styl

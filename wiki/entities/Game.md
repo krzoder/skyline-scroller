@@ -93,7 +93,7 @@ Imported by:
 - [[systems/game-loop]] — rAF tick contract and error containment
 - [[systems/sky]] — what `sky.update` / `sky.draw` / `getAmbientColor` deliver
 - [[entities/SkySystem]], [[entities/CityGenerator]], [[entities/Layer]], [[entities/Renderable]]
-- [[concepts/renderable-contract]] — the 8-line `Renderable` interface
+- renderable contract — the 8-line `Renderable` interface
 - [[concepts/determinism]] — what is and isn't reseeded (noise isn't)
 - [[concepts/dualisms]] — update/render, run-state/world-time, preview/main, etc.
 - [[decisions/DEC-01-unified-rng]] — Date.now seeding and unseeded noise

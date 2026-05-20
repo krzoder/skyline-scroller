@@ -6,6 +6,15 @@ type: log
 
 # Log
 
+## 2026-05-20 (end of day) - main.ts decomposition + wiki cleanup + v1.2.0
+
+- **DEC-04 implemented**: main.ts 1722 -> 427 LOC (-75.2%) across 10 extracts to `src/ui/`. Status frontmatter updated to `implemented`.
+- **25 PR-y zmergowane na main** (#7 do #31). Skrótowo: dekompozycja main.ts (10 PR-ów), hard-rule bugfixy (3), REGIONS adoption + Tree registry + entity moves (3), config centralization + operability (2), CI fixes + house style + dash scrub + bug fix UX + cleanup (7).
+- **Wiki cleanup**: 7 pustych stub plików usunięte (`concepts/autocomplete-engine`, `concepts/clouds`, `concepts/dualism`, `concepts/visibility-toggle-class`, `entities/Terminal-Bar`, `decisions/legacy-swarm-history`, `operations/build-and-deploy`). 171 dead wikilinków stripped z 33 plików (były to "phantom nodes" widoczne w Obsidian graph). Vault z 65 -> 60 plików, 0 dead wikilinków.
+- **Wersja 1.2.0** bumped (semver minor: nowy `/debug-state` terminal command + `src/config.ts` knobs + massive decomposition). `package.json` ma teraz `engines.node: ">=24.0.0 <27.0.0"`.
+- **README.md** zaktualizowane: nowa struktura `src/ui/`, lista 10 modułów, opis nowych terminal commands (`debug-state`), Node 22 -> 24 wymóg, 67 testów.
+- **Bundle**: stałe ~79 kB / gzip 22.7 kB mimo całej restrukturyzacji.
+
 ## 2026-05-20 (README rewrite) - README po polsku, non-technical
 
 - Przepisany `README.md` w całości po polsku, zgodnie z prośbą użytkownika - ma być zrozumiały dla osoby nietechnicznej.

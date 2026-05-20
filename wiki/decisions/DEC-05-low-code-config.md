@@ -16,7 +16,7 @@ related:
   - "[[systems/procgen]]"
   - "[[systems/sky]]"
   - "[[systems/css-architecture]]"
-  - "[[operations/build-deploy]]"
+  - "build deploy"
   - "[[concepts/determinism]]"
 ---
 
@@ -33,7 +33,7 @@ The codebase has matured into beta-1.1.x but still treats *configuration* the sa
 5. **CSS has no design tokens and contains broken declarations.** `style.css:330` uses the long-deprecated `writing-mode: bt-lr` and `-webkit-appearance: slider-vertical`, both removed from Chromium since 2021. The vertical volume slider is broken in every modern browser. z-index values are assigned ad-hoc — `ui-layer:10`, `bottom-right-controls:100`, `terminal-output-container:150`, `terminal-bar:150` (collision), `volume-popup:200`, `custom-gen-window:200` (collision), `advanced-window:300`, `gesture-slider-container:500`, `volume-visual-container:9999`. Two pairs collide; the ladder is unprincipled.
 6. **Workflows duplicate setup.** `ci.yml`, `deploy.yml`, `pr-preview.yml` each repeat `checkout → setup-node@v4 (node 22, cache npm) → npm ci`. `deploy.yml` has `cancel-in-progress: false` (correct for prod), but no production lint job exists, no actions are pinned to commit SHAs, and the `--base=` flag is duplicated three times — change the repo name and you must edit three files.
 
-See [[systems/procgen]], [[systems/sky]], [[systems/css-architecture]], [[operations/build-deploy]] for the systems each problem touches.
+See [[systems/procgen]], [[systems/sky]], [[systems/css-architecture]], build deploy for the systems each problem touches.
 
 ## Constraints
 
@@ -112,43 +112,43 @@ Shape:
 ```ts
 export const COLORS = {
     tree: {
-        bark:   { sequoia: '#5D4037', pine: '#4E342E', oak: '#6D4C41' },
-        leaves: { sequoia: '#43A047', pine: '#1B5E20', oak: '#2E7D32' },
-        bush:   '#7CB342',
-        cactus: '#2E7D32',
-        flower: '#E91E63',
-        hedge:  '#558B2F',
-        hedgeStroke: '#33691E',
-    },
+        bark:   { sequoia: '#5D4037', pine: '#4E342E', oak: '#6D4C41' }
+        leaves: { sequoia: '#43A047', pine: '#1B5E20', oak: '#2E7D32' }
+        bush:   '#7CB342'
+        cactus: '#2E7D32'
+        flower: '#E91E63'
+        hedge:  '#558B2F'
+        hedgeStroke: '#33691E'
+    }
     ground: {
-        grass: '#4CAF50', grassDark: '#388E3C',
-        pavement: '#9E9E9E', pavementMark: '#FFFFFF',
-        water: '#2196F3', waterFoam: '#BBDEFB',
-        dirt: '#795548',
-    },
+        grass: '#4CAF50', grassDark: '#388E3C'
+        pavement: '#9E9E9E', pavementMark: '#FFFFFF'
+        water: '#2196F3', waterFoam: '#BBDEFB'
+        dirt: '#795548'
+    }
     building: {
-        windowLit: '#FDF5E6',
-        windowDay: '#87CEEB',
-        stoneNoise: 'rgba(0,0,0,0.1)',
-    },
+        windowLit: '#FDF5E6'
+        windowDay: '#87CEEB'
+        stoneNoise: 'rgba(0,0,0,0.1)'
+    }
     sky: {
-        sun: '#FFD700',
-        moon: '#FEFCD7',
-        moonCrater: '#E0E0E0',
+        sun: '#FFD700'
+        moon: '#FEFCD7'
+        moonCrater: '#E0E0E0'
         // keyframes moved here from SkySystem.ts; SkySystem imports COLORS.sky.keyframes
-        keyframes: [/* ...the 17 entries currently inline at SkySystem.ts:9-25... */],
-    },
+        keyframes: [/* ...the 17 entries currently inline at SkySystem.ts:9-25... */]
+    }
     ui: {
-        panelBg: 'rgba(20,20,20,0.95)',
-        panelBorder: 'rgba(255,255,255,0.1)',
-        controlBg: 'rgba(0,0,0,0.7)',
-        terminalText: '#0f0',
-        terminalBorder: '#336',
-        resetDefault: '#FBC02D',
-        resetModified: '#d32f2f',
-        accentGreen: '#2E7D32',
-        accentGreenLight: '#4CAF50',
-    },
+        panelBg: 'rgba(20,20,20,0.95)'
+        panelBorder: 'rgba(255,255,255,0.1)'
+        controlBg: 'rgba(0,0,0,0.7)'
+        terminalText: '#0f0'
+        terminalBorder: '#336'
+        resetDefault: '#FBC02D'
+        resetModified: '#d32f2f'
+        accentGreen: '#2E7D32'
+        accentGreenLight: '#4CAF50'
+    }
 } as const;
 ```
 
@@ -269,25 +269,25 @@ export interface BiomeDefinition {
 import type { BiomeDefinition } from './types';
 
 export const forest: BiomeDefinition = {
-    id: 'forest',
-    label: 'Forest',
-    durationRange: [3000, 8000],
-    transitionsTo: ['tundra', 'plains'],
-    treeSpecies: ['sequoia', 'pine', 'oak', 'bush'],
+    id: 'forest'
+    label: 'Forest'
+    durationRange: [3000, 8000]
+    transitionsTo: ['tundra', 'plains']
+    treeSpecies: ['sequoia', 'pine', 'oak', 'bush']
     buildingMaterials: [
-        { material: 'wood',  weight: 0.5 },
-        { material: 'stone', weight: 0.5 },
-    ],
+        { material: 'wood',  weight: 0.5 }
+        { material: 'stone', weight: 0.5 }
+    ]
     roofTypes: [
-        { roof: 'gabled', weight: 1.0 },
-    ],
+        { roof: 'gabled', weight: 1.0 }
+    ]
     buildingPalette: {
         hue: [90, 150],   // green-ish
-        saturation: 50,
-        lightness: 50,
-    },
-    backgroundGround: 'grass',
-    debugColor: '#2E7D32',
+        saturation: 50
+        lightness: 50
+    }
+    backgroundGround: 'grass'
+    debugColor: '#2E7D32'
 };
 ```
 
@@ -304,7 +304,7 @@ import { plains }  from './plains';
 import { city }    from './city';
 
 export const REGIONS: Readonly<Record<string, BiomeDefinition>> = {
-    forest, desert, tundra, plains, city,
+    forest, desert, tundra, plains, city
 } as const;
 
 export const REGION_IDS = Object.keys(REGIONS) as ReadonlyArray<keyof typeof REGIONS>;
@@ -399,18 +399,18 @@ const pkg = JSON.parse(
 );
 
 export default defineConfig({
-    base: process.env.PUBLIC_BASE_PATH ?? '/',
+    base: process.env.PUBLIC_BASE_PATH ?? '/'
     define: {
-        __PACKAGE_VERSION__: JSON.stringify(pkg.version),
-    },
+        __PACKAGE_VERSION__: JSON.stringify(pkg.version)
+    }
     build: {
-        target: 'es2022',
-        sourcemap: true,
-    },
+        target: 'es2022'
+        sourcemap: true
+    }
 });
 ```
 
-Workflows pass `PUBLIC_BASE_PATH=/skyline-scroller/` (or the PR-preview path) via `env:`; local `npm run build` produces a `base=/` artefact that works under `npm run preview` without further flags. The single source of base-path truth is now an env-var name, not a CLI flag duplicated three times. See [[operations/build-deploy]].
+Workflows pass `PUBLIC_BASE_PATH=/skyline-scroller/` (or the PR-preview path) via `env:`; local `npm run build` produces a `base=/` artefact that works under `npm run preview` without further flags. The single source of base-path truth is now an env-var name, not a CLI flag duplicated three times. See build deploy.
 
 ### 4. Version sync — `package.json` is canonical
 
@@ -754,4 +754,4 @@ SHA-pinned actions mean Dependabot PRs every time an action releases. Mitigation
 - `src/style.css:76,128,132,161,228,284,310,348,454` — current z-index sites with collisions
 - `.github/workflows/ci.yml:48`, `deploy.yml:35`, `pr-preview.yml:35` — three duplicated `--base=` CLI flags to be replaced by `PUBLIC_BASE_PATH` env
 - `package.json:4` — version literal `1.0.0-beta` to bump to `1.1.2`
-- Related: [[entities/BiomeSystem]], [[entities/TreeConfig]], [[entities/CityGenerator]], [[entities/SkySystem]], [[entities/Building]], [[systems/procgen]], [[systems/sky]], [[systems/css-architecture]], [[operations/build-deploy]], [[concepts/determinism]], [[DEC-02-lifecycle]]
+- Related: [[entities/BiomeSystem]], [[entities/TreeConfig]], [[entities/CityGenerator]], [[entities/SkySystem]], [[entities/Building]], [[systems/procgen]], [[systems/sky]], [[systems/css-architecture]], build deploy, [[concepts/determinism]], [[DEC-02-lifecycle]]

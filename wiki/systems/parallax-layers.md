@@ -18,7 +18,7 @@ Give the scroller infinite-horizon depth by drawing four [[entities/Layer]] inst
 
 **In:** [[entities/Layer]] (container, 75 LOC), [[entities/Landscape]] (biome silhouette, 175 LOC), [[entities/Ground]] (flat strip, 55 LOC). Layer configuration lives in `Game.reset()`.
 
-**Out:** the [[concepts/renderable-contract]] interface is shared with [[systems/entity-rendering]] (Building, Tree). Chunk emission is owned by [[systems/procgen]]. The earth-bar + ambient overlay are part of [[systems/game-loop]] render pipeline, not Layer itself.
+**Out:** the renderable contract interface is shared with [[systems/entity-rendering]] (Building, Tree). Chunk emission is owned by [[systems/procgen]]. The earth-bar + ambient overlay are part of [[systems/game-loop]] render pipeline, not Layer itself.
 
 ## Data flow
 
@@ -98,6 +98,6 @@ Chunks overlap by 1 px (`lastX[i] += chunkWidth - 1`) to hide ground seams. Prun
 ## Cross-references
 
 - Entities: [[entities/Layer]], [[entities/Landscape]], [[entities/Ground]], [[entities/CityEntity]], [[entities/CityGenerator]], [[entities/Game]]
-- Concepts: [[concepts/parallax-scrolling]], [[concepts/chunk-generation]], [[concepts/layer-composition]], [[concepts/renderable-contract]], [[concepts/biome-system]]
+- Concepts: parallax scrolling, chunk generation, layer composition, renderable contract, biome system
 - Decisions: [[decisions/DEC-01-unified-rng]] (Landscape uses Math.random)
 - Systems: [[systems/procgen]] (chunk emitter), [[systems/entity-rendering]] (Building/Tree), [[systems/game-loop]] (drives update + render)

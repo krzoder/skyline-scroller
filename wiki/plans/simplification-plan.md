@@ -27,12 +27,12 @@ related:
   - "[[systems/ui-shell]]"
   - "[[systems/css-architecture]]"
   - "[[systems/terminal]]"
-  - "[[operations/build-deploy]]"
+  - "build deploy"
   - "[[operations/codex-integration]]"
   - "[[concepts/determinism]]"
-  - "[[concepts/escape-priority-stack]]"
-  - "[[concepts/idempotent-render]]"
-  - "[[concepts/dualism]]"
+  - "escape priority stack"
+  - "idempotent render"
+
 ---
 
 # Skyline Scroller — Master Simplification Plan
@@ -51,23 +51,23 @@ Everything in this table is dead, duplicated, or wholesale superseded. No replac
 
 | Target | LOC / size | Reason | Source |
 |---|---:|---|---|
-| `./skyline-scroller/` (whole folder, 27 .md + `.obsidian/`) | ~5.0 MB | Legacy swarm-output wiki. Every page is SUPERSEDED by `wiki/entities|systems|concepts|operations/*`. Invariants 1–11 lifted in Stage 1; nothing left to preserve. | [[.scan/agent-11-wiki-drift]] |
+| `./skyline-scroller/` (whole folder, 27 .md + `.obsidian/`) | ~5.0 MB | Legacy swarm-output wiki. Every page is SUPERSEDED by `wiki/entities|systems|concepts|operations/*`. Invariants 1–11 lifted in Stage 1; nothing left to preserve. | agent 11 wiki drift |
 | `./skyline-scroller/md_contents.json` | 52 KB | Flat LLM-scrap dump of every .md from the prior swarm. Not knowledge. | agent-11 |
 | `./skyline-scroller/ts_contents.json` | 173 KB | Flat LLM-scrap dump of every .ts from the prior swarm. Not knowledge. | agent-11 |
 | `./skyline-scroller/.obsidian/` | — | Stale per-vault config + Local REST API keys for a vault we no longer use. Audit then remove. | agent-11 |
 | `./docs/knowledge_base/` (whole folder, 13 .md) | ~3.9 MB | Strict older subset of `./skyline-scroller/`. 8 of 13 are byte-identical mirrors; others are older. Superseded by new wiki same as parent. | agent-11 |
-| `src/engine/Building.ts:drawCactus` — `flowerPos === 'top'` branch | ~8 LOC | Unreachable: `flowerPos` is only ever assigned `'left'` or `'right'` in `Tree.ts` cactus path. Dead code per agent-06. | [[.scan/agent-06-entities]] |
-| `src/procgen/TreeConfig.ts:60` — `let currentTreeConfig` module-level singleton | 1 LOC + transitive usages | Nothing reads it. Mutated by `resetTreeConfigToDefault()` and that's it. Dead state. | [[.scan/agent-07-procgen]] |
+| `src/engine/Building.ts:drawCactus` — `flowerPos === 'top'` branch | ~8 LOC | Unreachable: `flowerPos` is only ever assigned `'left'` or `'right'` in `Tree.ts` cactus path. Dead code per agent-06. | agent 06 entities |
+| `src/procgen/TreeConfig.ts:60` — `let currentTreeConfig` module-level singleton | 1 LOC + transitive usages | Nothing reads it. Mutated by `resetTreeConfigToDefault()` and that's it. Dead state. | agent 07 procgen |
 | `src/procgen/TreeConfig.ts` — `resetTreeConfigToDefault()` helper | ~6 LOC | Paired dead code with the singleton above. No callers. | agent-07 |
 | `src/main.ts:1369` — duplicate `btnGenApply.addEventListener` | ~14 LOC | D12 (Codex CONFIRMED). Earlier handler at `main.ts:698` is the canonical one and survives the `custom-gen.ts` extraction. | [[DEC-04-main-decomposition]] |
 | `src/main.ts:1382` — duplicate `btnGenClose.addEventListener` | ~5 LOC | One survives (the one extended in DEC-02 to call `previewGame?.dispose()`); the other goes. | [[DEC-02-lifecycle]] |
-| `src/engine/Landscape.ts:Landscape.draw` — double-paint (super.draw + fillRect flood) | ~3 LOC | Two paints for one frame. Drop the flood; keep `super.draw`. | [[.scan/agent-05-landscape-ground-layer]] |
-| `src/engine/Terminal.ts` — `biome` command usage string + 6-entry biome autocomplete | ~10 LOC | D11. Usage advertises writable; command is read-only. Either make it writable (out of scope here) or trim the lie. Stage 1 trims; future DEC can re-add write. | [[.scan/agent-03-terminal]] |
+| `src/engine/Landscape.ts:Landscape.draw` — double-paint (super.draw + fillRect flood) | ~3 LOC | Two paints for one frame. Drop the flood; keep `super.draw`. | agent 05 landscape ground layer |
+| `src/engine/Terminal.ts` — `biome` command usage string + 6-entry biome autocomplete | ~10 LOC | D11. Usage advertises writable; command is read-only. Either make it writable (out of scope here) or trim the lie. Stage 1 trims; future DEC can re-add write. | agent 03 terminal |
 | `src/main.ts:1895` — Polish signoff comment | 1 LOC | "Żadna komórka mózgowa nie ucierpiała…" Author's tombstone on the file. Goes with the file when `main.ts` shrinks to 20 LOC. Keep the spirit, not the comment. | [[DEC-04-main-decomposition]] |
-| `src/main.ts:735` — second `import { Tree }` line | 1 LOC | Already imported transitively + at line 713. Symptom; dies in DEC-04 extraction. | [[.scan/agent-13-complexity-deps]] |
+| `src/main.ts:735` — second `import { Tree }` line | 1 LOC | Already imported transitively + at line 713. Symptom; dies in DEC-04 extraction. | agent 13 complexity deps |
 | `src/main.ts:3-5` — `alert(...)` global error handler | 3 LOC | D13. Replaced by toast in DEC-03. | [[DEC-03-safe-eval-and-error]] |
 | `src/engine/Terminal.ts:207-211` — `Function('… return (${inputStr});')` | ~5 LOC | D10 / RCE surface. Replaced by `parseExpr` in DEC-03. | [[DEC-03-safe-eval-and-error]] |
-| `src/style.css:329-338` — `writing-mode: bt-lr` + `-webkit-appearance: slider-vertical` | ~10 LOC | D14. Both removed from Chromium 2021–2024; slider is broken in every modern browser. Replaced by rotated-container + `@supports (writing-mode: vertical-lr)` in DEC-05. | [[.scan/agent-09-css-html]] |
+| `src/style.css:329-338` — `writing-mode: bt-lr` + `-webkit-appearance: slider-vertical` | ~10 LOC | D14. Both removed from Chromium 2021–2024; slider is broken in every modern browser. Replaced by rotated-container + `@supports (writing-mode: vertical-lr)` in DEC-05. | agent 09 css html |
 | `src/style.css` — z-index collisions (`terminal-bar`/`terminal-output-container` both 150; `custom-gen-window`/`volume-popup` both 200; double-declared `settings-window`/`advanced-window`) | ~6 sites | D15. Replaced by single `--z-*` ladder in DEC-05. | agent-09 |
 | `src/counter.ts` | 9 LOC | Vite scaffold leftover. Zero imports, zero usages. | agent-13 |
 
@@ -372,6 +372,6 @@ Plus non-LOC wins:
 - [[DEC-01-unified-rng]] · [[DEC-02-lifecycle]] · [[DEC-03-safe-eval-and-error]] · [[DEC-04-main-decomposition]] · [[DEC-05-low-code-config]] · DEC-06-cloudflare-outpost (to write Stage 10) · DEC-07-enterprise-workflows (to write Stage 10)
 - [[entities/Game]] · [[entities/main]] · [[entities/Random]] · [[entities/Terminal]] · [[entities/SkySystem]] · [[entities/CityGenerator]] · [[entities/BiomeSystem]] · [[entities/Tree]] · [[entities/TreeConfig]] · [[entities/Building]] · [[entities/Landscape]]
 - [[systems/game-loop]] · [[systems/procgen]] · [[systems/ui-shell]] · [[systems/terminal]] · [[systems/css-architecture]] · [[systems/sky]]
-- [[concepts/determinism]] · [[concepts/escape-priority-stack]] · [[concepts/idempotent-render]] · [[concepts/dualism]] · [[concepts/preview-game-mirror]]
-- [[operations/build-deploy]] · [[operations/codex-integration]]
-- [[.scan/agent-11-wiki-drift]] · [[.scan/agent-13-complexity-deps]]
+- [[concepts/determinism]] · escape priority stack · idempotent render · preview game mirror
+- build deploy · [[operations/codex-integration]]
+- agent 11 wiki drift · agent 13 complexity deps

@@ -9,7 +9,7 @@ supersedes: []
 superseded-by: []
 tags: [ci, cd, github-actions, security, supply-chain, codeql, dependabot, sha-pinning, release, codeowners, branch-protection, workflows]
 related:
-  - "[[operations/build-deploy]]"
+  - "build deploy"
   - "[[decisions/DEC-05-low-code-config]]"
   - "[[decisions/DEC-06-cloudflare-outpost]]"
 ---
@@ -32,7 +32,7 @@ The DEC-05 hardening is necessary but not sufficient. Concretely, the workflows 
 
 5. **No dependency auditing.** `npm audit` is never run. Even at zero runtime deps, the 89-package dev-tree (Vite + Vitest + transitive) is a vector. A daily scheduled `npm audit --omit=dev --audit-level=high` (and weekly `--include=dev`) closes the gap.
 
-6. **No release-notes automation.** Pushes to `main` deploy but produce no GitHub Release. Version drift (already noted in [[operations/build-deploy]]) is compounded by lack of human-readable release history. `release-drafter/release-drafter` reads PR labels to auto-generate notes.
+6. **No release-notes automation.** Pushes to `main` deploy but produce no GitHub Release. Version drift (already noted in build deploy) is compounded by lack of human-readable release history. `release-drafter/release-drafter` reads PR labels to auto-generate notes.
 
 7. **Forks can trigger preview deploys.** `pull_request` (not `pull_request_target`) fires for forks too. Today's `pr-preview.yml` runs the fork's code with write permissions to `gh-pages` — a fork PR that adds a malicious npm script in `npm ci`'s lifecycle hooks (`postinstall`) gets RCE on the runner with `contents: write`. The mitigation is well-known: only run preview for *same-repo* PRs OR require a maintainer label (`safe-preview`) for fork PRs.
 
@@ -46,7 +46,7 @@ The DEC-05 hardening is necessary but not sufficient. Concretely, the workflows 
 
 12. **`workflow_dispatch` on deploy bypasses CI.** Today, anyone with write access can dispatch a deploy from a red branch. The fix is to gate `deploy.yml` on the latest `ci.yml` run for the same SHA being successful (via `workflow_run` trigger or an explicit `needs:` chain across workflows using `actions/github-script` to query the API).
 
-See [[operations/build-deploy]] for the current state of these workflows and [[decisions/DEC-05-low-code-config]] §6 for what's already been proposed.
+See build deploy for the current state of these workflows and [[decisions/DEC-05-low-code-config]] §6 for what's already been proposed.
 
 ## Constraints
 
@@ -583,7 +583,7 @@ change-title-escapes: '\<*_&'
 # No AI attribution per user memory rule:
 # - $AUTHOR resolves to the human committer login; release-drafter does not
 #   inject co-authored-by trailers.
-# - Do NOT add an "AI assistance" category or any line referencing Claude,
+# - Do NOT add an "AI assistance" category or any line referencing Claude
 #   Copilot, etc.
 exclude-labels:
   - skip-release-notes
@@ -846,6 +846,6 @@ If two PRs merge to `main` within seconds, two `workflow_run` events fire. The `
 - `src/config/version.ts` — DEC-05's version barrel, read by `release.yml`.
 - [[decisions/DEC-05-low-code-config]] §6 — composite action and base-path env-var (prerequisites).
 - [[decisions/DEC-06-cloudflare-outpost]] — Worker preview path `/pr/<n>/` consumed by `pr-preview.yml`.
-- [[operations/build-deploy]] — current state of the three workflows; this DEC supersedes that page's "Pipeline" section.
+- build deploy — current state of the three workflows; this DEC supersedes that page's "Pipeline" section.
 - GitHub docs: [Pinning actions to a SHA](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-third-party-actions), [workflow_run trigger](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_run), [Environments](https://docs.github.com/en/actions/deployment/targeting-different-environments/managing-environments-for-deployment).
 - Related decisions: [[DEC-02-lifecycle]], [[DEC-03-safe-eval-and-error]], [[DEC-04-main-decomposition]].

@@ -237,7 +237,7 @@ export function parse(src: string): number {
      const clamped = Math.max(-10000, Math.min(10000, val));
      ctx.game.setTimeScale(clamped);
      ctx.output(`Speed set to ${clamped}`);
- },
+ }
 ```
 
 ## Alternative considered — regex-whitelist + `Function` eval

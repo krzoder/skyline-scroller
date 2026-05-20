@@ -44,7 +44,7 @@ Tracks the current biome and drifts to adjacent biomes after a duration elapses.
 ## Dependencies
 
 - Imports: [[entities/Random]].
-- Imported by: [[entities/CityGenerator]] (composition). `BiomeType` is re-imported by [[entities/Landscape]], [[entities/Ground]], [[entities/Building]], [[entities/SkySystem]], and [[main.ts]] (custom-gen UI).
+- Imported by: [[entities/CityGenerator]] (composition). `BiomeType` is re-imported by [[entities/Landscape]], [[entities/Ground]], [[entities/Building]], [[entities/SkySystem]], and main.ts (custom-gen UI).
 
 ## Invariants
 

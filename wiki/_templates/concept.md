@@ -24,4 +24,4 @@ Where the concept is intentionally broken.
 
 ## See also
 
-- [[entities/...]], [[systems/...]]
+- ..., ...

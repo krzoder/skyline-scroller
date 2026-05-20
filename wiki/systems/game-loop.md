@@ -15,7 +15,7 @@ Drive one canvas frame at a time: advance world state by `dt` seconds, then rend
 
 ## Boundary
 
-**In:** [[entities/Game]] (the loop coordinator) and the [[concepts/renderable-contract]] (`Renderable.ts`, 8 LOC). `Game.update` and `Game.render` are the canonical tick body.
+**In:** [[entities/Game]] (the loop coordinator) and the renderable contract (`Renderable.ts`, 8 LOC). `Game.update` and `Game.render` are the canonical tick body.
 
 **Out:** the four [[entities/Layer]] instances and the [[entities/CityGenerator]] are *driven* but not *owned* by this system — they belong to [[systems/parallax-layers]] and [[systems/procgen]]. Sky time advancement is in [[systems/sky]]. Terminal command dispatch is in [[systems/terminal]].
 
@@ -54,14 +54,14 @@ flowchart TD
   N --> L
 ```
 
-**Render Z-order** (canonical, [[concepts/render-pipeline-order]]):
+**Render Z-order** (canonical, render pipeline order):
 
-1. `ctx.scale(1.6, 1.6)` — global pixel-art zoom ([[concepts/scale-factor]]).
+1. `ctx.scale(1.6, 1.6)` — global pixel-art zoom (scale factor).
 2. `sky.draw` → vertical gradient + sun/moon + clouds.
 3. `translate(0, groundY)` then back-to-front `layer.draw` ×4.
 4. Solid earth bar (`#2e2e2e`, 80 px) below `groundY`.
-5. `globalCompositeOperation = 'multiply'` + `sky.getAmbientColor()` fill ([[concepts/ambient-lighting]]).
-6. Noise dither pattern fill ([[concepts/dither-noise-overlay]]).
+5. `globalCompositeOperation = 'multiply'` + `sky.getAmbientColor()` fill (ambient lighting).
+6. Noise dither pattern fill (dither noise overlay).
 
 Stack discipline: 2 `save` / 2 `restore`, composite reset to `source-over` before exit.
 
@@ -87,6 +87,6 @@ Stack discipline: 2 `save` / 2 `restore`, composite reset to `source-over` befor
 ## Cross-references
 
 - Entities: [[entities/Game]], [[entities/SkySystem]], [[entities/CityGenerator]], [[entities/Layer]], [[entities/Random]]
-- Concepts: [[concepts/renderable-contract]], [[concepts/render-pipeline-order]], [[concepts/scale-factor]], [[concepts/time-model]], [[concepts/ambient-lighting]], [[concepts/dither-noise-overlay]], [[concepts/preview-mode]], [[concepts/determinism]], [[concepts/update-render-split]]
+- Concepts: renderable contract, render pipeline order, scale factor, time model, ambient lighting, dither noise overlay, preview mode, [[concepts/determinism]], update render split
 - Decisions: [[decisions/DEC-02-lifecycle]] (dispose hygiene), [[decisions/DEC-01-unified-rng]] (noise should be seeded)
 - Systems: [[systems/parallax-layers]], [[systems/procgen]], [[systems/sky]], [[systems/terminal]], [[systems/ui-shell]]
