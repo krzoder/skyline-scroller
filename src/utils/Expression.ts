@@ -10,7 +10,7 @@
  *
  * No identifiers, no function calls, no member access. Replaces the
  * `new Function(...)` eval that previously powered the `speed` terminal
- * command — eliminates the arbitrary-code-execution surface
+ * command - eliminates the arbitrary-code-execution surface
  * `(()=>{while(1);})()` could exploit.
  */
 
@@ -27,6 +27,11 @@ type Token =
     | { type: 'lparen' }
     | { type: 'rparen' };
 
+function isIdentChar(c: string | undefined): boolean {
+    if (!c) return false;
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c === '_';
+}
+
 function tokenize(input: string): Token[] {
     const tokens: Token[] = [];
     let i = 0;
@@ -35,10 +40,7 @@ function tokenize(input: string): Token[] {
     while (i < s.length) {
         const c = s[i];
 
-        if (c === ' ' || c === '\t' || c === '\n') {
-            i++;
-            continue;
-        }
+        if (c === ' ' || c === '\t' || c === '\n') { i++; continue; }
 
         if (c === '+' || c === '-' || c === '*' || c === '/') {
             tokens.push({ type: 'op', value: c });
@@ -49,7 +51,6 @@ function tokenize(input: string): Token[] {
         if (c === '(') { tokens.push({ type: 'lparen' }); i++; continue; }
         if (c === ')') { tokens.push({ type: 'rparen' }); i++; continue; }
 
-        // Number: digits, optional decimal, optional exponent (e.g. 1e3).
         if (c >= '0' && c <= '9' || c === '.') {
             let j = i;
             while (j < s.length && (s[j] >= '0' && s[j] <= '9' || s[j] === '.')) j++;
@@ -65,7 +66,6 @@ function tokenize(input: string): Token[] {
             continue;
         }
 
-        // Constants. Only 'pi', 'π', and standalone 'e' (not part of a number).
         if (c === 'π') { tokens.push({ type: 'num', value: Math.PI }); i++; continue; }
         if (s.startsWith('pi', i) && !isIdentChar(s[i + 2])) {
             tokens.push({ type: 'num', value: Math.PI });
@@ -84,85 +84,71 @@ function tokenize(input: string): Token[] {
     return tokens;
 }
 
-function isIdentChar(c: string | undefined): boolean {
-    if (!c) return false;
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c === '_';
-}
+function parse(tokens: Token[]): number {
+    let pos = 0;
 
-class Parser {
-    private tokens: Token[];
-    private pos: number = 0;
+    const peekOp = (op: '+' | '-' | '*' | '/'): boolean => {
+        const t = tokens[pos];
+        return !!t && t.type === 'op' && t.value === op;
+    };
 
-    constructor(tokens: Token[]) { this.tokens = tokens; }
+    const parseAtom = (): number => {
+        const t = tokens[pos];
+        if (!t) throw new ExpressionError('Unexpected end of expression');
+        if (t.type === 'num') { pos++; return t.value; }
+        if (t.type === 'lparen') {
+            pos++;
+            const value = parseExpr();
+            const close = tokens[pos];
+            if (!close || close.type !== 'rparen') throw new ExpressionError('Missing closing parenthesis');
+            pos++;
+            return value;
+        }
+        throw new ExpressionError(`Unexpected token at position ${pos}`);
+    };
 
-    parseExpression(): number {
-        const value = this.parseExpr();
-        if (this.pos < this.tokens.length) {
-            throw new ExpressionError(`Unexpected token after expression (position ${this.pos})`);
+    const parseFactor = (): number => {
+        if (peekOp('+')) { pos++; return parseFactor(); }
+        if (peekOp('-')) { pos++; return -parseFactor(); }
+        return parseAtom();
+    };
+
+    const parseTerm = (): number => {
+        let value = parseFactor();
+        while (peekOp('*') || peekOp('/')) {
+            const op = tokens[pos++] as { type: 'op'; value: '*' | '/' };
+            if (op.value === '*') value *= parseFactor();
+            else value /= parseFactor();
         }
         return value;
-    }
+    };
 
-    private parseExpr(): number {
-        let value = this.parseTerm();
-        while (this.peekOp('+') || this.peekOp('-')) {
-            const op = this.tokens[this.pos++] as { type: 'op'; value: '+' | '-' };
-            const rhs = this.parseTerm();
+    const parseExpr = (): number => {
+        let value = parseTerm();
+        while (peekOp('+') || peekOp('-')) {
+            const op = tokens[pos++] as { type: 'op'; value: '+' | '-' };
+            const rhs = parseTerm();
             value = op.value === '+' ? value + rhs : value - rhs;
         }
         return value;
-    }
+    };
 
-    private parseTerm(): number {
-        let value = this.parseFactor();
-        while (this.peekOp('*') || this.peekOp('/')) {
-            const op = this.tokens[this.pos++] as { type: 'op'; value: '*' | '/' };
-            const rhs = this.parseFactor();
-            if (op.value === '*') value *= rhs;
-            else value /= rhs; // Infinity / NaN for /0 are allowed; callers clamp.
-        }
-        return value;
+    const value = parseExpr();
+    if (pos < tokens.length) {
+        throw new ExpressionError(`Unexpected token after expression (position ${pos})`);
     }
-
-    private parseFactor(): number {
-        if (this.peekOp('+')) { this.pos++; return this.parseFactor(); }
-        if (this.peekOp('-')) { this.pos++; return -this.parseFactor(); }
-        return this.parseAtom();
-    }
-
-    private parseAtom(): number {
-        const t = this.tokens[this.pos];
-        if (!t) throw new ExpressionError('Unexpected end of expression');
-        if (t.type === 'num') { this.pos++; return t.value; }
-        if (t.type === 'lparen') {
-            this.pos++;
-            const value = this.parseExpr();
-            const close = this.tokens[this.pos];
-            if (!close || close.type !== 'rparen') throw new ExpressionError('Missing closing parenthesis');
-            this.pos++;
-            return value;
-        }
-        throw new ExpressionError(`Unexpected token at position ${this.pos}`);
-    }
-
-    private peekOp(op: '+' | '-' | '*' | '/'): boolean {
-        const t = this.tokens[this.pos];
-        return !!t && t.type === 'op' && t.value === op;
-    }
+    return value;
 }
 
 /**
  * Evaluate a math expression containing only +, -, *, /, parens, unary +/-,
  * numeric literals (including 1e3-style exponents), and the constants
  * `π` / `pi` / `e`.
- *
- * Throws `ExpressionError` on any other token, mismatched parens, or
- * empty input.
  */
 export function evalExpression(input: string): number {
     const trimmed = input.trim();
     if (!trimmed) throw new ExpressionError('Empty expression');
     const tokens = tokenize(trimmed);
     if (tokens.length === 0) throw new ExpressionError('Empty expression');
-    return new Parser(tokens).parseExpression();
+    return parse(tokens);
 }
