@@ -4,6 +4,7 @@ import type { Game } from './Game';
 import type { TreeType } from '../procgen/entities/Tree';
 import type { BiomeType } from '../procgen/BiomeSystem';
 import { ALL_BIOMES } from '../regions/_index';
+import { DEFAULT_TREE_CONFIG } from '../procgen/TreeConfig';
 
 export interface CommandContext {
     game: Game;
@@ -441,14 +442,12 @@ export class Terminal {
                     ctx.game.setSeed(rnd);
                     ctx.output(`Seed restarted randomly.`);
                 } else if (target === 'generate' || target === 'gen') {
-                    import('../procgen/TreeConfig').then(module => {
-                        const def = deepClone(module.DEFAULT_TREE_CONFIG);
-                        ctx.game.treeConfig = def;
-                        if (ctx.game.generator) {
-                            ctx.game.generator.config = deepClone(def);
-                        }
-                        ctx.output(`Generator configuration reset to defaults.`);
-                    }).catch(() => ctx.output(`Failed to load defaults module.`, true));
+                    const def = deepClone(DEFAULT_TREE_CONFIG);
+                    ctx.game.treeConfig = def;
+                    if (ctx.game.generator) {
+                        ctx.game.generator.config = deepClone(def);
+                    }
+                    ctx.output(`Generator configuration reset to defaults.`);
                 } else {
                     ctx.output(`Unknown reset target: '${target}'. Try 'help reset'.`, true);
                 }
@@ -599,18 +598,13 @@ export class Terminal {
             this.game.timeFormat = '24h';
             const rnd = Math.floor(Math.random() * 100000).toString();
             this.game.setSeed(rnd);
-            import('../procgen/TreeConfig').then(module => {
-                const def = deepClone(module.DEFAULT_TREE_CONFIG);
-                this.game.treeConfig = def;
-                if (this.game.generator) {
-                    this.game.generator.config = deepClone(def);
-                }
-                this.onOutput(`All settings and configurations factory reset!`);
-                if (this.onCommandExecuted) this.onCommandExecuted();
-            }).catch(() => {
-                this.onOutput(`All basic settings reset. Generator module pending.`, true);
-                if (this.onCommandExecuted) this.onCommandExecuted();
-            });
+            const def = deepClone(DEFAULT_TREE_CONFIG);
+            this.game.treeConfig = def;
+            if (this.game.generator) {
+                this.game.generator.config = deepClone(def);
+            }
+            this.onOutput(`All settings and configurations factory reset!`);
+            if (this.onCommandExecuted) this.onCommandExecuted();
         }
     }
 }
