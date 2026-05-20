@@ -104,6 +104,19 @@ export class Game {
         return this.cameraX;
     }
 
+    public getDebugState(): Record<string, unknown> {
+        return {
+            seed: this.seed,
+            cameraX: Math.round(this.cameraX * 100) / 100,
+            timeScale: this.timeScale,
+            skyTime: this.sky ? Math.round(this.sky.getTime() * 100) / 100 : null,
+            currentBiome: this.generator?.getCurrentBiome() ?? null,
+            timeFormat: this.timeFormat,
+            volume: this.volume,
+            isMuted: this.isMuted,
+        };
+    }
+
     public setCameraX(x: number) {
         this.cameraX = x;
     }
