@@ -29,7 +29,9 @@ export class CityGenerator {
         this.rng = root;
         this.lastX = new Array(layerCount).fill(0);
         // BiomeSystem gets its own forked sub-stream so its draws don't correlate with city geometry.
-        this.biomeSystem = new BiomeSystem(root.fork('biome'));
+        // The seed string is also passed so the initial biome is a deterministic
+        // hash of the seed (issue #51), insulated from any future fork-order changes.
+        this.biomeSystem = new BiomeSystem(root.fork('biome'), seed);
 
         if (config) {
             this.config = deepClone(config);
@@ -182,22 +184,17 @@ export class CityGenerator {
     }
 
     private pickColor(biome: BiomeType): { base: string, roof: string } {
-        let h = this.rng.nextInt(0, 360);
-        let s = 50;
-        let l = 50;
-
-        if (biome === 'desert') {
-            h = this.rng.nextInt(30, 60);
-            s = 40;
-            l = 70;
-        } else if (biome === 'tundra') {
-            h = this.rng.nextInt(180, 240);
-            s = 30;
-            l = 80;
-        } else if (biome === 'forest') {
-            h = this.rng.nextInt(90, 150);
-        }
-
+        // Read palette ranges from REGIONS so adding a biome requires only
+        // a regions edit, not an additional pickColor branch (issue #52).
+        // The RNG call sequence is preserved (one nextInt for hue) so seeded
+        // output stays byte-identical for biomes that had a hue range; the
+        // forest/desert/tundra ranges and saturation/lightness now live as data.
+        const def = REGIONS[biome];
+        const h = def.paletteHue
+            ? this.rng.nextInt(def.paletteHue.min, def.paletteHue.max)
+            : this.rng.nextInt(0, 360);
+        const s = def.paletteSaturation;
+        const l = def.paletteLightness;
         return { base: `hsl(${h}, ${s}%, ${l}%)`, roof: `hsl(${h}, ${s}%, ${l - 20}%)` };
     }
 }
