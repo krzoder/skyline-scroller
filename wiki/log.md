@@ -6,6 +6,43 @@ type: log
 
 # Log
 
+## 2026-05-27 - architecture pass 2 kickoff + dead-code batch 1+2 + dependabot
+
+Big day. After DEC-10 + #38/#39/#40 fixes shipped overnight, the user asked for a full second-pass architectural review plus a dead-code sweep.
+
+**DEC-11 architecture pass 2** ([[DEC-11-architecture-pass-2]], [[plans/architecture-pass-2]], [[concepts/test-scenarios]] all filed):
+- 5 Explore agents investigated engine / procgen / UI / utils+config / test-coverage; 2 Codex agents verified.
+- Adopted 9 proposals. Blocked 3 (CameraController / RenderPipeline / CachedPattern - micro-extractions without boundary).
+- Codex MISSING addition: Game.update was querying `#ui-seed-val`/`#ui-time-val` on every frame; engine -> UI DOM leak. Made it Stage A.
+- 23-test high-ROI cluster catalogued with concrete numeric assertions (Codex B replaced vague "is deterministic" with seed-specific golden values).
+
+**Shipped today** (all via admin merge - self-hosted homelab runner remained offline so `fidom-verified` gate never materialised; user explicitly authorised the bypass when CI + tests + Codex were green):
+- PR #43: DEC-11 Stage A - HUD state snapshot API. `Game.getStateSnapshot()` mutates one cached object; `onTick(cb)` registers listeners; `src/ui/seed-display.ts` owns the HUD DOM. Codex caught a splice-during-iteration race; fix applied (slice the listener list before iterating).
+- PR #44: dead-code batch 1 - 4 interaction-free micro-cleanups (Terminal trimLeft->trimStart, Game ctx honest null narrowing, Layer.draw drop unused `_screenHeight`, Tree drop unused `ALL_TREE_TYPES` export).
+- PR #35, #36, #37: dependabot bumps - vite-ecosystem patch, codeql-action + release-drafter minor, marocchino/sticky-pull-request-comment 2.x -> 3.0.4 (major bump but only Node-runtime, inputs unchanged).
+
+**Dead-code 11-swarm + Codex L+M cross-review** ([[concepts/test-scenarios]] referenced):
+- 11 Explore agents scoured engine / procgen / UI / utils+config / CSS / tests+CI / wiki / Building / Tree / SkySystem / custom-gen / Terminal.
+- 24 candidate findings. Two Codex agents independently rejected 9 false positives:
+  - Terminal reset y/yes fall-through: intentional ("Executing normally..." documented).
+  - SkySystem keyframes t=2.5 + t=4.0: identical by design (darkest-night plateau).
+  - SkySystem `bounds.maxX`: stored field unused but local var needed for cloud-spawn off-screen.
+  - Random.ts `max <= min` guard: removal would also drop RNG-state-advance + inverted-range semantic.
+  - Determinism.test.ts overlap: tests BiomeSystem integration, not just fork.
+  - deepClone wrapper: tested shared API.
+- 7 more findings deferred to existing DEC-11 stages where they naturally overlap.
+- 4 landed in batch 1 (PR #44). Remaining batches: wiki accuracy (PR #45 - this), CSS dedup, registry id removal.
+
+**PR #45 in flight** (this commit): wiki accuracy. 6 entity pages had stale `src/engine/...` source paths; bumped to `src/procgen/entities/...` per PR #15. Loc counts refreshed. `plans/simplification-plan.md` flipped `proposed -> implemented` with completion date and a pointer to [[plans/architecture-pass-2]].
+
+**Deferred** (not done today):
+- `maps/complexity.md` + `maps/dependencies.md` regen - per Codex M, defer until after DEC-11 Stages E + H so the maps reflect the new shape.
+- Stages B-J of DEC-11 - planned but not started.
+- CSS `.setting-group` + `!important` cleanup - Codex M flagged interaction with Stage B + inline-style overrides.
+- Registry `id` field removal - changes BiomeDefinition shape; coordinate with Stage F.
+
+**Operational note**: homelab self-hosted runner is offline for at least ~24h now. Admin merge is the pragmatic path while CI + Codex + tests are the gates. If the runner stays flaky we should reassess DEC-10's hard requirement.
+
 ## 2026-05-27 - both PRs merged via admin (homelab runner offline)
 
 - **PR #42 merged** (77f8bb3 -> main): layer pixel-snap fix for #40.
