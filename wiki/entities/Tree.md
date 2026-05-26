@@ -2,8 +2,8 @@
 name: Tree
 description: Six-variant CityEntity drawn from primitive shapes; cactus optionally flowered.
 type: entity
-source: src/engine/Tree.ts
-loc: 187
+source: src/procgen/entities/Tree.ts
+loc: 160
 ---
 
 # Tree
