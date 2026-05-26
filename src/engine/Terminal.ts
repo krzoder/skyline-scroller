@@ -98,7 +98,7 @@ export class Terminal {
     }
 
     public getSuggestions(input: string): AutocompleteSuggestion[] {
-        if (!input.trimLeft()) return [];
+        if (!input.trimStart()) return [];
         const matches = input.match(/\S+/g) || [];
         const endsWithSpace = /\s$/.test(input);
 

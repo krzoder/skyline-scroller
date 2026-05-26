@@ -28,7 +28,7 @@ export class Layer {
         });
     }
 
-    public draw(ctx: CanvasRenderingContext2D, cameraX: number, screenWidth: number, _screenHeight: number, scaleFactor: number = 1) {
+    public draw(ctx: CanvasRenderingContext2D, cameraX: number, screenWidth: number, scaleFactor: number = 1) {
         // Snap layerViewX to an integer device-pixel boundary. cameraX is a
         // float (time * speed); without snapping, the fractional part jitters
         // every frame, and Canvas2D rasterises adjacent draws onto different
