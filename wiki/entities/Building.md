@@ -2,8 +2,8 @@
 name: Building
 description: Pre-baked canvas of body + windows + roof; the urban feature on layers 2 and 3.
 type: entity
-source: src/engine/Building.ts
-loc: 127
+source: src/procgen/entities/Building.ts
+loc: 114
 ---
 
 # Building

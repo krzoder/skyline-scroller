@@ -2,8 +2,8 @@
 name: Landscape
 description: Biome-shaped silhouette (hill, dune, peaks, skyline) on layers 0 and 1.
 type: entity
-source: src/engine/Landscape.ts
-loc: 175
+source: src/procgen/entities/Landscape.ts
+loc: 144
 ---
 
 # Landscape

@@ -2,8 +2,8 @@
 name: Ground
 description: Flat coloured strip — one per chunk per layer; the only always-present chunk component.
 type: entity
-source: src/engine/Ground.ts
-loc: 55
+source: src/procgen/entities/Ground.ts
+loc: 53
 ---
 
 # Ground

@@ -2,8 +2,8 @@
 name: CityEntity
 description: Abstract base providing offscreen-cache + padding template-method for renderables.
 type: entity
-source: src/engine/CityEntity.ts
-loc: 65
+source: src/procgen/entities/CityEntity.ts
+loc: 48
 ---
 
 # CityEntity

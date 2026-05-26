@@ -2,8 +2,8 @@
 name: TextureGenerator
 description: Stateless static factory for brick and wood pattern canvases consumed only by Building.
 type: entity
-source: src/engine/TextureGenerator.ts
-loc: 46
+source: src/procgen/entities/TextureGenerator.ts
+loc: 45
 ---
 
 # TextureGenerator

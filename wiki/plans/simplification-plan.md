@@ -2,8 +2,10 @@
 name: Skyline Scroller Master Simplification Plan
 description: Single source-of-truth plan that consolidates DEC-01..05 (plus prospective DEC-06/07) and 15 swarm scans into 10 commit-sized stages. Pre-commit Codex review per stage, direct push to main, each stage individually revertable.
 type: plan
-status: proposed
+status: implemented
 date: 2026-05-20
+completed: 2026-05-27
+followup: "[[plans/architecture-pass-2]] for second-pass refactor work (DEC-11)"
 deciders: fszalaj
 related:
   - "[[DEC-01-unified-rng]]"
