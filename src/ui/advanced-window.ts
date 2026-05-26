@@ -10,6 +10,7 @@
 
 import type { Game } from '../engine/Game';
 import { evalExpression } from '../utils/Expression';
+import { clamp } from '../utils/math';
 
 export interface AdvancedWindowDeps {
     game: Game;
@@ -115,7 +116,7 @@ export function initAdvancedWindow(deps: AdvancedWindowDeps): AdvancedWindowHand
     }
 
     function executeAdvSpeedSet(val: number, recenter: boolean): void {
-        const clamped = Math.max(-10000, Math.min(10000, val));
+        const clamped = clamp(val, -10000, 10000);
         if (recenter) currentAdvSpeedCenter = clamped;
         game.setTimeScale(clamped);
         updateAdvSpeedUI(recenter);

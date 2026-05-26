@@ -5,6 +5,7 @@
  */
 
 import type { Game } from '../engine/Game';
+import { clamp } from '../utils/math';
 
 export interface AudioControlsDeps {
     game: Game;
@@ -79,7 +80,7 @@ export function initAudioControls(deps: AudioControlsDeps): AudioControls {
 
         const base = isMuted ? (lastVolume || DEFAULT_VOLUME) : currentVolume;
         const delta = e.deltaY < 0 ? VOL_WHEEL_STEP : -VOL_WHEEL_STEP;
-        setGlobalVolume(Math.max(0, Math.min(100, base + delta)), false);
+        setGlobalVolume(clamp(base + delta, 0, 100), false);
         showVolumeBubble();
     });
 

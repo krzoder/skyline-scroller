@@ -63,3 +63,12 @@ export class Random {
         return new Random(childSeed);
     }
 }
+
+/**
+ * Entropy entry point for seed inputs. NOT seeded - uses native Math.random
+ * as the entropy source. Use only at UI / terminal level where a fresh
+ * external seed is needed; engine code must consume Random.fork instead.
+ */
+export function generateRandomSeed(): string {
+    return Math.floor(Math.random() * 100000).toString();
+}

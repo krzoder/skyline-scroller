@@ -1,6 +1,8 @@
 import { installGlobalErrorHandlers } from './ui/error-toast';
 import { initSeedControls } from './ui/seed-controls';
 import { initSeedDisplay } from './ui/seed-display';
+import { clamp } from './utils/math';
+import { generateRandomSeed } from './utils/Random';
 import { initFullscreenToggle, initSpeedGestures, toggleFullscreen } from './ui/gestures';
 import { initAudioControls } from './ui/audio-controls';
 import { toggleWindow } from './ui/window-manager';
@@ -328,7 +330,7 @@ const getSpeedFromSlider = (val: number) => Math.pow(10, val);
 const getSliderFromSpeed = (val: number) => Math.log10(val);
 
 const updateSpeed = (speed: number) => {
-    speed = Math.max(0.1, Math.min(10, speed));
+    speed = clamp(speed, 0.1, 10);
 
     const sliderVal = getSliderFromSpeed(speed);
     if (document.activeElement !== speedSlider) {
@@ -403,8 +405,7 @@ installKeyboardShortcuts({
         }
     },
     randomizeSeed: () => {
-        const newSeed = Math.floor(Math.random() * 100000).toString();
-        game.setSeed(newSeed);
+        game.setSeed(generateRandomSeed());
     },
     toggleSettings: () => { toggleWindow(settingsWindow); },
     toggleAdvanced: () => {

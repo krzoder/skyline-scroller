@@ -6,6 +6,8 @@
  * module state and will move with the audio extraction.
  */
 
+import { clamp } from '../utils/math';
+
 export function initFullscreenToggle(btn: HTMLElement): void {
     btn.addEventListener('click', toggleFullscreen);
 }
@@ -72,7 +74,7 @@ export function initSpeedGestures(deps: SpeedGestureDeps): void {
 
     document.addEventListener('mousemove', (e) => {
         if (!isDragging || document.pointerLockElement !== canvas) return;
-        currentSpeedLog = Math.max(MIN_LOG, Math.min(MAX_LOG, currentSpeedLog + e.movementX * DRAG_SENSITIVITY));
+        currentSpeedLog = clamp(currentSpeedLog + e.movementX * DRAG_SENSITIVITY, MIN_LOG, MAX_LOG);
         const newSpeed = deps.getSpeedFromSlider(currentSpeedLog);
         deps.updateSpeed(newSpeed);
         gestureSpeedVal.innerText = newSpeed.toFixed(2) + 'x';
