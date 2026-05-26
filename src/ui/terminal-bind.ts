@@ -50,11 +50,16 @@ export function initTerminalBind(deps: TerminalBindDeps): TerminalBindHandle {
             el.style.display = 'flex';
             el.style.alignItems = 'center';
             if (idx === terminalActiveHintIndex) {
-                el.innerHTML = `
-                    <span style="font-weight:bold; font-size:1.05em; color:#fff;">${hint.value}</span>
-                    <span style="color:rgba(255,255,255,0.4); margin:0 6px;">|</span>
-                    <span style="font-size:0.9em; color:#00E676;">${hint.description}</span>
-                `;
+                const valSpan = document.createElement('span');
+                valSpan.style.cssText = 'font-weight:bold; font-size:1.05em; color:#fff;';
+                valSpan.textContent = hint.value;
+                const sepSpan = document.createElement('span');
+                sepSpan.style.cssText = 'color:rgba(255,255,255,0.4); margin:0 6px;';
+                sepSpan.textContent = '|';
+                const descSpan = document.createElement('span');
+                descSpan.style.cssText = 'font-size:0.9em; color:#00E676;';
+                descSpan.textContent = hint.description;
+                el.append(valSpan, sepSpan, descSpan);
                 el.style.background = 'rgba(0, 200, 80, 0.15)';
                 el.style.color = '#fff';
                 el.style.boxShadow = '0 2px 6px rgba(0, 200, 80, 0.2)';
