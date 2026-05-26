@@ -8,6 +8,16 @@ import { CAMERA_SPEED_PX_PER_S, GROUND_HEIGHT_PX } from '../config';
 
 import { SkySystem } from './SkySystem';
 
+export interface GameStateSnapshot {
+    seed: string;
+    cameraX: number;
+    skyTime: number | null;
+    timeFormat: 'score' | '24h' | '12h';
+    biome: string | null;
+}
+
+export type TickListener = (snap: Readonly<GameStateSnapshot>) => void;
+
 export class Game {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
@@ -36,6 +46,18 @@ export class Game {
     private isPreview: boolean = false;
     public timeFormat: 'score' | '24h' | '12h' = '24h';
 
+    // Reused single snapshot so per-frame fan-out to listeners costs no
+    // allocation. Mutated in-place inside getStateSnapshot(); listeners get
+    // a Readonly view and must not retain the reference across ticks.
+    private readonly snapshot: GameStateSnapshot = {
+        seed: '',
+        cameraX: 0,
+        skyTime: null,
+        timeFormat: '24h',
+        biome: null,
+    };
+    private tickListeners: TickListener[] = [];
+
     constructor(canvas: HTMLCanvasElement, isPreview: boolean = false) {
         this.canvas = canvas;
         this.isPreview = isPreview;
@@ -56,7 +78,7 @@ export class Game {
     }
 
     public dispose() {
-        if (!this.isRunning && this.rafId === null && this.resizeHandler === null) return; // idempotent
+        if (!this.isRunning && this.rafId === null && this.resizeHandler === null && this.tickListeners.length === 0) return; // idempotent
         this.isRunning = false;
         if (this.rafId !== null) {
             cancelAnimationFrame(this.rafId);
@@ -66,6 +88,7 @@ export class Game {
             window.removeEventListener('resize', this.resizeHandler);
             this.resizeHandler = null;
         }
+        this.tickListeners.length = 0;
     }
 
     private initNoise(rng: Random) {
@@ -115,6 +138,23 @@ export class Game {
             timeFormat: this.timeFormat,
             volume: this.volume,
             isMuted: this.isMuted,
+        };
+    }
+
+    public getStateSnapshot(): Readonly<GameStateSnapshot> {
+        this.snapshot.seed = this.seed;
+        this.snapshot.cameraX = this.cameraX;
+        this.snapshot.skyTime = this.sky ? this.sky.getTime() : null;
+        this.snapshot.timeFormat = this.timeFormat;
+        this.snapshot.biome = this.generator?.getCurrentBiome() ?? null;
+        return this.snapshot;
+    }
+
+    public onTick(cb: TickListener): () => void {
+        this.tickListeners.push(cb);
+        return () => {
+            const i = this.tickListeners.indexOf(cb);
+            if (i >= 0) this.tickListeners.splice(i, 1);
         };
     }
 
@@ -191,31 +231,13 @@ export class Game {
 
         this.layers.forEach(l => l.prune(this.cameraX));
 
-        // Debug UI only runs in the main game, not the preview canvas.
-        if (!this.isPreview) {
-            const uiSeedVal = document.getElementById('ui-seed-val');
-            const uiTimeVal = document.getElementById('ui-time-val');
-
-            if (uiSeedVal && uiSeedVal.innerText !== this.seed) {
-                uiSeedVal.innerText = this.seed;
-            }
-            if (uiTimeVal) {
-                if (this.timeFormat === 'score') {
-                    uiTimeVal.innerText = Math.floor(this.cameraX).toString();
-                } else if (this.sky) {
-                    const t = this.sky.getTime();
-                    const h = Math.floor(t);
-                    const m = Math.floor((t - h) * 60);
-                    const mStr = m.toString().padStart(2, '0');
-
-                    if (this.timeFormat === '12h') {
-                        const ampm = h >= 12 ? 'PM' : 'AM';
-                        const h12 = h % 12 || 12;
-                        uiTimeVal.innerText = `${h12}:${mStr} ${ampm}`;
-                    } else {
-                        uiTimeVal.innerText = `${h.toString().padStart(2, '0')}:${mStr}`;
-                    }
-                }
+        if (this.tickListeners.length > 0) {
+            const snap = this.getStateSnapshot();
+            // Snapshot the listener list so a self-unsubscribe inside a
+            // callback can't shift the next listener out of this frame.
+            const cbs = this.tickListeners.slice();
+            for (let i = 0; i < cbs.length; i++) {
+                cbs[i](snap);
             }
         }
     }

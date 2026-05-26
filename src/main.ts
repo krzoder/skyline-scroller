@@ -1,5 +1,6 @@
 import { installGlobalErrorHandlers } from './ui/error-toast';
 import { initSeedControls } from './ui/seed-controls';
+import { initSeedDisplay } from './ui/seed-display';
 import { initFullscreenToggle, initSpeedGestures, toggleFullscreen } from './ui/gestures';
 import { initAudioControls } from './ui/audio-controls';
 import { toggleWindow } from './ui/window-manager';
@@ -256,6 +257,10 @@ game.start();
 
 const uiSeedVal = document.getElementById('ui-seed-val');
 const uiTimeVal = document.getElementById('ui-time-val');
+
+if (uiSeedVal && uiTimeVal) {
+    initSeedDisplay({ game, uiSeedVal, uiTimeVal });
+}
 
 function copyToClipboard(element: HTMLElement | null, textFn: () => string) {
     if (!element) return;
