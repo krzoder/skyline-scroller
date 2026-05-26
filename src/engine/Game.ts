@@ -240,7 +240,7 @@ export class Game {
         this.ctx.translate(0, groundY);
 
         this.layers.forEach(layer => {
-            layer.draw(this.ctx, this.cameraX, logicalW, logicalH);
+            layer.draw(this.ctx, this.cameraX, logicalW, logicalH, this.scaleFactor);
         });
 
         this.ctx.restore();
