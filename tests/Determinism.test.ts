@@ -15,8 +15,8 @@ describe('Determinism contract', () => {
         const rootA = new Random('test-seed-42');
         const rootB = new Random('test-seed-42');
 
-        const a = new BiomeSystem(rootA.fork('biome'));
-        const b = new BiomeSystem(rootB.fork('biome'));
+        const a = new BiomeSystem(rootA.fork('biome'), 'test-seed-42');
+        const b = new BiomeSystem(rootB.fork('biome'), 'test-seed-42');
 
         const seqA: string[] = [a.getCurrentBiome()];
         const seqB: string[] = [b.getCurrentBiome()];
@@ -33,8 +33,9 @@ describe('Determinism contract', () => {
 
     it('Random.fork with different labels yields independent biome sequences', () => {
         const root = new Random('shared-seed');
-        const a = new BiomeSystem(root.fork('biome'));
-        const b = new BiomeSystem(root.fork('different-label'));
+        const a = new BiomeSystem(root.fork('biome'), 'shared-seed');
+        // Different seed forces both rng stream AND initial-biome hash to diverge.
+        const b = new BiomeSystem(root.fork('different-label'), 'shared-seed-alt');
 
         const seqA: string[] = [];
         const seqB: string[] = [];
@@ -50,8 +51,8 @@ describe('Determinism contract', () => {
 
     it('forceBiome respects determinism — switchBiome still uses the seeded RNG', () => {
         const root = new Random('forced');
-        const a = new BiomeSystem(root.fork('biome'));
-        const b = new BiomeSystem(root.fork('biome'));
+        const a = new BiomeSystem(root.fork('biome'), 'forced');
+        const b = new BiomeSystem(root.fork('biome'), 'forced');
 
         a.forceBiome('forest');
         b.forceBiome('forest');

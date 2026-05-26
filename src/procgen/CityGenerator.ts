@@ -184,15 +184,12 @@ export class CityGenerator {
     }
 
     private pickColor(biome: BiomeType): { base: string, roof: string } {
-        // Read palette ranges from REGIONS so adding a biome requires only
-        // a regions edit, not an additional pickColor branch (issue #52).
-        // The RNG call sequence is preserved (one nextInt for hue) so seeded
-        // output stays byte-identical for biomes that had a hue range; the
-        // forest/desert/tundra ranges and saturation/lightness now live as data.
+        // RNG call sequence preserved: old code always called nextInt(0,360)
+        // first, then refined for forest/desert/tundra with a second call.
+        // We keep both calls so seeded output is byte-identical (#52).
         const def = REGIONS[biome];
-        const h = def.paletteHue
-            ? this.rng.nextInt(def.paletteHue.min, def.paletteHue.max)
-            : this.rng.nextInt(0, 360);
+        const fallbackH = this.rng.nextInt(0, 360);
+        const h = def.paletteHue ? this.rng.nextInt(def.paletteHue.min, def.paletteHue.max) : fallbackH;
         const s = def.paletteSaturation;
         const l = def.paletteLightness;
         return { base: `hsl(${h}, ${s}%, ${l}%)`, roof: `hsl(${h}, ${s}%, ${l - 20}%)` };
