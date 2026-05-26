@@ -158,5 +158,3 @@ const TREE_SPECS: Record<TreeType, TreeSpec> = {
         },
     },
 };
-
-export const ALL_TREE_TYPES: TreeType[] = Object.keys(TREE_SPECS) as TreeType[];
