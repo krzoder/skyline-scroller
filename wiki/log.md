@@ -6,6 +6,31 @@ type: log
 
 # Log
 
+## 2026-05-27 (afternoon) - stage R-A reliability batch + big swarm + plan docs
+
+Stacked user directives over the afternoon kept extending scope:
+1. Architecture pass 2 second swarm (5 agents) -> DEC-11 + plans/architecture-pass-2 + concepts/test-scenarios filed (morning).
+2. Dead-code 11-swarm + 2 Codex L/M + batch 1+2 merged.
+3. Big swarm: security/reliability/zones/objects/settings/views -> 14 GitHub issues created (#48-#61).
+4. Graphics DPR fix shipped (PR #47).
+5. User dropped further scope: weather system, animations, mountains editable, UI redesign from scratch, more building types, "use web research not AI slop".
+6. 5 web-research agents -> visual-references.md + anti-ai-slop-checklist.md.
+7. 6-agent UI redesign swarm -> design recipes filed in plans/weather-textures-animations.md.
+
+**Plan written** ([[plans/weather-textures-animations]]): 26-stage roadmap covering weather (W-A..W-G), per-object textures (T-A, T-B), animations (A-A tree sway, A-B window break, sand overlay), settings UI (U-A, U-B, U-C, U-M mountains, U-W weather weights, U-Bldg building config), redesign from scratch (S-U), reliability/perf/security/CI/test cleanup (R-A, O-A, O-B, P-A, C-A, S-A, T-X), enterprise (E-A reduced-motion, E-B CSP+SRI, E-C web-vitals).
+
+**Codex plan review**: REVISE - 10 fixes applied (issue #48 added to closes list; stage count corrected; window-break time axis pinned to weatherEpoch; tree-sway flagged as intentionally non-deterministic; mobile frame-budget gate added before W-D).
+
+**Stage R-A shipped (PR #62)**: 4 fixes closing #49 (game-loop visible failure via queueMicrotask re-throw), #50 (preview-game leak on Apply - close() now called after setSeed), #51 (initial biome derived from seed hash insulated from fork order; RNG call preserved for parity), #52 (pickColor reads REGIONS palette; old dual-nextInt call sequence preserved).
+
+**Codex R-A review**: caught two determinism shifts on first pass (initial-biome nextInt removed + pickColor call count changed). Fix applied: discard rng.nextInt(0, ALL_BIOMES.length) in BiomeSystem ctor + restore fallbackH nextInt in pickColor. Tests updated to pass seed param. 67/67 green.
+
+**Wiki additions**: [[plans/weather-textures-animations]], [[concepts/anti-ai-slop-checklist]], [[concepts/visual-references]], [[meta/lint-report-2026-05-27]].
+
+**Still in flight**: 11 open issues (#48 security XSS, #53 biome tree variety, #54 localStorage, #55 stub buttons, #56 CI audit, #57 sky perf, #58 test infra, #59 noise overlay, #60 weather system, #61 per-object texture). 3 new feature issues from user directives: animations, mountains editor, building variety expansion.
+
+**Operational caveat**: homelab self-hosted runner still offline >24h. Admin merge remains the path of least resistance for low-risk + Codex-green PRs.
+
 ## 2026-05-27 - architecture pass 2 kickoff + dead-code batch 1+2 + dependabot
 
 Big day. After DEC-10 + #38/#39/#40 fixes shipped overnight, the user asked for a full second-pass architectural review plus a dead-code sweep.

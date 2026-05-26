@@ -4,14 +4,28 @@ import { BIOME_DURATION_MIN, BIOME_DURATION_MAX } from '../config';
 
 export type BiomeType = 'forest' | 'desert' | 'tundra' | 'plains' | 'city';
 
+// Initial-biome index derived from the seed string (#51) so it stays
+// stable across fork-order churn upstream.
+function pickInitialBiomeIndex(seed: string | number): number {
+    const s = typeof seed === 'string' ? seed : seed.toString();
+    let acc = 0;
+    for (let i = 0; i < s.length; i++) acc = (acc + s.charCodeAt(i)) >>> 0;
+    return acc % ALL_BIOMES.length;
+}
+
 export class BiomeSystem {
     private rng: Random;
     private currentBiome: BiomeType;
     private durationRemaining: number;
 
-    constructor(rng: Random) {
+    constructor(rng: Random, seed: string | number) {
         this.rng = rng;
-        this.currentBiome = ALL_BIOMES[this.rng.nextInt(0, ALL_BIOMES.length)];
+        // Discard the original nextInt that the pre-fix code spent picking
+        // the initial biome - the seed hash replaces it but the rng stream
+        // must advance the same number of steps or downstream determinism
+        // shifts.
+        this.rng.nextInt(0, ALL_BIOMES.length);
+        this.currentBiome = ALL_BIOMES[pickInitialBiomeIndex(seed)];
         this.durationRemaining = this.rng.nextInt(BIOME_DURATION_MIN, BIOME_DURATION_MAX);
     }
 

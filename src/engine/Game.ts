@@ -231,6 +231,10 @@ export class Game {
             console.error("Game Loop Error:", e);
             this.isRunning = false;
             this.rafId = null;
+            // Surface the crash to the global error handler so the toast
+            // appears - otherwise the canvas just freezes silently
+            // (issue #49). Re-throw outside the catch to escape the loop.
+            queueMicrotask(() => { throw e; });
             return;
         }
 

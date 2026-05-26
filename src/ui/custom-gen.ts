@@ -513,6 +513,10 @@ export function initCustomGen(deps: CustomGenDeps): CustomGenHandle {
             game.treeConfig = deepClone(previewGame.generator.config);
         }
         game.setSeed(seed || game.getSeed());
+        // Apply means "I'm done editing"; close the panel so the preview
+        // Game gets disposed (issue #50). Without this, repeated Apply+Open
+        // cycles leak preview RAF loops + resize listeners.
+        close();
     });
 
     btnGenReset.addEventListener('click', (e) => {
