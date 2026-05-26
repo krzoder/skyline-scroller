@@ -6,6 +6,16 @@ type: log
 
 # Log
 
+## 2026-05-26 - speed slider UX fix + flickering issue filed
+
+- **PR #41 opened**: `fix/speed-controls` branch fixes #38 (slider 0 was secretly -1x reverse, not stop) and #39 (basic Simulation Speed bar snapped to centre = 1x when Advanced drove outside [0.1, 10]).
+- `src/ui/advanced-window.ts`: slider now strictly non-negative end-to-end. Mapping: 0..500 -> speed 0..1 (500 snaps cleanly to 1.0x), 500..1000 -> 1..max. `speedRange` clamps `min` to `max(0, center - 10)`. Reverse / negative speeds reachable only via the input text box.
+- `src/main.ts` `advanced.onSpeedChange`: out-of-range advanced speeds now pin the basic bar to the matching extreme (-1 for slower than 0.1x, +1 for faster than 10x).
+- Build 79.36 kB / gzip 22.70 kB (unchanged). Tests 67/67. Hard rules untouched.
+- Issues #38, #39 assigned to fszalaj with comment linking to PR #41. Will close on merge.
+- **Issue #40 filed**: sub-pixel jitter on biome borders during scroll. Verified by two parallel agents (Explore + Codex rescue). Primary suspect: `cameraX` float passed through `Layer.draw` parallax multiplier (Layer.ts:32) without snapping, combined with non-integer `scaleFactor=1.6` in `Game.ts:228`. Fix path: snap `layerViewX = Math.round(cameraX * speedModifier * effectiveScale) / effectiveScale` so all drawables in a layer step in unison.
+- Next: branch `fix/biome-border-flicker` to implement the snap, codex review, fidom preview, approval, merge.
+
 ## 2026-05-20 (post-DEC-10) - PR preview on fidom, main on Pages, formal approval gate
 
 - **DEC-10 implemented**: fidom is now PR-preview, Pages is production.

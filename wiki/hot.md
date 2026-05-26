@@ -4,88 +4,56 @@ description: Rolling current-state snapshot of the project. Overwrite each subst
 type: hot
 ---
 
-# Hot - 2026-05-20 (end of day, post-DEC-10)
+# Hot - 2026-05-26 (mid-day, 2 PRs awaiting fidom approval)
 
-**Status**: 25 PR-ów zmergowanych na main, 0 open, 0 zombie branche, 0 issues. Tests 67/67. Build clean. Bundle 79.4 kB / gzip 22.7 kB. Wersja **1.2.0**. README po angielsku.
+**Status**: 2 open PRs (#41 speed slider UX, #42 layer pixel-snap). 0 closed-but-unmerged. 3 issues active (#38, #39, #40) - all assigned fszalaj, all blocked on merge of their fix PR. Build clean. Bundle 79.42 kB / gzip 22.74 kB. Tests 67/67. Wersja 1.2.0. Last merge to main: d4220d2 (DEC-10 manual setup tracking, 2026-05-20).
 
-## Deploy story (DEC-10, 2026-05-20)
+## In-flight PRs
 
-- **GitHub Pages (`krzoder.github.io/skyline-scroller/`)** = production. Auto-deploys on push to `main` via `deploy.yml`. No change.
-- **fidom.link (`skyline-scroller.fidom.link`)** = PR preview. `pr-preview.yml` builds PR HEAD on ubuntu-hosted runner, atomic-swaps dist into nginx via self-hosted homelab runner. Sticky bot comment posts preview URL + link to approval gate.
-- **Approval gate (BLOCKING merge)**: GitHub Environment `fidom-verified` with required reviewer (self). Job `await-approval` pauses until user clicks "Review deployments -> Approve" in GitHub Actions UI. Branch protection on `main` requires this status check, so merge stays blocked until current HEAD SHA is approved. Pushing a new commit invalidates prior approval.
-- **One-time setup TODO**: tracked in [[operations/dec-10-manual-setup]] (2 steps in GitHub UI: create `fidom-verified` env with required reviewer + add branch protection check on `main`). Approval gate will not block merges until both are applied.
-- On PR close (merge or abandon), rebuilds main and deploys to fidom so no stale content lingers.
-- Security: PR's npm scripts run on GitHub-hosted (untrusted); self-hosted only does artifact download + atomic mv (trusted). Codex flagged this as a blocking requirement.
-- Concurrency: global `fidom-preview` group with cancel-in-progress. Latest PR push wins. Documented in sticky comment.
-- Homelab repo's `deploy-skyline-scroller.yml` daily cron + path-push triggers DISABLED (manual + first-time-setup only) to avoid racing with PR previews.
-- `deploy-fidom.yml` in skyline-scroller stays as emergency "rebuild main → fidom" lever (workflow_dispatch only).
+| PR | Branch | Closes | Status | Note |
+|---|---|---|---|---|
+| [#41](https://github.com/krzoder/skyline-scroller/pull/41) | `fix/speed-controls` | #38, #39 | All CI green; **fidom preview CANCELLED by #42 push** | Needs empty-commit re-trigger or merge of #42 first |
+| [#42](https://github.com/krzoder/skyline-scroller/pull/42) | `fix/biome-border-flicker` | #40 | Building (in progress as of last poll) | Holds the live fidom preview right now |
+
+**Concurrency reminder**: `fidom-preview` workflow group has `cancel-in-progress`. Latest PR push wins. Documented in PR sticky comments.
+
+## What changed today (2026-05-26)
+
+### #41 - speed slider UX (#38 + #39)
+
+- `src/ui/advanced-window.ts`: slider strictly non-negative. `speedRange` returns `{0, 20}` for default centre; non-default centre uses `{max(0, center-10), center+10}`. Mapping: slider 0..500 → speed 0..1, 500..1000 → 1..max.
+- `src/main.ts` `advanced.onSpeedChange`: out-of-range advanced speeds pin basic bar to extreme (-1 / +1) instead of snapping to centre.
+- Reverse / negative scrolling now reachable only via the input text box.
+
+### #42 - layer pixel-snap (#40)
+
+- `src/engine/Layer.ts`: `Layer.draw` gains `scaleFactor` parameter, snaps `layerViewX = Math.round(cameraX * speedModifier * effectiveScale) / effectiveScale`. Whole layer translates in integer device-pixel steps; edges no longer wobble between columns.
+- `src/engine/Game.ts`: passes `this.scaleFactor` to each `layer.draw(...)` call.
+- Verified by parallel Explore agent + Codex (independent investigation -> approve).
+- Per-entity edges may still anti-alias (if `entity.x * effectiveScale` non-integer) - that's a STABLE blend (no jitter) and a separate follow-up if desired.
+
+## Deploy story (unchanged from 2026-05-20)
+
+- **GitHub Pages (`krzoder.github.io/skyline-scroller/`)** = production, auto-deploys on push to `main`.
+- **fidom.link (`skyline-scroller.fidom.link`)** = PR preview. `pr-preview.yml` builds PR HEAD on ubuntu-hosted, atomic-swaps via self-hosted homelab runner.
+- **Approval gate (BLOCKING merge)**: `fidom-verified` Environment with required reviewer (self). Approve in Actions UI to unblock merge.
+- One-time setup tracked in [[operations/dec-10-manual-setup]].
 
 ## Wielka dekompozycja main.ts (DEC-04 implemented)
 
-```
-main.ts: 1722 -> 427 LOC  (-1295 LOC, -75.2%)
-```
+main.ts: 1722 -> 427 LOC (-75.2%). 10 modules in `src/ui/`. (Details unchanged from 2026-05-20 hot cache - see `log.md`.)
 
-10 modułów wycięte do `src/ui/`:
+## Hard rules all clean
 
-| Moduł | LOC | Odpowiedzialność |
-|---|---:|---|
-| custom-gen.ts | 593 | Custom Generation panel (preview Game + tree config) |
-| advanced-window.ts | 230 | Advanced Options (clock format + advanced speed eval) |
-| terminal-bind.ts | 185 | Terminal mount + history + autocomplete |
-| audio-controls.ts | 117 | Volume slider + mute + wheel-volume + lazy bubble |
-| gestures.ts | 97 | Fullscreen + pointer-lock drag + dblclick reset |
-| keyboard-shortcuts.ts | 72 | f/g/r/s/a/m/t/Enter/Escape priority chain |
-| seed-controls.ts | 37 | Seed input + Set/Randomize buttons |
-| error-toast.ts | 37 | HUD toast + global error handlers |
-| window-manager.ts | 24 | toggleWindow + dismissOnOutsideClick |
-| settings-window.ts | 23 | btnSettings toggle + outside-click dismiss |
-
-main.ts to teraz tylko HTML template + DOM refs + orchestration init + `syncUIFromTerminal`.
-
-## Hard rules wszystkie czyste
-
-- D18 (`Function()` eval) - PR #9
-- D19 (`Math.random()` w preview) - PR #9
-- deepClone fake fix (`JSON.parse(JSON.stringify())` -> `structuredClone()`) - PR #13
-- ALL_BIOMES mutability trap (`Object.freeze` + readonly) - PR #31
-- SkySystem `Date.now()` fallback (rng required) - PR #31
-- `[INEFFECTIVE_DYNAMIC_IMPORT]` Vite warning - PR #31
-
-## Inne istotne refaktoringi
-
-- REGIONS jako single source of truth dla danych biomu (PR #14)
-- Tree TREE_SPECS registry (PR #16)
-- Entity files moved engine/ -> procgen/entities/ (PR #15)
-- src/config.ts dla tunable constants (PR #19)
-- `/debug-state` terminal command + dev-setup Node 24 preflight (PR #18)
+- D18 (`Function()` eval), D19 (`Math.random()` in preview), deepClone, ALL_BIOMES frozen, SkySystem rng required, `[INEFFECTIVE_DYNAMIC_IMPORT]` Vite warning - all addressed.
 
 ## Tests
 
-5 plików, 67 case'ów:
-- `Random.test.ts` - 14 cases (fork + nextInt edge + distribution)
-- `deepClone.test.ts` - 8 cases (Date, Map+Set, NaN, circular)
-- `Expression.test.ts` - 36 cases (parametrized: arithmetic + safety reject)
-- `regions.test.ts` - 7 cases (registry + frozen contract)
-- `Determinism.test.ts` - 3 cases (DEC-01 BiomeSystem stream identity)
+5 plików, 67 case'ów. No new tests in #41/#42 (UI rendering / Canvas2D - hard to unit-test; visual verification on fidom is the gate).
 
-Wciąż brakuje: integration test dla CityGenerator stream identity + REGIONS->backgroundGround contract (deferred, Codex flagged).
+## Open work (deferred)
 
-## Wiki vault cleanup (2026-05-20 koniec dnia)
-
-- **7 pustych stub plików usunięte** (0 bajtów każdy): `concepts/autocomplete-engine`, `concepts/clouds`, `concepts/dualism`, `concepts/visibility-toggle-class`, `entities/Terminal-Bar`, `decisions/legacy-swarm-history`, `operations/build-and-deploy`.
-- **171 dead wikilinków stripped z 33 plików** - to były "phantom nodes" widoczne w Obsidian graph view jako puste tytuły bez treści. Skonwertowane do plain text gdzie miały sens, usunięte gdzie nie.
-- Vault: **60 plików .md** (było 65), 0 dead wikilinków (poza `.scan/` które są immutable raw scan output).
-
-## Deployment
-
-- **GitHub Pages** (`krzoder.github.io/skyline-scroller/`) - automat po merge do main, ~2-3 min.
-- **fidom.link** (`skyline-scroller.fidom.link`) - self-hosted runner workflow w `fszalaj/homelab` (Traefik route + nginx compose + dist sync). Manual trigger; auto-trigger TODO.
-- Bundle 79.4 kB / gzip 22.7 kB.
-- Node 24 (Active LTS) wymagany - `package.json` ma `engines.node: ">=24.0.0 <27.0.0"` od PR #docs/end-of-day-update.
-
-## Otwarte sprawy (świadomie deferred)
-
-- 3x `Math.random()` w `src/ui/seed-controls.ts` + `src/ui/custom-gen.ts` (linia 521, 560) - policy nit: hard rule mówi "tylko main.ts + Terminal.ts". To są legitimowane entropy entry pointy z dekompozycji - albo update rule, albo refactor.
-- CityGenerator `pickMaterial`/`pickRoof`/`pickColor` - dane są już w REGIONS, ale logika ich nie używa. Wymaga determinism test rozszerzenia przed refactorem.
-- Palette extraction (~30 inline kolorów w `src/ui/`) - kosmetyczne, niski priorytet.
+- 3x `Math.random()` w `src/ui/seed-controls.ts` + `src/ui/custom-gen.ts` - legitimate entropy entry points after decomposition; rule update or refactor.
+- CityGenerator `pickMaterial`/`pickRoof`/`pickColor` - REGIONS-aware refactor pending determinism test extension.
+- Per-entity pixel snap (follow-up to #42) - currently entity edges still anti-alias; could remove residual blur with another sweep across draw calls.
+- Palette extraction (~30 inline colors in `src/ui/`).
