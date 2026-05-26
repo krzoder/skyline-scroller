@@ -336,13 +336,16 @@ const updateSpeed = (speed: number) => {
 };
 
 advanced.onSpeedChange((spd: number) => {
-    // The base slider only covers 0.1..10. If the advanced speed is outside
-    // that range, snap the base slider to 0 to signal "manual override".
+    // The base slider only covers 0.1..10. Outside that range, pin to the
+    // matching extreme so the bar visibly reflects "slower" vs "faster"
+    // instead of misleadingly snapping back to the 1.0x centre.
     if (document.activeElement === speedSlider) return;
     if (spd >= 0.1 && spd <= 10) {
         speedSlider.value = getSliderFromSpeed(spd).toString();
+    } else if (spd > 10) {
+        speedSlider.value = "1";
     } else {
-        speedSlider.value = "0";
+        speedSlider.value = "-1";
     }
 });
 

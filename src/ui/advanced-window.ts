@@ -70,28 +70,30 @@ export function initAdvancedWindow(deps: AdvancedWindowDeps): AdvancedWindowHand
         updateResetButton(btnResetTimeFmt, clockFmt === '24h');
     }
 
+    // Slider is non-negative: leftmost position is always "stop" (speed 0).
+    // Reverse / negative speeds are reachable only via the input text box.
     function speedRange(center: number): { min: number; max: number } {
-        if (center === 1.0) return { min: -1.0, max: 20.0 };
-        return { min: center - 10, max: center + 10 };
+        if (center === 1.0) return { min: 0, max: 20.0 };
+        return { min: Math.max(0, center - 10), max: center + 10 };
     }
 
     function getAdvSpeedFromSlider(sliderVal: number, center: number): number {
         const { min, max } = speedRange(center);
-        if (min < 0 && max > 1) {
-            // Dedicate 0..100 to negatives, 100..500 to 0..1, 500..1000 to >=1.
+        if (min === 0 && max > 1) {
+            // Split: 0..500 -> 0..1 (so 500 snaps cleanly to default 1.0x),
+            // 500..1000 -> 1..max for fast-forward range.
             if (sliderVal >= 500) return 1 + ((max - 1) * (sliderVal - 500) / 500);
-            if (sliderVal >= 100) return (sliderVal - 100) / 400;
-            return min + ((0 - min) * sliderVal / 100);
+            return sliderVal / 500;
         }
         return min + ((max - min) * sliderVal / 1000);
     }
 
     function getSliderFromAdvSpeed(speed: number, center: number): number {
         const { min, max } = speedRange(center);
-        if (min < 0 && max > 1) {
+        if (min === 0 && max > 1) {
             if (speed >= 1) return 500 + (500 * (speed - 1) / (max - 1));
-            if (speed >= 0) return 100 + (400 * speed);
-            return 100 * (speed - min) / (0 - min);
+            if (speed >= 0) return 500 * speed;
+            return 0; // negative speeds clamp to the leftmost slider position
         }
         return 1000 * (speed - min) / (max - min);
     }
