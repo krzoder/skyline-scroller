@@ -40,6 +40,13 @@ export class Game {
     private resizeHandler: (() => void) | null = null;
 
     private readonly scaleFactor = 1.6;
+    // Device-pixel ratio captured at construction + refreshed on resize/zoom.
+    // The canvas bitmap is sized clientPx * dpr; rendering ctx is scaled by
+    // dpr so drawing math stays in CSS-pixel-units. Effective device scale
+    // is dpr * scaleFactor; Layer.draw uses that for its pixel-snap math.
+    private dpr: number = 1;
+    private dprMediaQuery: MediaQueryList | null = null;
+    private dprChangeHandler: (() => void) | null = null;
     public timeScale: number = 1.0;
     private volume: number = 1.0;
     private isMuted: boolean = false;
@@ -72,6 +79,9 @@ export class Game {
         if (!this.isPreview) {
             this.resizeHandler = () => this.resize();
             window.addEventListener('resize', this.resizeHandler);
+            // Separate handler so zoom (which changes dpr without firing
+            // 'resize') triggers the same re-arm path.
+            this.dprChangeHandler = () => this.resize();
         }
         this.resize();
     }
@@ -86,6 +96,11 @@ export class Game {
         if (this.resizeHandler !== null) {
             window.removeEventListener('resize', this.resizeHandler);
             this.resizeHandler = null;
+        }
+        if (this.dprMediaQuery !== null && this.dprChangeHandler !== null) {
+            this.dprMediaQuery.removeEventListener('change', this.dprChangeHandler);
+            this.dprMediaQuery = null;
+            this.dprChangeHandler = null;
         }
         this.tickListeners.length = 0;
     }
@@ -180,8 +195,17 @@ export class Game {
     }
 
     public resize() {
-        this.canvas.width = this.canvas.clientWidth;
-        this.canvas.height = this.canvas.clientHeight;
+        this.dpr = window.devicePixelRatio || 1;
+        this.canvas.width = this.canvas.clientWidth * this.dpr;
+        this.canvas.height = this.canvas.clientHeight * this.dpr;
+        // Re-arm the DPR media-query so a browser zoom that crosses the
+        // current dppx boundary triggers another resize (re-issuing this
+        // function pointer-snapshots the new ratio).
+        if (!this.isPreview && this.dprChangeHandler) {
+            if (this.dprMediaQuery) this.dprMediaQuery.removeEventListener('change', this.dprChangeHandler);
+            this.dprMediaQuery = window.matchMedia(`(resolution: ${this.dpr}dppx)`);
+            this.dprMediaQuery.addEventListener('change', this.dprChangeHandler);
+        }
     }
 
     public start() {
@@ -216,7 +240,11 @@ export class Game {
     private update(dt: number) {
         this.cameraX += this.cameraSpeed * dt;
 
-        const logicalW = this.canvas.width / this.scaleFactor;
+        // Use clientWidth (CSS pixels) directly instead of canvas.width/dpr -
+        // at fractional DPR (e.g. Windows 1.5x) the bitmap is rounded to an
+        // integer while clientWidth stays exact, so dividing by dpr would
+        // re-introduce sub-pixel drift.
+        const logicalW = this.canvas.clientWidth / this.scaleFactor;
 
         this.sky?.update(dt, logicalW);
 
@@ -242,10 +270,14 @@ export class Game {
     }
 
     private render() {
-        const logicalW = this.canvas.width / this.scaleFactor;
-        const logicalH = this.canvas.height / this.scaleFactor;
+        // CSS-pixel-derived (see update() comment about fractional DPR).
+        const logicalW = this.canvas.clientWidth / this.scaleFactor;
+        const logicalH = this.canvas.clientHeight / this.scaleFactor;
 
         this.ctx.save();
+        // Apply DPR first so subsequent scale + draw operations think in
+        // CSS pixels; on retina+ this is where the sharpness comes from.
+        this.ctx.scale(this.dpr, this.dpr);
         this.ctx.scale(this.scaleFactor, this.scaleFactor);
 
         if (this.sky) {
@@ -260,8 +292,12 @@ export class Game {
         this.ctx.save();
         this.ctx.translate(0, groundY);
 
+        // Pass the full effective device scale (scaleFactor * dpr) so
+        // Layer.draw's pixel-snap math lands on whole device pixels even
+        // on HiDPI displays.
+        const effectiveDeviceScale = this.scaleFactor * this.dpr;
         this.layers.forEach(layer => {
-            layer.draw(this.ctx, this.cameraX, logicalW, this.scaleFactor);
+            layer.draw(this.ctx, this.cameraX, logicalW, effectiveDeviceScale);
         });
 
         this.ctx.restore();
