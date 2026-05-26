@@ -4,56 +4,56 @@ description: Rolling current-state snapshot of the project. Overwrite each subst
 type: hot
 ---
 
-# Hot - 2026-05-26 (mid-day, 2 PRs awaiting fidom approval)
+# Hot - 2026-05-27 (post-merge: speed UX + pixel-snap both shipped)
 
-**Status**: 2 open PRs (#41 speed slider UX, #42 layer pixel-snap). 0 closed-but-unmerged. 3 issues active (#38, #39, #40) - all assigned fszalaj, all blocked on merge of their fix PR. Build clean. Bundle 79.42 kB / gzip 22.74 kB. Tests 67/67. Wersja 1.2.0. Last merge to main: d4220d2 (DEC-10 manual setup tracking, 2026-05-20).
+**Status**: 0 open PRs. 0 open issues. Latest on `main`: 0079d1c. Build clean. Bundle 79.42 kB / gzip 22.74 kB (after #42 pixel-snap; #41 added no net bytes). Tests 67/67. Wersja 1.2.0.
 
-## In-flight PRs
+## Merged today (2026-05-26 -> 2026-05-27 UTC)
 
-| PR | Branch | Closes | Status | Note |
-|---|---|---|---|---|
-| [#41](https://github.com/krzoder/skyline-scroller/pull/41) | `fix/speed-controls` | #38, #39 | All CI green; **fidom preview CANCELLED by #42 push** | Needs empty-commit re-trigger or merge of #42 first |
-| [#42](https://github.com/krzoder/skyline-scroller/pull/42) | `fix/biome-border-flicker` | #40 | Building (in progress as of last poll) | Holds the live fidom preview right now |
+| PR | Commit | Closes | Summary |
+|---|---|---|---|
+| [#41](https://github.com/krzoder/skyline-scroller/pull/41) | 0079d1c | #38, #39 | Speed slider strictly non-negative; basic bar pins to extremes when Advanced drives outside [0.1, 10]. |
+| [#42](https://github.com/krzoder/skyline-scroller/pull/42) | 77f8bb3 | #40 | `Layer.draw` snaps `layerViewX` to integer device-pixel grid (`Math.round(cameraX * speedModifier * effectiveScale) / effectiveScale`). Layer translates in whole-pixel steps; border shimmer fixed. Codex APPROVE. |
 
-**Concurrency reminder**: `fidom-preview` workflow group has `cancel-in-progress`. Latest PR push wins. Documented in PR sticky comments.
+### DEC-10 footnote (operational gap noticed today)
 
-## What changed today (2026-05-26)
+Both PRs were admin-merged (branch-protection bypass) because the self-hosted homelab runner failed to pick up `Deploy preview to fidom` for ~3 hours. The `Await manual fidom verification` required-status-check never materialised so the gate could not be approved. User explicitly authorised the bypass. **Not a default operating mode** — fidom verification is the canonical gate. If the runner stays flaky we should reassess DEC-10 or add a runner-health check / fallback path.
 
-### #41 - speed slider UX (#38 + #39)
+## Engine snapshot (post-#42)
 
-- `src/ui/advanced-window.ts`: slider strictly non-negative. `speedRange` returns `{0, 20}` for default centre; non-default centre uses `{max(0, center-10), center+10}`. Mapping: slider 0..500 → speed 0..1, 500..1000 → 1..max.
-- `src/main.ts` `advanced.onSpeedChange`: out-of-range advanced speeds pin basic bar to extreme (-1 / +1) instead of snapping to centre.
-- Reverse / negative scrolling now reachable only via the input text box.
+`src/engine/Layer.ts:32-39` is now the single point that decides where a parallax layer renders. All four layers (speedModifier 0.2/0.4/0.6/1.0; bg scale 1.3; others 1.0) share the snap. `Game.scaleFactor = 1.6` is now passed in as a draw parameter rather than implicit.
 
-### #42 - layer pixel-snap (#40)
+Per-entity edges may still anti-alias if `entity.x * effectiveScale` is non-integer (stable AA, no jitter). Separate refactor would touch every `drawImage`/`fillRect` call site - not done yet.
 
-- `src/engine/Layer.ts`: `Layer.draw` gains `scaleFactor` parameter, snaps `layerViewX = Math.round(cameraX * speedModifier * effectiveScale) / effectiveScale`. Whole layer translates in integer device-pixel steps; edges no longer wobble between columns.
-- `src/engine/Game.ts`: passes `this.scaleFactor` to each `layer.draw(...)` call.
-- Verified by parallel Explore agent + Codex (independent investigation -> approve).
-- Per-entity edges may still anti-alias (if `entity.x * effectiveScale` non-integer) - that's a STABLE blend (no jitter) and a separate follow-up if desired.
+## UI snapshot (post-#41)
 
-## Deploy story (unchanged from 2026-05-20)
+`src/ui/advanced-window.ts` slider is monotonic "stop -> fast" end-to-end. `speedRange` returns `{0, 20}` for the default centre, `{max(0, center-10), center+10}` otherwise. Negative / reverse speeds reachable only through the input text box (which still uses `evalExpression` + `[-10000, 10000]` clamp).
 
-- **GitHub Pages (`krzoder.github.io/skyline-scroller/`)** = production, auto-deploys on push to `main`.
-- **fidom.link (`skyline-scroller.fidom.link`)** = PR preview. `pr-preview.yml` builds PR HEAD on ubuntu-hosted, atomic-swaps via self-hosted homelab runner.
-- **Approval gate (BLOCKING merge)**: `fidom-verified` Environment with required reviewer (self). Approve in Actions UI to unblock merge.
+`src/main.ts` `advanced.onSpeedChange`: out-of-range pinned to extreme (`-1` for slower than 0.1x, `+1` for faster than 10x) instead of the misleading centre snap-back.
+
+## Deploy story (DEC-10)
+
+- **GitHub Pages (`krzoder.github.io/skyline-scroller/`)** = production. Auto-deploys on push to `main` via `deploy.yml`. Both merges will trigger.
+- **fidom.link (`skyline-scroller.fidom.link`)** = PR preview. `pr-preview.yml` builds on ubuntu-hosted, deploys via self-hosted homelab runner.
+- **Approval gate**: `fidom-verified` Environment with required reviewer. **Today's bypass was an exception; runner-online is the steady state.**
 - One-time setup tracked in [[operations/dec-10-manual-setup]].
 
-## Wielka dekompozycja main.ts (DEC-04 implemented)
+## Wielka dekompozycja main.ts (DEC-04, unchanged)
 
-main.ts: 1722 -> 427 LOC (-75.2%). 10 modules in `src/ui/`. (Details unchanged from 2026-05-20 hot cache - see `log.md`.)
+main.ts: 1722 -> 427 LOC (-75.2%). 10 modules in `src/ui/`.
 
 ## Hard rules all clean
 
-- D18 (`Function()` eval), D19 (`Math.random()` in preview), deepClone, ALL_BIOMES frozen, SkySystem rng required, `[INEFFECTIVE_DYNAMIC_IMPORT]` Vite warning - all addressed.
+- D18 (`Function()` eval), D19 (`Math.random()` in preview), deepClone, ALL_BIOMES frozen, SkySystem rng required, `[INEFFECTIVE_DYNAMIC_IMPORT]` Vite warning. All addressed.
 
 ## Tests
 
-5 plików, 67 case'ów. No new tests in #41/#42 (UI rendering / Canvas2D - hard to unit-test; visual verification on fidom is the gate).
+5 plików, 67 case'ów. No new tests in #41/#42. Visual / rendering bugs - hard to unit-test; relying on Codex review + manual verification. Determinism tests (3) still pass.
 
 ## Open work (deferred)
 
-- 3x `Math.random()` w `src/ui/seed-controls.ts` + `src/ui/custom-gen.ts` - legitimate entropy entry points after decomposition; rule update or refactor.
+- 3x `Math.random()` w `src/ui/seed-controls.ts` + `src/ui/custom-gen.ts` - legitimate entropy entry points after decomposition.
 - CityGenerator `pickMaterial`/`pickRoof`/`pickColor` - REGIONS-aware refactor pending determinism test extension.
-- Per-entity pixel snap (follow-up to #42) - currently entity edges still anti-alias; could remove residual blur with another sweep across draw calls.
+- **Per-entity pixel snap** (follow-up to #42) - currently entity edges still anti-alias; could remove residual blur with another sweep across `drawImage`/`fillRect` sites. Low priority unless visually objectionable on fidom.
 - Palette extraction (~30 inline colors in `src/ui/`).
+- **Homelab self-hosted runner health** - flaky/offline today; review before next non-trivial PR.

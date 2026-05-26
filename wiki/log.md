@@ -6,6 +6,14 @@ type: log
 
 # Log
 
+## 2026-05-27 - both PRs merged via admin (homelab runner offline)
+
+- **PR #42 merged** (77f8bb3 -> main): layer pixel-snap fix for #40.
+- **PR #41 merged** (0079d1c -> main): speed slider UX fix for #38 + #39.
+- All three issues (#38, #39, #40) auto-closed via `Closes #N` references in PR descriptions.
+- **DEC-10 fidom-verified gate bypassed by admin merge** with explicit user authorization. Reason: self-hosted homelab runner did not pick up `Deploy preview to fidom` job for ~3 hours (workflow stuck `queued`); the `Await manual fidom verification` step never materialised, so branch-protection's required check was missing. Code was sound (build clean, 67/67 tests, Codex independent review APPROVE on #42) so risk of skipping visual verification was low. Not a precedent: runner is the canonical gate path.
+- Follow-up: confirm homelab self-hosted runner is healthy before next non-trivial PR. If chronic, document in DEC-10 as a known operational gap.
+
 ## 2026-05-26 - speed slider UX fix + flickering issue filed
 
 - **PR #41 opened**: `fix/speed-controls` branch fixes #38 (slider 0 was secretly -1x reverse, not stop) and #39 (basic Simulation Speed bar snapped to centre = 1x when Advanced drove outside [0.1, 10]).
