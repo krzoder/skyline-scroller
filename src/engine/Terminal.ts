@@ -1,5 +1,7 @@
 import { deepClone } from '../utils/deepClone';
 import { evalExpression } from '../utils/Expression';
+import { clamp } from '../utils/math';
+import { generateRandomSeed } from '../utils/Random';
 import type { Game } from './Game';
 import type { TreeType } from '../procgen/entities/Tree';
 import type { BiomeType } from '../procgen/BiomeSystem';
@@ -198,7 +200,7 @@ export class Terminal {
                 }
                 let val = args[0];
                 if (val.toLowerCase() === 'random') {
-                    val = Math.floor(Math.random() * 100000).toString();
+                    val = generateRandomSeed();
                 }
                 ctx.game.setSeed(val);
                 ctx.output(`Seed set to: ${val}`);
@@ -228,7 +230,7 @@ export class Terminal {
                 }
 
                 // Very high limits for fun, but still capped to prevent absolute browser lockup
-                const clamped = Math.max(-10000, Math.min(10000, val));
+                const clamped = clamp(val, -10000, 10000);
                 ctx.game.setTimeScale(clamped);
                 ctx.output(`Speed set to ${clamped}`);
             },
@@ -288,7 +290,7 @@ export class Terminal {
                     ctx.output(`Invalid volume.`, true);
                     return;
                 }
-                const vol = Math.max(0, Math.min(100, val));
+                const vol = clamp(val, 0, 100);
                 ctx.game.setVolume(vol / 100.0);
                 ctx.output(`Volume set to ${Math.round(vol)}`);
             },
@@ -438,7 +440,7 @@ export class Terminal {
                     ctx.game.timeFormat = '24h';
                     ctx.output(`Time format reset to default (HH:MM).`);
                 } else if (target === 'seed') {
-                    const rnd = Math.floor(Math.random() * 100000).toString();
+                    const rnd = generateRandomSeed();
                     ctx.game.setSeed(rnd);
                     ctx.output(`Seed restarted randomly.`);
                 } else if (target === 'generate' || target === 'gen') {
@@ -596,7 +598,7 @@ export class Terminal {
             this.game.setVolume(0.5);
             this.game.setMuted(false);
             this.game.timeFormat = '24h';
-            const rnd = Math.floor(Math.random() * 100000).toString();
+            const rnd = generateRandomSeed();
             this.game.setSeed(rnd);
             const def = deepClone(DEFAULT_TREE_CONFIG);
             this.game.treeConfig = def;

@@ -13,6 +13,8 @@ import { deepClone } from '../utils/deepClone';
 import type { Game } from '../engine/Game';
 import { Game as GameCtor } from '../engine/Game';
 import { Tree, type TreeType } from '../procgen/entities/Tree';
+import { clamp } from '../utils/math';
+import { generateRandomSeed } from '../utils/Random';
 import type { BiomeType } from '../procgen/BiomeSystem';
 import { ALL_BIOMES } from '../regions/_index';
 import { DEFAULT_TREE_CONFIG } from '../procgen/TreeConfig';
@@ -361,10 +363,10 @@ export function initCustomGen(deps: CustomGenDeps): CustomGenHandle {
                 const v2 = fresh.maxHeight;
                 if (document.activeElement !== minInp) minInp.value = v1.toString();
                 if (document.activeElement !== maxInp) maxInp.value = v2.toString();
-                if (document.activeElement !== sliderMinEl) sliderMinEl.value = Math.max(rangeMin, Math.min(rangeMax, v1)).toString();
-                if (document.activeElement !== sliderMaxEl) sliderMaxEl.value = Math.max(rangeMin, Math.min(rangeMax, v2)).toString();
-                const p1Val = Math.max(0, Math.min(100, ((v1 - rangeMin) / rangeSpan) * 100));
-                const p2Val = Math.max(0, Math.min(100, ((v2 - rangeMin) / rangeSpan) * 100));
+                if (document.activeElement !== sliderMinEl) sliderMinEl.value = clamp(v1, rangeMin, rangeMax).toString();
+                if (document.activeElement !== sliderMaxEl) sliderMaxEl.value = clamp(v2, rangeMin, rangeMax).toString();
+                const p1Val = clamp(((v1 - rangeMin) / rangeSpan) * 100, 0, 100);
+                const p2Val = clamp(((v2 - rangeMin) / rangeSpan) * 100, 0, 100);
                 track.style.left = `calc(${p1Val}% + 8px - ${p1Val * 0.16}px)`;
                 track.style.width = `calc(${p2Val - p1Val}% - ${(p2Val - p1Val) * 0.16}px)`;
             };
@@ -516,7 +518,7 @@ export function initCustomGen(deps: CustomGenDeps): CustomGenHandle {
     btnGenReset.addEventListener('click', (e) => {
         e.stopPropagation();
         if (isResetConfirming) {
-            const randomSeed = Math.floor(Math.random() * 100000).toString();
+            const randomSeed = generateRandomSeed();
             const customSeedInput = document.getElementById('custom-seed-input') as HTMLInputElement;
             if (customSeedInput) customSeedInput.value = randomSeed;
             if (previewGame) {
@@ -555,7 +557,7 @@ export function initCustomGen(deps: CustomGenDeps): CustomGenHandle {
 
     if (btnRandomPreviewSeed) {
         btnRandomPreviewSeed.onclick = () => {
-            const newSeed = Math.floor(Math.random() * 100000).toString();
+            const newSeed = generateRandomSeed();
             const inp = document.getElementById('custom-seed-input') as HTMLInputElement;
             if (inp) inp.value = newSeed;
             const savedX = previewGame ? previewGame.getCameraX() : 0;
