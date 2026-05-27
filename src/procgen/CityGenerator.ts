@@ -22,6 +22,9 @@ export class CityGenerator {
     private biomeSystem: BiomeSystem;
     private dna: CityDNA;
     public config: TreeConfig;
+    // Runtime-tunable multipliers; UI cycles them via game.setDensity / setTerrainScale.
+    public densityScale: number = 1;
+    public terrainScale: number = 1;
 
     constructor(seed: number | string, layerCount: number, config?: TreeConfig, rng?: Random) {
         // Caller can pass a forked stream; otherwise we mint a root for backward compat.
@@ -90,7 +93,7 @@ export class CityGenerator {
         } else {
             if (groundType !== 'water') {
                 const roll = this.rng.nextFloat();
-                if (roll < this.dna.density) {
+                if (roll < this.dna.density * this.densityScale) {
                     feature = 'building';
                 } else if (this.rng.nextFloat() < this.dna.greenery) {
                     feature = 'tree';
@@ -103,14 +106,14 @@ export class CityGenerator {
 
         if (feature === 'landscape') {
             featureWidth = this.rng.nextInt(200, 500);
-            const h = this.rng.nextInt(FEATURE_HEIGHT_MIN, FEATURE_HEIGHT_MAX);
+            const h = this.rng.nextInt(FEATURE_HEIGHT_MIN, FEATURE_HEIGHT_MAX) * this.terrainScale;
             obj = new Landscape(x, featureWidth, h, biome, this.rng);
 
         } else if (feature === 'building') {
             const minW = 60;
             const maxW = 120 + (layerIndex * 20);
             featureWidth = this.rng.nextInt(minW, maxW);
-            const h = this.rng.nextInt(FEATURE_HEIGHT_MIN, FEATURE_HEIGHT_MAX) * this.dna.buildingHeight;
+            const h = this.rng.nextInt(FEATURE_HEIGHT_MIN, FEATURE_HEIGHT_MAX) * this.dna.buildingHeight * this.terrainScale;
 
             const mat = this.pickMaterial(biome);
             const roof = this.pickRoof(biome);

@@ -193,8 +193,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <!-- Tree Settings Dropdown -->
         <div id="tree-settings-dropdown-container" style="margin-bottom: 5px;"></div>
         
-        <button class="btn-small" style="background:#446; text-align:center;">Density: Medium</button>
-        <button class="btn-small" style="background:#446; text-align:center;">Terrain: Hilly</button>
+        <button id="btn-gen-density" class="btn-small" style="background:#446; text-align:center;">Density: Medium</button>
+        <button id="btn-gen-terrain" class="btn-small" style="background:#446; text-align:center;">Terrain: Hilly</button>
         <button id="btn-gen-weather" class="btn-small" style="background:#446; text-align:center;">Weather: Auto</button>
       </div>
 
@@ -302,7 +302,38 @@ const customGenWindow = document.getElementById('custom-gen-window')!;
 const btnGenClose = document.getElementById('btn-gen-close')!;
 const btnGenApply = document.getElementById('btn-gen-apply')!;
 const btnGenReset = document.getElementById('btn-gen-reset')!;
+const btnGenDensity = document.getElementById('btn-gen-density');
+const btnGenTerrain = document.getElementById('btn-gen-terrain');
 const btnGenWeather = document.getElementById('btn-gen-weather');
+
+if (btnGenDensity) {
+    const presets: Array<{ label: string; scale: number }> = [
+        { label: 'Sparse', scale: 0.5 },
+        { label: 'Medium', scale: 1 },
+        { label: 'Packed', scale: 1.6 },
+    ];
+    let i = 1;
+    btnGenDensity.addEventListener('click', () => {
+        i = (i + 1) % presets.length;
+        btnGenDensity.textContent = `Density: ${presets[i].label}`;
+        if (game.generator) game.generator.densityScale = presets[i].scale;
+    });
+}
+
+if (btnGenTerrain) {
+    const presets: Array<{ label: string; scale: number }> = [
+        { label: 'Flat', scale: 0.6 },
+        { label: 'Hilly', scale: 1 },
+        { label: 'Mountainous', scale: 1.6 },
+    ];
+    let i = 1;
+    btnGenTerrain.addEventListener('click', () => {
+        i = (i + 1) % presets.length;
+        btnGenTerrain.textContent = `Terrain: ${presets[i].label}`;
+        if (game.generator) game.generator.terrainScale = presets[i].scale;
+    });
+}
+
 
 if (btnGenWeather) {
     const cycle: Array<'auto' | 'clear' | 'rain' | 'snow' | 'fog' | 'sandstorm'> = ['auto', 'clear', 'rain', 'snow', 'fog', 'sandstorm'];
