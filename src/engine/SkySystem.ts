@@ -179,27 +179,33 @@ export class SkySystem {
 
         this.drawCelestialBody(ctx, w);
 
+        // Cloud fillStyle strings would otherwise allocate ~100-300
+        // rgba() strings per frame across all parts. globalAlpha + a
+        // single fillStyle per cloud type drops that to ~3 per frame.
         this.clouds.forEach(c => {
             ctx.save();
             ctx.translate(c.x, c.y);
             ctx.scale(c.scale, c.scale);
             if (c.type === 'cumulus') {
-                ctx.fillStyle = `rgba(255, 255, 255, ${c.opacity})`;
+                ctx.fillStyle = 'rgb(255, 255, 255)';
+                ctx.globalAlpha = c.opacity;
                 c.parts.forEach(p => {
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
                     ctx.fill();
                 });
             } else if (c.type === 'cirrus') {
+                ctx.fillStyle = 'rgb(255, 255, 255)';
+                ctx.globalAlpha = 0.4;
                 c.parts.forEach(p => {
-                    ctx.fillStyle = `rgba(255, 255, 255, 0.4)`;
                     ctx.beginPath();
                     ctx.ellipse(p.x, p.y, p.w || 50, p.h || 5, 0, 0, Math.PI * 2);
                     ctx.fill();
                 });
             } else if (c.type === 'stratus') {
+                ctx.fillStyle = 'rgb(220, 220, 220)';
                 c.parts.forEach(p => {
-                    ctx.fillStyle = `rgba(220, 220, 220, ${p.opacity || 0.4})`;
+                    ctx.globalAlpha = p.opacity || 0.4;
                     ctx.beginPath();
                     ctx.rect(p.x, p.y, p.w || 100, p.h || 20);
                     ctx.fill();
