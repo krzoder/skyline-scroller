@@ -1,5 +1,27 @@
 import { Random } from '../utils/Random';
 
+type RGB = [number, number, number];
+
+interface KeyframeRGB {
+    t: number;
+    top: RGB;
+    bot: RGB;
+    overlay: RGB;
+}
+
+function parseColor(c: string): RGB {
+    if (c.startsWith('#')) {
+        const hex = c.slice(1);
+        return [
+            parseInt(hex.slice(0, 2), 16),
+            parseInt(hex.slice(2, 4), 16),
+            parseInt(hex.slice(4, 6), 16),
+        ];
+    }
+    const m = c.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+    return m ? [parseInt(m[1]), parseInt(m[2]), parseInt(m[3])] : [0, 0, 0];
+}
+
 export class SkySystem {
     private time: number = 0; // 0 to 24
     private speed: number = 0.1; // 5x Slower
@@ -38,12 +60,20 @@ export class SkySystem {
     }[] = [];
     private rng: Random;
 
+    private keyframesRGB: KeyframeRGB[];
+
     constructor(_canvas: HTMLCanvasElement, rng: Random) {
         // Caller must pass a forked rng; the previous Date.now() fallback was
         // a determinism trap (DEC-01) - any caller that forgot the arg would
         // silently produce non-reproducible sky output.
         this.rng = rng;
         this.time = this.rng.nextRange(0, 24);
+        this.keyframesRGB = this.keyframes.map(kf => ({
+            t: kf.t,
+            top: parseColor(kf.top),
+            bot: parseColor(kf.bot),
+            overlay: parseColor(kf.overlay),
+        }));
         this.initClouds();
     }
 
@@ -216,51 +246,21 @@ export class SkySystem {
     }
 
     private getSkyColors(t: number) {
-        let f1 = this.keyframes[0];
-        let f2 = this.keyframes[1];
-
-        for (let i = 0; i < this.keyframes.length - 1; i++) {
-            if (t >= this.keyframes[i].t && t < this.keyframes[i + 1].t) {
-                f1 = this.keyframes[i];
-                f2 = this.keyframes[i + 1];
+        let f1 = this.keyframesRGB[0];
+        let f2 = this.keyframesRGB[1];
+        for (let i = 0; i < this.keyframesRGB.length - 1; i++) {
+            if (t >= this.keyframesRGB[i].t && t < this.keyframesRGB[i + 1].t) {
+                f1 = this.keyframesRGB[i];
+                f2 = this.keyframesRGB[i + 1];
                 break;
             }
         }
-
-        const progress = (t - f1.t) / (f2.t - f1.t);
+        const p = (t - f1.t) / (f2.t - f1.t);
         return {
-            top: this.lerpColor(f1.top, f2.top, progress),
-            bot: this.lerpColor(f1.bot, f2.bot, progress),
-            overlay: this.lerpColor(f1.overlay, f2.overlay, progress)
+            top: lerpRGBString(f1.top, f2.top, p),
+            bot: lerpRGBString(f1.bot, f2.bot, p),
+            overlay: lerpRGBString(f1.overlay, f2.overlay, p),
         };
-    }
-
-    private lerpColor(c1: string, c2: string, t: number): string {
-        const parse = (c: string) => {
-            if (c.startsWith('#')) {
-                const hex = c.replace('#', '');
-                return [
-                    parseInt(hex.substr(0, 2), 16),
-                    parseInt(hex.substr(2, 2), 16),
-                    parseInt(hex.substr(4, 2), 16)
-                ];
-            } else {
-                const match = c.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-                if (match) {
-                    return [parseInt(match[1]), parseInt(match[2]), parseInt(match[3])];
-                }
-                return [0, 0, 0];
-            }
-        };
-        const [r1, g1, b1] = parse(c1);
-        const [r2, g2, b2] = parse(c2);
-
-        // Round to integers for Canvas/CSS compatibility and to avoid sub-pixel multiply issues
-        const r = Math.round(r1 + (r2 - r1) * t);
-        const g = Math.round(g1 + (g2 - g1) * t);
-        const b = Math.round(b1 + (b2 - b1) * t);
-
-        return `rgb(${r}, ${g}, ${b})`;
     }
 
     private drawCelestialBody(ctx: CanvasRenderingContext2D, w: number) {
@@ -356,4 +356,11 @@ function computeCelestialPhase(
     }
 
     return { drawSun, currentBloom, currentCore, scaleX };
+}
+
+function lerpRGBString(a: RGB, b: RGB, t: number): string {
+    const r = Math.round(a[0] + (b[0] - a[0]) * t);
+    const g = Math.round(a[1] + (b[1] - a[1]) * t);
+    const bl = Math.round(a[2] + (b[2] - a[2]) * t);
+    return `rgb(${r},${g},${bl})`;
 }
