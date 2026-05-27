@@ -7,6 +7,7 @@ import { Random } from '../utils/Random';
 import { CAMERA_SPEED_PX_PER_S, GROUND_HEIGHT_PX } from '../config';
 
 import { SkySystem } from './SkySystem';
+import { WeatherSystem } from './WeatherSystem';
 
 export interface GameStateSnapshot {
     seed: string;
@@ -30,10 +31,11 @@ export class Game {
     private layers: Layer[] = [];
     public generator: CityGenerator | null = null;
     private sky: SkySystem | null = null;
+    private weather: WeatherSystem | null = null;
     private seed: string = "default";
     public treeConfig: TreeConfig; // Custom config
 
-    private noisePattern: CanvasPattern | null = null;
+
     private rootRng: Random | null = null;
     private prevCameraX: number = 0;
     private rafId: number | null = null;
@@ -105,30 +107,6 @@ export class Game {
         this.tickListeners.length = 0;
     }
 
-    private initNoise(rng: Random) {
-        const w = 256;
-        const h = 256;
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        const idata = ctx.createImageData(w, h);
-        const data = idata.data;
-
-        for (let i = 0; i < data.length; i += 4) {
-            const val = rng.nextInt(0, 256);
-            data[i] = val;     // R
-            data[i + 1] = val; // G
-            data[i + 2] = val; // B
-            data[i + 3] = 8;   // ~3% opacity
-        }
-        ctx.putImageData(idata, 0, 0);
-
-        this.noisePattern = this.ctx.createPattern(canvas, 'repeat');
-    }
-
     public setSeed(seed: string) {
         this.seed = seed;
         this.reset();
@@ -188,10 +166,11 @@ export class Game {
             new Layer(1.0, 3, 0)    // Foreground (Ground level)
         ];
 
-        // Independent sub-streams keep procgen/sky/noise from correlating.
-        this.initNoise(this.rootRng.fork('noise'));
         this.generator = new CityGenerator(this.seed, this.layers.length, this.treeConfig, this.rootRng.fork('city'));
-        if (!this.isPreview) this.sky = new SkySystem(this.canvas, this.rootRng.fork('sky'));
+        if (!this.isPreview) {
+            this.sky = new SkySystem(this.canvas, this.rootRng.fork('sky'));
+            this.weather = new WeatherSystem(this.rootRng.fork('weather'));
+        }
     }
 
     public resize() {
@@ -251,6 +230,7 @@ export class Game {
         const logicalW = this.canvas.clientWidth / this.scaleFactor;
 
         this.sky?.update(dt, logicalW);
+        this.weather?.update(dt);
 
         // Generate new buildings if needed; pass real camera-pixel delta so
         // BiomeSystem.durationRemaining can be measured in pixels, not frames.
@@ -258,6 +238,7 @@ export class Game {
             const dx = this.cameraX - this.prevCameraX;
             this.generator.generate(this.layers, this.cameraX, logicalW, dx);
             this.prevCameraX = this.cameraX;
+            this.weather?.setBiome(this.generator.getCurrentBiome());
         }
 
         this.layers.forEach(l => l.prune(this.cameraX));
@@ -321,13 +302,15 @@ export class Game {
             this.ctx.globalCompositeOperation = 'source-over';
         }
 
-        // Noise dithering fixes gradient banding.
-        if (this.noisePattern) {
-            this.ctx.fillStyle = this.noisePattern;
-            this.ctx.fillRect(0, 0, logicalW, logicalH);
-        }
+        // Weather layer renders last so particles / fog overlay sit on top
+        // of buildings and ambient tint. Clear weather is a no-op.
+        this.weather?.draw(this.ctx, logicalW, logicalH);
 
         this.ctx.restore();
+    }
+
+    public getWeather(): WeatherSystem | null {
+        return this.weather;
     }
 
     public setTimeScale(scale: number) {
