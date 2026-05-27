@@ -6,9 +6,13 @@
 
 import type { Game } from '../engine/Game';
 import { generateRandomSeed } from '../utils/Random';
+import { savePersistedState, loadPersistedState } from '../utils/persistence';
 
 export function initSeedControls(game: Game): void {
-    game.setSeed(generateRandomSeed());
+    const persisted = loadPersistedState();
+    const initialSeed = persisted?.lastSeed ?? generateRandomSeed();
+    game.setSeed(initialSeed);
+    savePersistedState({ lastSeed: initialSeed });
 
     const seedInput = document.getElementById('seed-input') as HTMLInputElement;
     const setSeedBtn = document.getElementById('set-seed-btn') as HTMLButtonElement;
@@ -17,6 +21,7 @@ export function initSeedControls(game: Game): void {
     const applySeed = () => {
         if (seedInput.value) {
             game.setSeed(seedInput.value);
+            savePersistedState({ lastSeed: seedInput.value });
             setSeedBtn.blur();
             seedInput.blur();
         }
@@ -28,7 +33,9 @@ export function initSeedControls(game: Game): void {
     });
 
     randomSeedBtn.addEventListener('click', () => {
-        game.setSeed(generateRandomSeed());
+        const s = generateRandomSeed();
+        game.setSeed(s);
+        savePersistedState({ lastSeed: s });
         randomSeedBtn.blur();
     });
 }

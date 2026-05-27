@@ -6,6 +6,7 @@
 
 import type { Game } from '../engine/Game';
 import { clamp } from '../utils/math';
+import { savePersistedState, loadPersistedState } from '../utils/persistence';
 
 export interface AudioControlsDeps {
     game: Game;
@@ -30,9 +31,10 @@ export interface AudioControls {
 export function initAudioControls(deps: AudioControlsDeps): AudioControls {
     const { game, btnSound, soundContainer, volumePopup, volumeSlider } = deps;
 
-    let currentVolume = DEFAULT_VOLUME;
-    let lastVolume = DEFAULT_VOLUME;
-    let isMuted = false;
+    const persisted = loadPersistedState();
+    let currentVolume = persisted?.volume ?? DEFAULT_VOLUME;
+    let lastVolume = currentVolume > 0 ? currentVolume : DEFAULT_VOLUME;
+    let isMuted = persisted?.isMuted ?? false;
     let volFadeTimer: number | null = null;
 
     function applyState(): void {
@@ -41,6 +43,7 @@ export function initAudioControls(deps: AudioControlsDeps): AudioControls {
         game.setMuted(isMuted);
         const icon = document.getElementById('icon-sound');
         if (icon) icon.innerHTML = isMuted ? SVG_MUTED : SVG_UNMUTED;
+        savePersistedState({ volume: currentVolume, isMuted });
     }
 
     function setGlobalVolume(val: number, fromMuteToggle = false): void {

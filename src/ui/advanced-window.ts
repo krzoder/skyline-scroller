@@ -11,6 +11,7 @@
 import type { Game } from '../engine/Game';
 import { evalExpression } from '../utils/Expression';
 import { clamp } from '../utils/math';
+import { savePersistedState, loadPersistedState } from '../utils/persistence';
 
 export interface AdvancedWindowDeps {
     game: Game;
@@ -157,10 +158,18 @@ export function initAdvancedWindow(deps: AdvancedWindowDeps): AdvancedWindowHand
         if (e.target !== btnAdvReset) cancelResetConfirm();
     });
 
+    // Hydrate timeFormat from persisted state if available.
+    const persisted = loadPersistedState();
+    if (persisted?.timeFormat) {
+        game.timeFormat = persisted.timeFormat;
+        if (persisted.timeFormat !== 'score') lastClockFormat = persisted.timeFormat;
+    }
+
     timeModeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             const mode = (btn as HTMLElement).dataset.val as 'clock' | 'score';
             game.timeFormat = mode === 'score' ? 'score' : lastClockFormat;
+            savePersistedState({ timeFormat: game.timeFormat });
             updateTimeFormatUI();
         });
     });
@@ -170,6 +179,7 @@ export function initAdvancedWindow(deps: AdvancedWindowDeps): AdvancedWindowHand
             const fmt = (btn as HTMLElement).dataset.val as '24h' | '12h';
             lastClockFormat = fmt;
             game.timeFormat = fmt;
+            savePersistedState({ timeFormat: fmt });
             updateTimeFormatUI();
         });
     });
