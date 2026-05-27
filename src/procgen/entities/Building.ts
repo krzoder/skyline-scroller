@@ -82,6 +82,18 @@ export class Building implements Renderable {
             }
         }
 
+        // Per-building grain: 80 sub-pixel specks at random positions on
+        // the body area. Half dark, half light. rng-driven so position
+        // is deterministic per building.x.
+        const grainCount = 80;
+        const grainBottom = totalHeight;
+        for (let i = 0; i < grainCount; i++) {
+            const gx = Math.floor(this.rng.nextFloat() * this.width);
+            const gy = bodyTopY + Math.floor(this.rng.nextFloat() * (grainBottom - bodyTopY));
+            ctx.fillStyle = this.rng.nextFloat() < 0.5 ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.04)';
+            ctx.fillRect(gx, gy, 1, 1);
+        }
+
         ctx.fillStyle = this.roofColor;
         if (this.roofType === 'flat') {
             ctx.fillRect(0, bodyTopY - 5, this.width, 5); // Simple cornice
