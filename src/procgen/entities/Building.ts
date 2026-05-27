@@ -25,10 +25,13 @@ export class Building implements Renderable {
         this.height = height;
         this.material = material;
         this.roofType = roofType;
-        this.baseColor = baseColor;
-        this.roofColor = roofColor;
         this.y = 0;
         this.rng = rng ?? new Random(`building:${x}:${material}`);
+
+        // Per-building hue/sat/light jitter so adjacent same-material
+        // buildings don't read as identical stamps.
+        this.baseColor = jitterHsl(baseColor, this.rng);
+        this.roofColor = jitterHsl(roofColor, this.rng);
 
         this.cacheCanvas = this.generateTexture();
     }
@@ -111,4 +114,15 @@ export class Building implements Renderable {
     isVisible(_viewX: number, _viewWidth: number): boolean {
         return true;
     }
+}
+
+function jitterHsl(hsl: string, rng: Random): string {
+    const m = hsl.match(/hsl\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)%,\s*(-?\d+(?:\.\d+)?)%\)/);
+    if (!m) return hsl;
+    const h = ((parseFloat(m[1]) + (rng.nextFloat() - 0.5) * 8) % 360 + 360) % 360;
+    const sRaw = parseFloat(m[2]) + (rng.nextFloat() - 0.5) * 16;
+    const lRaw = parseFloat(m[3]) + (rng.nextFloat() - 0.5) * 12;
+    const s = sRaw < 0 ? 0 : sRaw > 100 ? 100 : sRaw;
+    const l = lRaw < 0 ? 0 : lRaw > 100 ? 100 : lRaw;
+    return `hsl(${h.toFixed(1)}, ${s.toFixed(1)}%, ${l.toFixed(1)}%)`;
 }
