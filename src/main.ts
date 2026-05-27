@@ -195,7 +195,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         
         <button class="btn-small" style="background:#446; text-align:center;">Density: Medium</button>
         <button class="btn-small" style="background:#446; text-align:center;">Terrain: Hilly</button>
-        <button class="btn-small" style="background:#446; text-align:center;">Weather: Clear</button>
+        <button id="btn-gen-weather" class="btn-small" style="background:#446; text-align:center;">Weather: Auto</button>
       </div>
 
       <div id="gen-preview-container">
@@ -302,6 +302,24 @@ const customGenWindow = document.getElementById('custom-gen-window')!;
 const btnGenClose = document.getElementById('btn-gen-close')!;
 const btnGenApply = document.getElementById('btn-gen-apply')!;
 const btnGenReset = document.getElementById('btn-gen-reset')!;
+const btnGenWeather = document.getElementById('btn-gen-weather');
+
+if (btnGenWeather) {
+    const cycle: Array<'auto' | 'clear' | 'rain' | 'snow' | 'fog' | 'sandstorm'> = ['auto', 'clear', 'rain', 'snow', 'fog', 'sandstorm'];
+    let idx = 0;
+    btnGenWeather.addEventListener('click', () => {
+        idx = (idx + 1) % cycle.length;
+        const w = cycle[idx];
+        btnGenWeather.textContent = `Weather: ${w === 'auto' ? 'Auto' : w.charAt(0).toUpperCase() + w.slice(1)}`;
+        const ws = game.getWeather();
+        if (!ws) return;
+        if (w === 'auto') {
+            ws.setBiome(game.generator?.getCurrentBiome() ?? 'plains');
+        } else {
+            ws.forceWeather(w);
+        }
+    });
+}
 
 const terminalBar = document.getElementById('terminal-bar')!;
 const terminalInput = document.getElementById('terminal-input') as HTMLInputElement;
