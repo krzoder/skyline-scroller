@@ -6,41 +6,31 @@ Procedurally generated parallax city scroller with a day/night cycle and weather
 
 ## Where to see it
 
-Two URLs with different purposes:
-
-| URL | What's there | When it updates |
-|---|---|---|
-| **[krzoder.github.io/skyline-scroller/](https://krzoder.github.io/skyline-scroller/)** | Production - always reflects `main` | ~2 min after each merge |
-| **[skyline-scroller.fidom.link](https://skyline-scroller.fidom.link/)** | PR preview - the **most recently pushed PR HEAD**, or `main` when no PR is open | ~1 min after each PR commit |
+**[krzoder.github.io/skyline-scroller/](https://krzoder.github.io/skyline-scroller/)** -
+production, always reflecting `main`, updated about two minutes after each merge.
 
 Repository: https://github.com/krzoder/skyline-scroller
+
+> Until 2026-08-18 a second copy was also served from `skyline-scroller.fidom.link`, a
+> self-hosted box that rendered the most recently pushed PR head. That preview and its approval
+> gate are gone: GitHub Pages already publishes the site, and the preview pipeline depended on a
+> runner that no longer exists, so every PR carried a check that could only time out.
 
 ---
 
 ## The pipeline at a glance
 
 ```
-PR commit ──► CI (lint, typecheck, test, build) ──┐
-                                                  │
-              build dist on ubuntu-hosted runner ─┤
-                                                  ▼
-                  artifact downloaded by self-hosted homelab runner
-                                                  │
-                  atomic-swap into nginx data dir │
-                                                  ▼
-                          fidom.link shows the PR
-                                                  │
-                  sticky PR comment with preview URL
-                                                  │
-                  await-approval job pauses for manual review
-                                                  ▼
-              user tests fidom -> clicks Approve in GitHub UI
-                                                  │
-                  branch-protected merge unlocks
-                                                  ▼
-              squash-merge -> deploy.yml -> GitHub Pages
-                                                  ▼
-                          krzoder.github.io serves main
+PR commit ──► CI (lint, typecheck, test, build)
+              CodeQL, npm audit
+                     │
+                     ▼
+              squash-merge to main
+                     │
+                     ▼
+              deploy.yml ──► GitHub Pages
+                     ▼
+              krzoder.github.io serves main
 ```
 
 ## How an end-to-end change actually goes
@@ -66,83 +56,19 @@ Open the PR via the link GitHub prints.
 
 If any check is red, fix it. Push the fix - everything below reruns.
 
-### 3. PR preview deploys to fidom.link
+### 3. Merge when the checks are green
 
-After CI is green, the `PR Preview on fidom.link` workflow runs:
+Nothing else gates the PR. Squash-merge from the GitHub UI, or add the `auto-merge` label and
+let `auto-merge.yml` do it once every check passes.
 
-1. Builds the PR commit on a GitHub-hosted ubuntu runner (untrusted code stays here, never on your homelab box).
-2. Uploads `dist/` as a workflow artifact.
-3. A self-hosted runner on the homelab downloads the artifact and **atomic-swaps** it into nginx (`mv -T` so nginx never serves a half-written tree).
-4. Smoke-tests `https://skyline-scroller.fidom.link/health` returns 200.
-5. Posts a sticky comment on the PR:
-
-> 🚀 **Preview live**: https://skyline-scroller.fidom.link/
->
-> Built from `<sha>`.
->
-> **Next step**:
-> 1. Open https://skyline-scroller.fidom.link/ and verify everything works.
-> 2. Go to the deployment approval page and click **Review deployments → fidom-verified → Approve and deploy**.
-> 3. After approval, the `await-approval` status check turns green and you can **Squash and merge**.
-
-### 4. Test on fidom.link
-
-Click the preview link. Verify your change actually works in production-like conditions:
-- Does the canvas render?
-- Are the new biome/tree/UI buttons functioning?
-- Did you break the terminal or the keyboard shortcuts?
-- Run `debug-state` in the in-app terminal, copy the JSON, attach to the PR if anything looks off.
-
-### 5. Approve the deployment
-
-The PR has a status check called `await-approval` that's **stuck on "pending"**. It's a job in the workflow that's waiting on a GitHub Environment called `fidom-verified` with you set as a required reviewer.
-
-To approve:
-- Either click the link in the sticky comment, or go to **Actions → the latest "PR Preview on fidom.link" run for your PR**.
-- You'll see a yellow banner: **"Review deployments"** → click it.
-- Tick **`fidom-verified`** → click **"Approve and deploy"**.
-
-The `await-approval` job now succeeds. Status check goes green. The merge button unblocks.
-
-> **Important**: Pushing a new commit invalidates the prior approval. fidom rebuilds, the approval gate resets, and you must approve again. This is by design - each commit must be re-verified.
-
-### 6. Squash and merge
-
-Click the green **"Squash and merge"** button. Confirm.
-
-### 7. Production deploys automatically
+### 4. Production deploys automatically
 
 `deploy.yml` triggers on every push to `main`:
 - Downloads the dist artifact built by CI (the one from the merged PR).
 - Publishes to the `gh-pages` branch.
 - GitHub Pages serves it at https://krzoder.github.io/skyline-scroller/.
 
-End-to-end: ~3 minutes from "Squash and merge" to the change being live on production.
-
-### 8. fidom.link cleans up
-
-After the PR closes (merged or abandoned), the workflow rebuilds `main` and redeploys to fidom. No stale PR content survives the PR.
-
----
-
-## One-time repo setup for the approval gate
-
-**You only do this once, per repository owner.**
-
-1. Go to **Settings → Environments → New environment**.
-2. Name it `fidom-verified`.
-3. Under **Deployment protection rules**, tick **"Required reviewers"** and add yourself.
-4. (Optional) Set **"Wait timer"** to 0 (default).
-5. Save.
-
-Then add a branch protection rule on `main`:
-1. **Settings → Branches → Branch protection rules → Add rule**.
-2. Branch name pattern: `main`.
-3. Tick **"Require status checks to pass before merging"**.
-4. Add the check called `Await manual fidom verification` (the job's display name from `pr-preview.yml`).
-5. Save.
-
-After this, no PR can merge into `main` until you've clicked Approve on its deployment to `fidom-verified` for the current HEAD SHA.
+End-to-end: about three minutes from "Squash and merge" to the change being live.
 
 ---
 
@@ -151,15 +77,17 @@ After this, no PR can merge into `main` until you've clicked Approve on its depl
 | File | What it does |
 |---|---|
 | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | Lint, typecheck, test, build. Runs on PR + push to main. |
-| [`.github/workflows/pr-preview.yml`](.github/workflows/pr-preview.yml) | The full PR-preview-on-fidom + approval-gate flow above. |
 | [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) | Builds main → publishes to GitHub Pages. Triggers on CI success on main. |
-| [`.github/workflows/deploy-fidom.yml`](.github/workflows/deploy-fidom.yml) | Emergency manual lever: rebuild main and rsync to fidom. workflow_dispatch only. |
-| [`.github/workflows/auto-merge.yml`](.github/workflows/auto-merge.yml) | If a PR has the `auto-merge` label and all checks pass (including `await-approval`), GitHub auto-merges. Useful when you've already approved and want to walk away. |
+| [`.github/workflows/auto-merge.yml`](.github/workflows/auto-merge.yml) | If a PR has the `auto-merge` label and all checks pass, GitHub auto-merges it. |
+| [`.github/workflows/dependabot-automerge.yml`](.github/workflows/dependabot-automerge.yml) | Merges a Dependabot PR once every check on its head commit is green. |
 | [`.github/workflows/codeql.yml`](.github/workflows/codeql.yml) | Weekly + PR security scan. |
 | [`.github/workflows/dep-audit.yml`](.github/workflows/dep-audit.yml) | Daily `npm audit`. Opens issue if high+ vulnerability appears. |
 | [`.github/workflows/release.yml`](.github/workflows/release.yml) | Drafts GitHub release notes from PRs since last tag. |
 
-The container + Traefik route + nginx config for fidom.link live in `fszalaj/homelab`. See [`wiki/decisions/DEC-09-homelab-deploy.md`](wiki/decisions/DEC-09-homelab-deploy.md) and [`wiki/decisions/DEC-10-pr-preview-on-fidom.md`](wiki/decisions/DEC-10-pr-preview-on-fidom.md).
+The self-hosted copy on fidom.link was retired on 2026-08-18 along with its container, Traefik
+route and nginx config in `fszalaj/homelab`. [`wiki/decisions/DEC-09-homelab-deploy.md`](wiki/decisions/DEC-09-homelab-deploy.md)
+and [`wiki/decisions/DEC-10-pr-preview-on-fidom.md`](wiki/decisions/DEC-10-pr-preview-on-fidom.md)
+record why it existed.
 
 ---
 
@@ -221,7 +149,10 @@ Most useful entry points:
 
 ## Hosting
 
-- **GitHub Pages** - free static hosting, deploys automatically on every merge to `main`.
-- **fidom.link** - self-hosted on a homelab box (Traefik + nginx), public access (no auth).
+**GitHub Pages** - free static hosting, deploying automatically on every merge to `main`. It is
+the only place the site is served from; the self-hosted `fidom.link` copy was retired on
+2026-08-18.
 
-Architecture decisions and homelab config: [`wiki/decisions/DEC-09-homelab-deploy.md`](wiki/decisions/DEC-09-homelab-deploy.md), [`wiki/decisions/DEC-10-pr-preview-on-fidom.md`](wiki/decisions/DEC-10-pr-preview-on-fidom.md).
+Why the second copy existed, and the preview flow built on it:
+[`wiki/decisions/DEC-09-homelab-deploy.md`](wiki/decisions/DEC-09-homelab-deploy.md),
+[`wiki/decisions/DEC-10-pr-preview-on-fidom.md`](wiki/decisions/DEC-10-pr-preview-on-fidom.md).
