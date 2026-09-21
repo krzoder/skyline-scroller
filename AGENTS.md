@@ -1,4 +1,6 @@
-# CLAUDE.md — project-level instructions
+# AGENTS.md - project-level instructions
+
+Claude Code 2.1.277+ reads `AGENTS.md` natively; keep the built-in `agents-md` plugin enabled.
 
 Auto-loaded by Claude Code at session start.
 
