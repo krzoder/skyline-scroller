@@ -1,4 +1,6 @@
-# CLAUDE.md — project-level instructions
+# AGENTS.md - project-level instructions
+
+`AGENTS.md` is canonical; `CLAUDE.md` is a relative symlink to it for compatible instruction loading.
 
 Auto-loaded by Claude Code at session start.
 
