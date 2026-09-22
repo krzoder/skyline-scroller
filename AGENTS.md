@@ -1,6 +1,6 @@
 # AGENTS.md - project-level instructions
 
-Claude Code 2.1.277+ reads `AGENTS.md` natively; keep the built-in `agents-md` plugin enabled.
+`AGENTS.md` is canonical; `CLAUDE.md` is a relative symlink to it for compatible instruction loading.
 
 Auto-loaded by Claude Code at session start.
 
