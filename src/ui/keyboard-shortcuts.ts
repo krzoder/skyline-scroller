@@ -27,9 +27,12 @@ export interface KeyboardShortcutsDeps {
 
 export function installKeyboardShortcuts(deps: KeyboardShortcutsDeps): void {
     window.addEventListener('keydown', (e) => {
+        // Leave browser chords (Ctrl+R reload, Ctrl+F find, Ctrl+S save...) alone.
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+
         // While focused inside an input, only Escape is hijacked (blur or
         // close terminal); Enter is left to native input behaviour.
-        if (document.activeElement?.tagName === 'INPUT') {
+        if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName ?? '')) {
             if (e.key === 'Escape') {
                 if (deps.isTerminalOpen()) {
                     deps.toggleTerminal();

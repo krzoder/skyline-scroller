@@ -6,7 +6,7 @@ import type { Game } from './Game';
 import type { TreeType } from '../procgen/entities/Tree';
 import type { BiomeType } from '../procgen/BiomeSystem';
 import { ALL_BIOMES } from '../regions/_index';
-import { DEFAULT_TREE_CONFIG } from '../procgen/TreeConfig';
+import { DEFAULT_TREE_CONFIG, parseTreeTokens, validateTreeItem } from '../procgen/TreeConfig';
 
 export interface CommandContext {
     game: Game;
@@ -244,8 +244,8 @@ export class Terminal {
 
         this.registerCommand({
             name: 'pause',
-            aliases: ['play', 'resume'],
-            description: 'Pauses or resumes the simulation.',
+            aliases: [],
+            description: 'Pauses the simulation, or toggles it when no value is given.',
             usage: 'pause [true|false]',
             execute: (args, ctx) => {
                 if (args.length > 1) {
@@ -262,13 +262,36 @@ export class Terminal {
                         return;
                     }
                 }
-                ctx.game.setTimeScale(targetPause ? 0 : 1.0);
-                ctx.output(targetPause ? 'Simulation paused.' : 'Simulation resumed (1.0x).');
-            },
+                if (targetPause) {
+                    ctx.game.setTimeScale(0);
+                    ctx.output('Simulation paused.');
+                } else {
+                    ctx.game.resume();
+                    ctx.output(`Simulation resumed (${ctx.game.timeScale}x).`);
+                }            },
             autocomplete: (args) => args.length === 0 ? [
                 { value: 'true', description: 'Freeze the simulation' },
                 { value: 'false', description: 'Resume the engine' }
             ] : []
+        });
+
+        this.registerCommand({
+            name: 'resume',
+            aliases: ['play'],
+            description: 'Resumes the simulation at the speed it had before pausing.',
+            usage: 'resume',
+            execute: (args, ctx) => {
+                if (args.length > 0) {
+                    ctx.output(`Too many arguments. Usage: resume`, true);
+                    return;
+                }
+                if (ctx.game.timeScale !== 0) {
+                    ctx.output(`Simulation is already running (${ctx.game.timeScale}x).`);
+                    return;
+                }
+                ctx.game.resume();
+                ctx.output(`Simulation resumed (${ctx.game.timeScale}x).`);
+            }
         });
 
         this.registerCommand({
@@ -282,7 +305,7 @@ export class Terminal {
                     return;
                 }
                 if (args.length === 0) {
-                    ctx.output(`Current volume: ${Math.round(ctx.game.getVolume() * 100)}`);
+                    ctx.output(`Current volume: ${Math.round(ctx.game.getVolume() * 100)}${ctx.game.getMuted() ? ' (muted)' : ''}`);
                     return;
                 }
                 const val = parseFloat(args[0]);
@@ -422,7 +445,7 @@ export class Terminal {
                     ctx.output(`Too many arguments. Usage: reset [speed|volume|format|seed|generate]`, true);
                     return;
                 }
-                if (args.length === 0) {
+                if (args.length === 0 || args[0].toLowerCase() === 'all') {
                     this.pendingResetTarget = 'all';
                     ctx.output(`This resets all settings. Type (y) to confirm.`);
                     return;
@@ -449,6 +472,7 @@ export class Terminal {
                     if (ctx.game.generator) {
                         ctx.game.generator.config = deepClone(def);
                     }
+                    ctx.game.setSeed(ctx.game.getSeed()); // Same rebuild as `generate` so the world matches the config.
                     ctx.output(`Generator configuration reset to defaults.`);
                 } else {
                     ctx.output(`Unknown reset target: '${target}'. Try 'help reset'.`, true);
@@ -532,27 +556,18 @@ export class Terminal {
                     return;
                 }
 
-                let outStr = `${type} updated => `;
-                for (const token of pairs) {
-                    if (token === 'true') { config.enabled = true; outStr += 'enabled:true '; continue; }
-                    if (token === 'false') { config.enabled = false; outStr += 'enabled:false '; continue; }
-
-                    if (token.includes(':')) {
-                        const [key, val] = token.split(':');
-                        if (key === 'minHeight') { config.minHeight = parseInt(val); outStr += `minHeight:${val} `; }
-                        else if (key === 'maxHeight') { config.maxHeight = parseInt(val); outStr += `maxHeight:${val} `; }
-                        else if (key === 'flowerChance') { config.flowerChance = parseFloat(val); outStr += `flowerChance:${val} `; }
-                        else if (key === 'biomes') { config.biomes = val.split(',') as BiomeType[]; outStr += `biomes:[${val}] `; }
-                        else {
-                            ctx.output(`Unknown configuration key: ${key}. Ignored.`, true);
-                        }
-                    } else {
-                        ctx.output(`Unknown token: ${token}. Use key:value syntax (e.g. minHeight:50).`, true);
-                        return;
-                    }
+                // Validate on a copy first, so a typo never leaves a half-applied config.
+                const { patch, summary, errors } = parseTreeTokens(pairs);
+                const next = { ...config, ...patch };
+                const problem = validateTreeItem(next);
+                const problems = errors.length > 0 ? errors : (problem ? [problem] : []);
+                if (problems.length > 0) {
+                    problems.forEach(p => ctx.output(p, true));
+                    return;
                 }
+                ctx.game.treeConfig[type] = next;
 
-                ctx.output(outStr);
+                ctx.output(`${type} updated => ${summary.join(' ')}`);
 
                 if (ctx.game.generator) {
                     ctx.game.generator.config = deepClone(ctx.game.treeConfig);

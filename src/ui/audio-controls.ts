@@ -39,7 +39,8 @@ export function initAudioControls(deps: AudioControlsDeps): AudioControls {
 
     function applyState(): void {
         volumeSlider.value = currentVolume.toString();
-        game.setVolume(currentVolume / 100);
+        // While muted keep the audible level in Game, so `volume` reads it back instead of 0.
+        game.setVolume((isMuted ? lastVolume : currentVolume) / 100);
         game.setMuted(isMuted);
         const icon = document.getElementById('icon-sound');
         if (icon) icon.innerHTML = isMuted ? SVG_MUTED : SVG_UNMUTED;
@@ -112,8 +113,9 @@ export function initAudioControls(deps: AudioControlsDeps): AudioControls {
 
     return {
         syncFromGame() {
+            const uiLevel = isMuted ? lastVolume : currentVolume;
             const gVol = Math.round(game.getVolume() * 100);
-            if (currentVolume !== gVol) setGlobalVolume(gVol, false);
+            if (uiLevel !== gVol) setGlobalVolume(gVol, false);
             const gMuted = game.getMuted();
             if (isMuted !== gMuted) setGlobalVolume(0, true);
         },

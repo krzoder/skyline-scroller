@@ -50,6 +50,7 @@ export class Game {
     private dprMediaQuery: MediaQueryList | null = null;
     private dprChangeHandler: (() => void) | null = null;
     public timeScale: number = 1.0;
+    private lastActiveTimeScale: number = 1.0;
     private volume: number = 1.0;
     private isMuted: boolean = false;
     private isPreview: boolean = false;
@@ -314,7 +315,13 @@ export class Game {
     }
 
     public setTimeScale(scale: number) {
+        if (scale !== 0) this.lastActiveTimeScale = scale;
         this.timeScale = scale;
+    }
+
+    /** Restores the speed from before the pause (not necessarily 1x). No-op when already running. */
+    public resume() {
+        if (this.timeScale === 0) this.setTimeScale(this.lastActiveTimeScale);
     }
 
     public getVolume(): number {
